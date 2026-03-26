@@ -78,6 +78,17 @@ struct TimelineView: View {
                                     ? { await restoreDeletedSegment(for: segment.id) }
                                     : nil
                             )
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                if segment.syncDisposition != .conflicted {
+                                    Button(role: .destructive) {
+                                        Task {
+                                            await deleteSegment(for: segment.id)
+                                        }
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -231,6 +242,17 @@ struct TimelineView: View {
             await pushPendingSync()
         } catch {
             syncActivity.lastPushMessage = "Could not restore that deleted segment."
+        }
+    }
+
+    private func deleteSegment(for segmentID: UUID) async {
+        do {
+            let tombstoner = LocalSegmentTombstoner(modelContext: modelContext)
+            try tombstoner.tombstone(segmentID: segmentID)
+            refreshSyncActivity()
+            await pushPendingSync()
+        } catch {
+            syncActivity.lastPushMessage = "Could not delete that segment."
         }
     }
 }
