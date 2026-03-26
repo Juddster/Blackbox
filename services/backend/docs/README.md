@@ -31,6 +31,9 @@ The current backend direction is intentionally narrow:
 Verification entrypoint:
 - `npm run verify`
 
+Automation:
+- `.github/workflows/backend-verify.yml`
+
 Runtime entrypoints:
 - `node services/backend/demo-server.mjs`
 - `cd services/backend && npm run build && npm run demo:server:built`

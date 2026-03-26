@@ -21,3 +21,6 @@ Current local scaffold:
 
 Verification:
 - `npm run verify`
+
+CI:
+- `.github/workflows/backend-verify.yml`
