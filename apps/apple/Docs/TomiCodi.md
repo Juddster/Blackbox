@@ -280,3 +280,5 @@ What to watch:
 - Mar 26, 19:20:
   - I extended the typed backend `/health` response so it now reports the active storage mode and optional snapshot path.
   - That health shape is now covered in both the OpenAPI document and the verify chain.
+- Mar 26, 19:21:
+  - I added a runtime-configuration doc for the typed backend path so `HOST`, `PORT`, and `BLACKBOX_FILE_STORAGE_DIR` are now spelled out in one place.

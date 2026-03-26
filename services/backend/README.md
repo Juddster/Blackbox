@@ -11,6 +11,7 @@ The current first sync slice is segment-envelope-centric.
 
 Entry point:
 - `services/backend/docs/README.md`
+- runtime knobs: `services/backend/docs/runtime-configuration.md`
 
 Current local scaffold:
 - `package.json`

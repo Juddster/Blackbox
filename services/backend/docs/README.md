@@ -15,6 +15,7 @@ Read them in this order:
 9. [../contracts/http-examples.md](/Users/judd/DevProjects/Blackbox/services/backend/contracts/http-examples.md)
 10. [../contracts/openapi.json](/Users/judd/DevProjects/Blackbox/services/backend/contracts/openapi.json)
 11. [local-demo-server.md](/Users/judd/DevProjects/Blackbox/services/backend/docs/local-demo-server.md)
+12. [runtime-configuration.md](/Users/judd/DevProjects/Blackbox/services/backend/docs/runtime-configuration.md)
 
 Supporting contract source of truth:
 - [sync-contract.md](/Users/judd/DevProjects/Blackbox/Docs/DevCoordination/sync-contract.md)

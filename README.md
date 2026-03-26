@@ -59,6 +59,9 @@ That verification path currently covers:
 - HTTP handler checks
 - shared schema/example validation
 
+Useful runtime docs:
+- `services/backend/docs/runtime-configuration.md`
+
 ## Apple Work
 
 Apple client implementation is in progress under `apps/apple/`.
