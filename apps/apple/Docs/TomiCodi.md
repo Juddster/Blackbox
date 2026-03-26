@@ -117,6 +117,7 @@ What to watch:
 - Mar 26, 14:05: Fixed the local sync/model drift Tomi flagged and added pull-side envelope reconciliation so the sync pass can now apply server segment envelopes back into local SwiftData state.
 - Mar 26, 14:39: Replaced the always-accept no-op sync seam with a demo sync client that exercises mixed accepted/conflicted push outcomes and pulled server envelopes against the local reconciliation path.
 - Mar 26, 14:42: Surfaced sync conflict reasons directly in timeline rows so conflicted segments now show user-facing error context instead of only affecting aggregate counters.
+- Mar 26, 14:44: Added local conflict resolution by storing conflicted server envelopes and exposing an `Apply Server Version` action on conflicted timeline rows.
 
 ## Tomi Progress Notes
 
@@ -179,6 +180,8 @@ What to watch:
 - Mar 26, 14:43:
   - Added a runnable no-listener demo path via `services/backend/demo-lib.mjs` and `services/backend/demo-smoke.mjs`.
   - Verified the in-memory backend path locally with `node services/backend/demo-smoke.mjs`; push and pull both returned the expected first-slice shapes.
+- Mar 26, 14:44:
+  - Added lightweight README stubs for the reserved multi-platform folders so the repo structure is now self-explanatory without depending on prior conversation context.
 
 ## Tomi Instructions To Codi
 
