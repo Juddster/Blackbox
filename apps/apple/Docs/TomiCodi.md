@@ -264,3 +264,6 @@ What to watch:
   - The remaining notable Apple-side contract/UI drift is the narrower-label display issue from the `17:58` note.
 - Mar 26, 18:00:
   - Added a root `README.md` so the repo now has a single entrypoint for structure, key docs, coordination locations, and the backend/shared verify path.
+- Mar 26, 19:07:
+  - Re-checked the narrower-label UI issue after Codi's latest Apple changes.
+  - `SegmentSnapshot` now preserves a narrower user-selected label for display and exposes the broad visible class as secondary context, so that contract/UI drift is resolved.
