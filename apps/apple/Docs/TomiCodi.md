@@ -131,6 +131,7 @@ What to watch:
 - Mar 26, 19:13: Added an explicit `Restore Segment` tombstone-resolution path and updated the seed commute data to demonstrate narrower labels like `train` in the timeline.
 - Mar 26, 19:15: Auto-ran the local sync pass after draft saves and restore-or-keep-local conflict actions so those flows now complete without an extra manual sync tap.
 - Mar 26, 19:17: Added a local tombstone delete action on timeline rows so segments can be hidden immediately and synced as deletions instead of being hard-removed from storage.
+- Mar 26, 19:19: Added a user-editable narrower activity-label flow so timeline rows can now be corrected to labels like `train` or `bus` and immediately re-synced.
 
 ## Tomi Progress Notes
 

@@ -8,6 +8,8 @@ struct TimelineView: View {
     @State private var captureControl = CaptureControlStore()
     @State private var syncActivity = SyncActivityStore()
     @State private var liveDraftStatusMessage: String?
+    @State private var editingSegment: SegmentSnapshot?
+    @State private var editedActivityLabel = ""
 
     @Query(
         sort: [
@@ -78,6 +80,15 @@ struct TimelineView: View {
                                     ? { await restoreDeletedSegment(for: segment.id) }
                                     : nil
                             )
+                            .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                                Button {
+                                    editingSegment = segment
+                                    editedActivityLabel = currentEditableLabel(for: segment)
+                                } label: {
+                                    Label("Label", systemImage: "pencil")
+                                }
+                                .tint(.blue)
+                            }
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 if segment.syncDisposition != .conflicted {
                                     Button(role: .destructive) {
@@ -105,6 +116,38 @@ struct TimelineView: View {
             if scenePhase == .active {
                 Task {
                     await resumeCaptureIfNeeded()
+                }
+            }
+        }
+        .sheet(item: $editingSegment) { segment in
+            NavigationStack {
+                Form {
+                    Section("Activity Label") {
+                        TextField("train, bus, stair climbing...", text: $editedActivityLabel)
+                            .textInputAutocapitalization(.words)
+                            .autocorrectionDisabled()
+
+                        Text("Leave blank to clear the narrower user-selected label and fall back to the broad visible class.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .navigationTitle(segment.title)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            editingSegment = nil
+                        }
+                    }
+
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Save") {
+                            Task {
+                                await saveEditedActivityLabel()
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -254,5 +297,28 @@ struct TimelineView: View {
         } catch {
             syncActivity.lastPushMessage = "Could not delete that segment."
         }
+    }
+
+    private func saveEditedActivityLabel() async {
+        guard let segment = editingSegment else {
+            return
+        }
+
+        do {
+            let editor = LocalSegmentInterpretationEditor(modelContext: modelContext)
+            try editor.updateUserSelectedClass(
+                for: segment.id,
+                label: editedActivityLabel
+            )
+            editingSegment = nil
+            refreshSyncActivity()
+            await pushPendingSync()
+        } catch {
+            syncActivity.lastPushMessage = "Could not update that activity label."
+        }
+    }
+
+    private func currentEditableLabel(for segment: SegmentSnapshot) -> String {
+        segment.visibleClassLabel == nil ? "" : segment.activityLabel
     }
 }
