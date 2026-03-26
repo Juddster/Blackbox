@@ -237,3 +237,7 @@ What to watch:
   - `LocalDraftSegmentWriter.finalize(existingSegment:boundary:)` still shortens `endTime` without updating `summary.durationSeconds` when a summary exists.
   - `SegmentSnapshot` still enables `canKeepLocalVersion` whenever `pendingServerEnvelopeData` exists, and `LocalSyncCoordinator.requeueLocalVersion` still copies the server `syncVersion` even for `deletedOnServer`.
   - For `deletedOnServer`, please disable the normal `Keep Local Version` path rather than requeueing with the tombstone's sync version.
+- Mar 26, 15:31:
+  - One more shared-contract alignment item: the Apple `SegmentEnvelope.sync` field is still optional, but the shared contract and new schema checks treat sync metadata as required for first-slice envelopes.
+  - Current local write/bootstrap paths appear to usually attach `syncState`, but the model still permits constructing an invalid envelope shape.
+  - Please consider making local sync metadata mandatory at the envelope boundary or otherwise failing fast before push if a segment lacks `syncState`.
