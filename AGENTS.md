@@ -103,3 +103,21 @@ Keep searching, editing, building, testing, and fixing follow-on issues until al
 Do not ask me for confirmation on routine implementation choices.
 Make reasonable assumptions, proceed, and report them at the end.
 Only return when you are actually blocked or the work is complete.
+
+## Commit And Push Policy
+
+When work reaches a stable condition:
+- code builds with no issues
+- relevant tests pass, if a test target exists
+- no obvious adjacent breakages remain
+
+then commit and push after each substantive step.
+
+Do not commit or push unstable or knowingly broken code.
+
+Commit messages must use this format:
+- first line: a concise one-line summary
+- then a blank line
+- then flat bullet points listing the changes included in that step
+
+The bullet points should be detailed enough to explain what changed without opening the diff.
