@@ -4,6 +4,12 @@ This document defines the first client/server contract between the Apple app and
 
 Its goal is to let iOS and backend work proceed in parallel without blocking on informal coordination.
 
+Machine-readable counterparts:
+- `packages/shared/contracts/segment-envelope.schema.json`
+- `packages/shared/contracts/sync-push.schema.json`
+- `packages/shared/contracts/sync-pull.schema.json`
+- `packages/shared/contracts/examples/`
+
 ## Scope
 
 This contract covers the first v1 durable semantic sync slice for:

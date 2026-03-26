@@ -28,3 +28,11 @@ They should not:
 - `client-sync-state.md`
 - `conflict-resolution.md`
 - `sync-contract.md`
+
+## Machine-Readable Counterparts
+
+These prose docs now have matching schema/example assets under:
+- `packages/shared/contracts/`
+
+Current validation entrypoint:
+- `cd services/backend && npm run test:schemas`
