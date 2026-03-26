@@ -98,7 +98,7 @@ struct TimelineView: View {
 
     private var summary: TimelineSummary {
         TimelineProjection.summary(
-            segmentCount: segments.count,
+            segmentCount: TimelineProjection.visibleSegmentCount(from: segments),
             observationCount: observations.count,
             syncSummary: SyncProjection.summary(from: segments)
         )

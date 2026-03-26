@@ -15,7 +15,7 @@ enum TimelineProjection {
     }
 
     static func groups(from records: [SegmentRecord]) -> [TimelineDayGroup] {
-        let snapshots = records.map(SegmentSnapshot.init)
+        let snapshots = visibleRecords(from: records).map(SegmentSnapshot.init)
         let calendar = Calendar.autoupdatingCurrent
 
         return Dictionary(grouping: snapshots) { snapshot in
@@ -28,5 +28,15 @@ enum TimelineProjection {
             )
         }
         .sorted { $0.day > $1.day }
+    }
+
+    static func visibleSegmentCount(from records: [SegmentRecord]) -> Int {
+        visibleRecords(from: records).count
+    }
+
+    private static func visibleRecords(from records: [SegmentRecord]) -> [SegmentRecord] {
+        records.filter { record in
+            record.lifecycleState != .deleted && record.syncState?.isDeleted != true
+        }
     }
 }

@@ -127,6 +127,7 @@ What to watch:
 - Mar 26, 17:07: Added a real demo tombstone-conflict path so `deletedOnServer` is now exercised in-app, with `Apply Server Version` allowed for the tombstone and ordinary `Keep Local Version` blocked.
 - Mar 26, 18:34: Added explicit in-progress sync state in the UI so duplicate sync taps are blocked and the sync section shows when a local sync pass is actively running.
 - Mar 26, 18:45: Fixed narrower user-selected label display so labels like `train` or `bus` now show in the timeline while still preserving the broader visible class underneath.
+- Mar 26, 19:03: Hid deleted/tombstoned segments from the main user timeline and segment count while still keeping them in local sync state for conflict and deletion handling.
 
 ## Tomi Progress Notes
 
