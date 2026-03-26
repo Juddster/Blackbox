@@ -129,6 +129,7 @@ What to watch:
 - Mar 26, 18:45: Fixed narrower user-selected label display so labels like `train` or `bus` now show in the timeline while still preserving the broader visible class underneath.
 - Mar 26, 19:03: Hid deleted/tombstoned segments from the main user timeline and segment count while still keeping them in local sync state for conflict and deletion handling.
 - Mar 26, 19:13: Added an explicit `Restore Segment` tombstone-resolution path and updated the seed commute data to demonstrate narrower labels like `train` in the timeline.
+- Mar 26, 19:15: Auto-ran the local sync pass after draft saves and restore-or-keep-local conflict actions so those flows now complete without an extra manual sync tap.
 
 ## Tomi Progress Notes
 

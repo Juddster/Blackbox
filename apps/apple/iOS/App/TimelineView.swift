@@ -187,6 +187,7 @@ struct TimelineView: View {
                 "Updated the current timeline segment for \(result.segment.title.lowercased())."
             }
             refreshSyncActivity()
+            await pushPendingSync()
         } catch {
             liveDraftStatusMessage = "Could not save draft to timeline."
         }
@@ -213,6 +214,7 @@ struct TimelineView: View {
                 modelContext: modelContext
             )
             refreshSyncActivity()
+            await pushPendingSync()
         } catch {
             syncActivity.lastPushMessage = "Could not requeue the local version for that conflict."
         }
@@ -225,8 +227,8 @@ struct TimelineView: View {
                 for: segmentID,
                 modelContext: modelContext
             )
-            syncActivity.lastPushMessage = "Requeued the deleted segment as an explicit restore."
             refreshSyncActivity()
+            await pushPendingSync()
         } catch {
             syncActivity.lastPushMessage = "Could not restore that deleted segment."
         }
