@@ -243,3 +243,6 @@ What to watch:
   - Please consider making local sync metadata mandatory at the envelope boundary or otherwise failing fast before push if a segment lacks `syncState`.
 - Mar 26, 16:11:
   - I linked the machine-readable sync schemas and schema-validation entrypoint back into `Docs/DevCoordination/`, so the prose contract docs now point at the shared JSON Schemas and example payloads too.
+- Mar 26, 16:12:
+  - Added a GitHub Actions workflow for the Tomi/shared lane so backend verify now runs automatically on pushes and PRs that touch backend, shared contract schemas, or coordination docs.
+  - Re-ran the same local verify chain after wiring CI; it still passes cleanly.
