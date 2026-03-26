@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://blackbox.local/contracts/sync-pull.schema.json",
+  "title": "SyncPullPayloads",
+  "$defs": {
+    "segmentEnvelope": {
+      "$ref": "./segment-envelope.schema.json"
+    }
+  },
+  "oneOf": [
+    {
+      "title": "PullRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["deviceID", "accountID"],
+      "properties": {
+        "deviceID": { "type": "string", "minLength": 1 },
+        "accountID": { "type": "string", "minLength": 1 },
+        "cursor": { "type": "string", "minLength": 1 }
+      }
+    },
+    {
+      "title": "PullResponse",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["changes", "nextCursor", "hasMore"],
+      "properties": {
+        "changes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["segmentEnvelope"],
+            "properties": {
+              "segmentEnvelope": {
+                "$ref": "#/$defs/segmentEnvelope"
+              }
+            }
+          }
+        },
+        "nextCursor": { "type": "string" },
+        "hasMore": { "type": "boolean" }
+      }
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://blackbox.local/contracts/segment-envelope.schema.json",
+  "title": "SegmentEnvelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["segment", "sync"],
+  "$defs": {
+    "activityClass": {
+      "type": "string",
+      "enum": ["stationary", "walking", "running", "cycling", "hiking", "vehicle", "flight", "waterActivity", "unknown"]
+    },
+    "segmentLifecycleState": {
+      "type": "string",
+      "enum": ["active", "unsettled", "settled", "deleted"]
+    },
+    "segmentOriginType": {
+      "type": "string",
+      "enum": ["system", "userCreated", "merged", "splitResult"]
+    },
+    "observationSourceDevice": {
+      "type": "string",
+      "enum": ["iPhone", "watch"]
+    },
+    "interpretationOrigin": {
+      "type": "string",
+      "enum": ["system", "user", "mixed"]
+    },
+    "ambiguityState": {
+      "type": "string",
+      "enum": ["clear", "mixed", "uncertain"]
+    },
+    "segmentPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "startTime", "endTime", "lifecycleState", "originType", "primaryDeviceHint", "title", "createdAt", "updatedAt"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "lifecycleState": { "$ref": "#/$defs/segmentLifecycleState" },
+        "originType": { "$ref": "#/$defs/segmentOriginType" },
+        "primaryDeviceHint": { "$ref": "#/$defs/observationSourceDevice" },
+        "title": { "type": "string", "minLength": 1 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "segmentInterpretationPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "segmentID", "visibleClass", "userSelectedClass", "confidence", "ambiguityState", "needsReview", "interpretationOrigin", "updatedAt"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "segmentID": { "type": "string", "minLength": 1 },
+        "visibleClass": { "$ref": "#/$defs/activityClass" },
+        "userSelectedClass": {
+          "type": ["string", "null"]
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "ambiguityState": { "$ref": "#/$defs/ambiguityState" },
+        "needsReview": { "type": "boolean" },
+        "interpretationOrigin": { "$ref": "#/$defs/interpretationOrigin" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "segmentSummaryPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "segmentID", "durationSeconds", "distanceMeters", "elevationGainMeters", "averageSpeedMetersPerSecond", "maxSpeedMetersPerSecond", "pauseCount", "updatedAt"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "segmentID": { "type": "string", "minLength": 1 },
+        "durationSeconds": { "type": "number", "minimum": 0 },
+        "distanceMeters": { "type": ["number", "null"], "minimum": 0 },
+        "elevationGainMeters": { "type": ["number", "null"], "minimum": 0 },
+        "averageSpeedMetersPerSecond": { "type": ["number", "null"], "minimum": 0 },
+        "maxSpeedMetersPerSecond": { "type": ["number", "null"], "minimum": 0 },
+        "pauseCount": { "type": "integer", "minimum": 0 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "syncMetadataPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lastModifiedByDeviceID", "lastModifiedAt", "syncVersion", "isDeleted"],
+      "properties": {
+        "lastModifiedByDeviceID": { "type": "string", "minLength": 1 },
+        "lastModifiedAt": { "type": "string", "format": "date-time" },
+        "syncVersion": { "type": "integer", "minimum": 0 },
+        "isDeleted": { "type": "boolean" }
+      }
+    }
+  },
+  "properties": {
+    "segment": { "$ref": "#/$defs/segmentPayload" },
+    "interpretation": {
+      "oneOf": [
+        { "$ref": "#/$defs/segmentInterpretationPayload" },
+        { "type": "null" }
+      ]
+    },
+    "summary": {
+      "oneOf": [
+        { "$ref": "#/$defs/segmentSummaryPayload" },
+        { "type": "null" }
+      ]
+    },
+    "sync": { "$ref": "#/$defs/syncMetadataPayload" }
+  }
+}

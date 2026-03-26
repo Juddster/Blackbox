@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://blackbox.local/contracts/sync-push.schema.json",
+  "title": "SyncPushPayloads",
+  "$defs": {
+    "segmentEnvelope": {
+      "$ref": "./segment-envelope.schema.json"
+    },
+    "pushChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["segmentEnvelope"],
+      "properties": {
+        "baseSyncVersion": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "segmentEnvelope": {
+          "$ref": "#/$defs/segmentEnvelope"
+        }
+      }
+    },
+    "acceptedPush": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["segmentID", "syncVersion", "updatedAt"],
+      "properties": {
+        "segmentID": { "type": "string", "minLength": 1 },
+        "syncVersion": { "type": "integer", "minimum": 1 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "pushConflict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["segmentID", "reason", "serverEnvelope"],
+      "properties": {
+        "segmentID": { "type": "string", "minLength": 1 },
+        "reason": {
+          "type": "string",
+          "enum": ["versionMismatch", "deletedOnServer"]
+        },
+        "serverEnvelope": {
+          "$ref": "#/$defs/segmentEnvelope"
+        }
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "title": "PushRequest",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["deviceID", "accountID", "changes"],
+      "properties": {
+        "deviceID": { "type": "string", "minLength": 1 },
+        "accountID": { "type": "string", "minLength": 1 },
+        "changes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/pushChange" }
+        }
+      }
+    },
+    {
+      "title": "PushResponse",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accepted", "conflicts"],
+      "properties": {
+        "accepted": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/acceptedPush" }
+        },
+        "conflicts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/pushConflict" }
+        }
+      }
+    }
+  ]
+}

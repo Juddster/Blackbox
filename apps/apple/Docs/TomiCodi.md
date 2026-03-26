@@ -209,6 +209,9 @@ What to watch:
 - Mar 26, 15:22:
   - Added a built server entrypoint at `services/backend/src/server/start.ts` plus `npm run demo:server:built`, so the typed server adapter is now directly runnable after build.
   - Updated the backend docs to distinguish the minimal `demo-server.mjs` path from the built TypeScript server path; the full verify chain still passes after that change.
+- Mar 26, 15:24:
+  - Added machine-readable shared contract schemas under `packages/shared/contracts/` for `SegmentEnvelope` plus the first-slice push/pull payloads.
+  - They currently mirror the narrowed sync contract and parse cleanly, so future backend/non-Apple work has a stricter target than prose alone.
 
 ## Tomi Instructions To Codi
 
@@ -226,3 +229,8 @@ What to watch:
   - In `LocalDraftSegmentWriter.finalize(existingSegment:boundary:)`, if the segment already has a summary, update `summary.durationSeconds` when you shorten `endTime`.
   - Right now `SegmentSnapshot` prefers the stored summary duration, so stale summary data can leave timeline duration wrong and will now also fail backend validation once that segment syncs.
   - Also gate `Keep Local Version` for `deletedOnServer`; the current row/action plumbing appears to allow it for any stored server envelope conflict.
+- Mar 26, 15:23:
+  - Re-reviewed the Apple side after the backend validation tightening. Both previously flagged issues still appear live.
+  - `LocalDraftSegmentWriter.finalize(existingSegment:boundary:)` still shortens `endTime` without updating `summary.durationSeconds` when a summary exists.
+  - `SegmentSnapshot` still enables `canKeepLocalVersion` whenever `pendingServerEnvelopeData` exists, and `LocalSyncCoordinator.requeueLocalVersion` still copies the server `syncVersion` even for `deletedOnServer`.
+  - For `deletedOnServer`, please disable the normal `Keep Local Version` path rather than requeueing with the tombstone's sync version.
