@@ -57,6 +57,7 @@ struct TimelineView: View {
                     pendingCount: syncActivity.pendingCount,
                     conflictedCount: syncActivity.conflictedCount,
                     conflicts: syncActivity.conflicts,
+                    isSyncing: syncActivity.isSyncing,
                     lastPushMessage: syncActivity.lastPushMessage,
                     lastSyncAt: syncActivity.lastSyncAt,
                     onPushPending: pushPendingSync

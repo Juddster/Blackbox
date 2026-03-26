@@ -4,6 +4,7 @@ struct SyncStatusSection: View {
     let pendingCount: Int
     let conflictedCount: Int
     let conflicts: [SyncConflictSnapshot]
+    let isSyncing: Bool
     let lastPushMessage: String?
     let lastSyncAt: Date?
     let onPushPending: () async -> Void
@@ -17,11 +18,12 @@ struct SyncStatusSection: View {
                 LabeledContent("Last Sync Pass", value: lastSyncAt.formatted(date: .omitted, time: .shortened))
             }
 
-            Button("Run Sync Pass") {
+            Button(isSyncing ? "Syncing..." : "Run Sync Pass") {
                 Task {
                     await onPushPending()
                 }
             }
+            .disabled(isSyncing)
 
             if conflicts.isEmpty == false {
                 ForEach(conflicts.prefix(3)) { conflict in

@@ -8,6 +8,7 @@ final class SyncActivityStore {
     var pendingCount: Int = 0
     var conflictedCount: Int = 0
     var conflicts = [SyncConflictSnapshot]()
+    var isSyncing = false
     var lastPushMessage: String?
     var lastSyncAt: Date?
 
@@ -34,6 +35,13 @@ final class SyncActivityStore {
     }
 
     func pushPending(using modelContext: ModelContext) async {
+        guard isSyncing == false else {
+            return
+        }
+
+        isSyncing = true
+        lastPushMessage = "Running sync pass..."
+
         do {
             let pushedCount = try await coordinator.pushPendingEnvelopes(modelContext: modelContext)
             let pulledCount = try await coordinator.pullEnvelopes(modelContext: modelContext)
@@ -46,6 +54,8 @@ final class SyncActivityStore {
         } catch {
             lastPushMessage = "Sync preparation failed."
         }
+
+        isSyncing = false
     }
 
     private func syncMessage(pushedCount: Int, pulledCount: Int) -> String {

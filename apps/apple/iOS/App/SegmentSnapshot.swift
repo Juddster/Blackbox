@@ -4,6 +4,8 @@ struct SegmentSnapshot: Identifiable {
     let id: UUID
     let title: String
     let activityClass: ActivityClass
+    let activityLabel: String
+    let visibleClassLabel: String?
     let startTime: Date
     let endTime: Date
     let durationSeconds: TimeInterval
@@ -16,6 +18,8 @@ struct SegmentSnapshot: Identifiable {
 
     init(record: SegmentRecord) {
         let selectedClass = record.interpretation?.userSelectedClass.flatMap(ActivityClass.init(rawValue:))
+        let userSelectedLabel = record.interpretation?.userSelectedClass?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         let syncErrorMessage = record.syncState?.lastSyncError
 
         id = record.id
@@ -23,6 +27,16 @@ struct SegmentSnapshot: Identifiable {
         activityClass = selectedClass
             ?? record.interpretation?.visibleClass
             ?? .unknown
+        activityLabel = if let userSelectedLabel, userSelectedLabel.isEmpty == false {
+            userSelectedLabel.replacingOccurrences(of: "-", with: " ").localizedCapitalized
+        } else {
+            activityClass.displayName
+        }
+        visibleClassLabel = if let userSelectedLabel, userSelectedLabel.isEmpty == false {
+            record.interpretation?.visibleClass.displayName
+        } else {
+            nil
+        }
         startTime = record.startTime
         endTime = record.endTime
         durationSeconds = record.summary?.durationSeconds

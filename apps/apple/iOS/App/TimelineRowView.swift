@@ -17,9 +17,15 @@ struct TimelineRowView: View {
                     Text(segment.title)
                         .font(.headline)
 
-                    Text(segment.activityClass.displayName)
+                    Text(segment.activityLabel)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+
+                    if let visibleClassLabel = segment.visibleClassLabel {
+                        Text(visibleClassLabel)
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
                 }
 
                 Spacer()
