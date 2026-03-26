@@ -24,3 +24,5 @@ temp/
 
 # Node
 node_modules/
+dist/
+*.tsbuildinfo

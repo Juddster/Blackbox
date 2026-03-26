@@ -123,6 +123,7 @@ Stores a durable semantic activity segment.
 - `end_time`
 - `lifecycle_state`
   - active
+  - unsettled
   - settled
   - deleted
 - `origin_type`
@@ -131,6 +132,7 @@ Stores a durable semantic activity segment.
   - merged
   - split_result
 - `primary_device_hint`
+- `title`
 - `created_at`
 - `updated_at`
 
@@ -543,16 +545,20 @@ The key requirement is consistency, not perfect historical version tracking.
 - summaries
 - quality state
 - annotations
-- collections
-- collection membership
-- active review state
-- exports
+- collections later
+- collection membership later
+- active review state later or folded into segment state
+- exports later
 
 ### Selectively Synced
 
 - support evidence
 - some resolved review metadata
 - some device records
+
+First-sync-slice clarification:
+- the initial mandatory synced semantic unit is the segment-centered state
+- collections, exports, and richer review sync can be promoted after the first sync slice stabilizes
 
 ## Suggested v1 Simplifications
 

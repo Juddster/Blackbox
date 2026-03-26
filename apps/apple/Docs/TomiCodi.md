@@ -194,6 +194,21 @@ What to watch:
 - Mar 26, 15:08:
   - Fixed a backend/shared policy gap where a normal retry could have recreated a tombstoned server segment if the base version matched the tombstone.
   - The backend scaffold and demo path now keep `deletedOnServer` conflicted until the product has an explicit restore action.
+- Mar 26, 15:14:
+  - Tightened the backend validation invariant so `summary.durationSeconds` must stay consistent with `endTime - startTime`.
+  - Re-ran the backend demo test and typecheck after that change; both still pass.
+- Mar 26, 15:17:
+  - The backend TypeScript scaffold now emits real build artifacts under `services/backend/dist`, not just `tsc --noEmit` checks.
+  - Added a sequential `npm run verify` path that runs typecheck, build, the demo-path checks, and a built-output smoke test; it passed cleanly.
+- Mar 26, 15:19:
+  - Extended backend verification to cover the route-handler contract too, not just the sync service underneath it.
+  - `npm run verify` now also checks that malformed request shapes map to `400`, invalid envelopes map to `422`, and accepted/conflicted sync requests still return `200`; the full chain passed.
+- Mar 26, 15:21:
+  - Added a typed Node HTTP server adapter under `services/backend/src/server/` so the backend scaffold now has a real server path sharing the same route handlers and sync service as the rest of the TypeScript build.
+  - Pulled in `@types/node` for that adapter and re-ran the full backend verify chain; it still passed cleanly.
+- Mar 26, 15:22:
+  - Added a built server entrypoint at `services/backend/src/server/start.ts` plus `npm run demo:server:built`, so the typed server adapter is now directly runnable after build.
+  - Updated the backend docs to distinguish the minimal `demo-server.mjs` path from the built TypeScript server path; the full verify chain still passes after that change.
 
 ## Tomi Instructions To Codi
 
@@ -207,3 +222,7 @@ What to watch:
 - Mar 26, 15:08:
   - One new conflict-policy constraint from the shared side: do not offer ordinary `Keep Local Version` as an automatic restore path when the conflict reason is `deletedOnServer`.
   - Tombstoned server segments should stay conflicted until there is an explicit restore action in the product model.
+- Mar 26, 15:14:
+  - In `LocalDraftSegmentWriter.finalize(existingSegment:boundary:)`, if the segment already has a summary, update `summary.durationSeconds` when you shorten `endTime`.
+  - Right now `SegmentSnapshot` prefers the stored summary duration, so stale summary data can leave timeline duration wrong and will now also fail backend validation once that segment syncs.
+  - Also gate `Keep Local Version` for `deletedOnServer`; the current row/action plumbing appears to allow it for any stored server envelope conflict.

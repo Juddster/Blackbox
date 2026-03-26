@@ -8,7 +8,7 @@ import {
   SegmentLifecycleState,
   SegmentOriginType,
   ValidationErrorPayload,
-} from "./types";
+} from "./types.js";
 
 const activityClasses = new Set<ActivityClass>([
   "stationary",
@@ -88,6 +88,10 @@ export function validateEnvelope(envelope: SegmentEnvelope): ValidationErrorPayl
     if (summary.segmentID !== segment.id) return makeError("summary.segmentID must match segment.id", "summary.segmentID");
     if (summary.durationSeconds < 0) return makeError("summary.durationSeconds must be non-negative", "summary.durationSeconds");
     if (summary.pauseCount < 0) return makeError("summary.pauseCount must be non-negative", "summary.pauseCount");
+    const segmentDurationSeconds = (Date.parse(segment.endTime) - Date.parse(segment.startTime)) / 1000;
+    if (Math.abs(summary.durationSeconds - segmentDurationSeconds) > 1) {
+      return makeError("summary.durationSeconds must match the segment time range", "summary.durationSeconds");
+    }
     for (const [field, value] of [
       ["summary.distanceMeters", summary.distanceMeters],
       ["summary.elevationGainMeters", summary.elevationGainMeters],

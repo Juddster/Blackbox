@@ -17,3 +17,7 @@ Current local scaffold:
 - `tsconfig.json`
 - framework-agnostic TypeScript source under `src/`
 - a no-dependency local demo server at `demo-server.mjs`
+- a typed Node HTTP adapter under `src/server/`
+
+Verification:
+- `npm run verify`

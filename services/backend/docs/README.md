@@ -27,3 +27,10 @@ The current backend direction is intentionally narrow:
 - backend stays current-state oriented
 - collections, exports, and first-class review sync are deferred
 - storage and conflict behavior are defined only enough to support Apple offline durability and catch-up
+
+Verification entrypoint:
+- `npm run verify`
+
+Runtime entrypoints:
+- `node services/backend/demo-server.mjs`
+- `cd services/backend && npm run build && npm run demo:server:built`

@@ -1,16 +1,26 @@
 # Local Demo Server
 
-This is a tiny no-dependency Node server for the first sync slice.
+This document covers two local server paths for the first sync slice.
 
-It exists to make the backend scaffold runnable before choosing:
+They exist to make the backend scaffold runnable before choosing:
 - a real server framework
 - a package manager strategy
 - a TypeScript runtime/build path
 
 ## Start
 
+Legacy no-dependency demo server:
+
 ```bash
 node services/backend/demo-server.mjs
+```
+
+Typed built server path:
+
+```bash
+cd services/backend
+npm run build
+npm run demo:server:built
 ```
 
 Default port:
@@ -95,9 +105,11 @@ curl -X POST http://127.0.0.1:8787/v1/sync/pull \
 
 ## Notes
 
-- this server is for local smoke testing only
-- it uses in-memory storage only
-- it is intentionally not the long-term backend runtime
+- both server paths are for local smoke testing only
+- both use in-memory storage only
+- neither is the long-term backend runtime
+- the `demo-server.mjs` path is intentionally minimal and dependency-free
+- the built TypeScript server path exercises the shared route handlers and sync service used by the main scaffold
 - the same logic is also available without opening a listener via:
 
 ```bash

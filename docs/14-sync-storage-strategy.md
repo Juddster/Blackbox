@@ -126,15 +126,19 @@ These should sync durably to cloud:
 - current summaries
 - quality state
 - annotations
-- collections
-- collection membership
-- active review state
-- saved exports
+- collections later
+- collection membership later
+- active review state later or folded into segment state
+- saved exports later
 
 Why:
 - this is the durable meaning of the user’s history
 - this is what should survive device loss
 - this is what later web or multi-device access will depend on
+
+Important first-slice clarification:
+- the initial mandatory sync slice should be segment-centric
+- collections, exports, and richer review sync can be promoted after the segment sync path is stable
 
 ## What Syncs Selectively
 
@@ -335,6 +339,10 @@ Exports should not:
 - support evidence retained through the unsettled window
 - support evidence compacted after settlement unless still justified
 - development replay data stored separately from ordinary user history
+
+Initial sync-slice default:
+- start with durable segment-centric sync first
+- defer collection/export sync unless implementation pressure justifies bringing them into the first slice
 
 ## Open Strategy Questions
 

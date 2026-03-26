@@ -1,4 +1,4 @@
-import { SegmentEnvelope, SyncFeedEntry } from "../domain/types";
+import { SegmentEnvelope, SyncFeedEntry } from "../domain/types.js";
 
 export interface StoredSegmentEnvelope {
   accountID: string;

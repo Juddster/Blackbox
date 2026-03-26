@@ -104,6 +104,12 @@ It covers only:
 - backend returns `5xx`
 - client treats as retryable service failure
 
+### T4. HTTP Handler Validation Split
+
+- malformed request shape returns `400`
+- semantically invalid `SegmentEnvelope` returns `422`
+- accepted and conflicted sync requests still return `200`
+
 ## Cursor / Ordering Cases
 
 ### O1. No Skipped Changes

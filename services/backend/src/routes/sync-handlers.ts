@@ -1,7 +1,7 @@
-import { SyncService } from "../domain/sync-service";
-import { PullRequest, PushRequest, ValidationErrorPayload } from "../domain/types";
-import { PullHttpResult, PushHttpResult } from "./http-types";
-import { validatePullRequestShape, validatePushRequestShape } from "./request-validation";
+import { SyncService } from "../domain/sync-service.js";
+import { PullRequest, PushRequest, ValidationErrorPayload } from "../domain/types.js";
+import { PullHttpResult, PushHttpResult } from "./http-types.js";
+import { validatePullRequestShape, validatePushRequestShape } from "./request-validation.js";
 
 function isValidationErrorPayload(value: unknown): value is ValidationErrorPayload {
   return typeof value === "object" && value !== null && "code" in value;

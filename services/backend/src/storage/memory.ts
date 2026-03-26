@@ -1,5 +1,5 @@
-import { SyncFeedEntry } from "../domain/types";
-import { EnvelopeStore, StoredSegmentEnvelope, SyncFeedStore } from "./interfaces";
+import { SyncFeedEntry } from "../domain/types.js";
+import { EnvelopeStore, StoredSegmentEnvelope, SyncFeedStore } from "./interfaces.js";
 
 export class InMemoryEnvelopeStore implements EnvelopeStore {
   private readonly records = new Map<string, StoredSegmentEnvelope>();

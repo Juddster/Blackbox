@@ -1,4 +1,4 @@
-import { PullResponse, PushResponse, ValidationErrorPayload } from "../domain/types";
+import { PullResponse, PushResponse, ValidationErrorPayload } from "../domain/types.js";
 
 export interface HttpSuccess<TBody> {
   statusCode: number;

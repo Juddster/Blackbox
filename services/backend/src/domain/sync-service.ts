@@ -1,4 +1,4 @@
-import { validatePushChange } from "./validation";
+import { validatePushChange } from "./validation.js";
 import {
   PullRequest,
   PullResponse,
@@ -6,8 +6,8 @@ import {
   PushResponse,
   SegmentEnvelope,
   ValidationErrorPayload,
-} from "./types";
-import { EnvelopeStore, StoredSegmentEnvelope, SyncFeedStore } from "../storage/interfaces";
+} from "./types.js";
+import { EnvelopeStore, StoredSegmentEnvelope, SyncFeedStore } from "../storage/interfaces.js";
 
 export class SyncService {
   constructor(

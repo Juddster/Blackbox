@@ -1,4 +1,4 @@
-import { PullRequest, PushRequest, ValidationErrorPayload } from "../domain/types";
+import { PullRequest, PushRequest, ValidationErrorPayload } from "../domain/types.js";
 
 function invalid(message: string, field?: string): ValidationErrorPayload {
   return field ? { code: "invalidPayload", message, field } : { code: "invalidPayload", message };

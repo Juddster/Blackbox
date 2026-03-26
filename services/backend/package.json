@@ -5,12 +5,18 @@
   "type": "module",
   "description": "Framework-agnostic backend sync slice scaffold for Blackbox",
   "devDependencies": {
+    "@types/node": "^25.5.0",
     "typescript": "^5.6.3"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "test:demo": "node tests/demo-backend-check.mjs",
+    "test:built": "node tests/built-backend-check.mjs",
+    "test:http": "node tests/http-handler-check.mjs",
     "demo:smoke": "node demo-smoke.mjs",
     "demo:server": "node demo-server.mjs",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "demo:server:built": "node dist/server/start.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "verify": "npm run typecheck && npm run build && npm run test:demo && npm run test:built && npm run test:http"
   }
 }

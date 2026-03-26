@@ -98,6 +98,7 @@ If `interpretation` is present:
 If `summary` is present:
 
 - `durationSeconds` must be non-negative
+- `durationSeconds` should materially match the segment time range
 - `pauseCount` must be non-negative
 - `distanceMeters`, `elevationGainMeters`, `averageSpeedMetersPerSecond`, and `maxSpeedMetersPerSecond` must not be negative if present
 

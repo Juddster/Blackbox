@@ -1,6 +1,6 @@
-import { SyncService } from "../domain/sync-service";
-import { PushRequest } from "../domain/types";
-import { InMemoryEnvelopeStore, InMemorySyncFeedStore } from "../storage/memory";
+import { SyncService } from "../domain/sync-service.js";
+import { PushRequest } from "../domain/types.js";
+import { InMemoryEnvelopeStore, InMemorySyncFeedStore } from "../storage/memory.js";
 
 export async function runSmokeExample() {
   const envelopes = new InMemoryEnvelopeStore();
