@@ -17,10 +17,17 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": ["ok"],
+                  "required": ["ok", "storageMode"],
                   "properties": {
                     "ok": {
                       "type": "boolean"
+                    },
+                    "storageMode": {
+                      "type": "string",
+                      "enum": ["memory", "file"]
+                    },
+                    "snapshotPath": {
+                      "type": "string"
                     }
                   }
                 }

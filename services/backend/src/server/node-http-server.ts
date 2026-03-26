@@ -2,8 +2,21 @@ import { createServer, IncomingMessage, ServerResponse } from "node:http";
 import { SyncService } from "../domain/sync-service.js";
 import { EnvelopeStore, SyncFeedStore } from "../storage/interfaces.js";
 import { InMemoryEnvelopeStore, InMemorySyncFeedStore } from "../storage/memory.js";
+import { StorageDescriptor } from "../storage/configured.js";
 import { handlePull, handlePush } from "../routes/sync-handlers.js";
 import { parseJsonRequestBody } from "./request-body.js";
+
+export interface HealthPayload {
+  ok: true;
+  storageMode: StorageDescriptor["mode"];
+  snapshotPath?: string;
+}
+
+export function createHealthPayload(storage: StorageDescriptor = { mode: "memory" }): HealthPayload {
+  return storage.snapshotPath
+    ? { ok: true, storageMode: storage.mode, snapshotPath: storage.snapshotPath }
+    : { ok: true, storageMode: storage.mode };
+}
 
 function sendJson(response: ServerResponse, statusCode: number, body: unknown): void {
   response.writeHead(statusCode, { "content-type": "application/json; charset=utf-8" });
@@ -48,7 +61,8 @@ async function handlePullRequest(
 
 export function createNodeHttpServer(
   envelopeStore: EnvelopeStore = new InMemoryEnvelopeStore(),
-  feedStore: SyncFeedStore = new InMemorySyncFeedStore()
+  feedStore: SyncFeedStore = new InMemorySyncFeedStore(),
+  storage: StorageDescriptor = { mode: "memory" }
 ) {
   const service = new SyncService(envelopeStore, feedStore);
   return createServer(async (request, response) => {
@@ -63,7 +77,7 @@ export function createNodeHttpServer(
     }
 
     if (request.method === "GET" && request.url === "/health") {
-      sendJson(response, 200, { ok: true });
+      sendJson(response, 200, createHealthPayload(storage));
       return;
     }
 
@@ -73,7 +87,8 @@ export function createNodeHttpServer(
 
 export function createDefaultNodeHttpServer(
   envelopeStore: EnvelopeStore = new InMemoryEnvelopeStore(),
-  feedStore: SyncFeedStore = new InMemorySyncFeedStore()
+  feedStore: SyncFeedStore = new InMemorySyncFeedStore(),
+  storage: StorageDescriptor = { mode: "memory" }
 ) {
-  return createNodeHttpServer(envelopeStore, feedStore);
+  return createNodeHttpServer(envelopeStore, feedStore, storage);
 }

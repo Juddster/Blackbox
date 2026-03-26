@@ -43,6 +43,11 @@ Health check:
 curl http://127.0.0.1:8787/health
 ```
 
+The typed server health response now includes:
+- `ok`
+- `storageMode`
+- `snapshotPath` when file-backed storage is active
+
 ## Example Push
 
 ```bash

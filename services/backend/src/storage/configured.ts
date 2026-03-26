@@ -9,6 +9,11 @@ export interface ConfiguredStores {
   snapshotPath?: string;
 }
 
+export interface StorageDescriptor {
+  mode: ConfiguredStores["mode"];
+  snapshotPath?: string;
+}
+
 export function createConfiguredStores(
   fileStorageDir = process.env.BLACKBOX_FILE_STORAGE_DIR
 ): ConfiguredStores {

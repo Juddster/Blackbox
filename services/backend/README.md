@@ -24,5 +24,8 @@ Current local scaffold:
 Verification:
 - `npm run verify`
 
+Health endpoint:
+- the typed server path reports `ok`, `storageMode`, and optional `snapshotPath`
+
 CI:
 - `.github/workflows/backend-verify.yml`

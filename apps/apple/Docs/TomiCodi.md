@@ -277,3 +277,6 @@ What to watch:
 - Mar 26, 19:18:
   - I extended the backend/shared lane with a machine-readable OpenAPI description for `/health`, `/v1/sync/push`, and `/v1/sync/pull`.
   - The verify chain now checks that OpenAPI document too, so the endpoint-level contract is covered alongside the payload schemas and backend behavior.
+- Mar 26, 19:20:
+  - I extended the typed backend `/health` response so it now reports the active storage mode and optional snapshot path.
+  - That health shape is now covered in both the OpenAPI document and the verify chain.
