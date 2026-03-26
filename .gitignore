@@ -1,0 +1,23 @@
+# Xcode
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xccheckout
+*.moved-aside
+*.xcscmblueprint
+
+# SwiftPM
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
+
+# Local environment
+.env
+.env.*
+
+# Logs and temp files
+*.log
+tmp/
+temp/

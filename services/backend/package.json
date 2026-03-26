@@ -1,0 +1,12 @@
+{
+  "name": "@blackbox/backend",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Framework-agnostic backend sync slice scaffold for Blackbox",
+  "scripts": {
+    "demo:smoke": "node demo-smoke.mjs",
+    "demo:server": "node demo-server.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  }
+}

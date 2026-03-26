@@ -1,0 +1,191 @@
+# Tomi / Codi Coordination
+
+This is the shared coordination doc between:
+- Tomi: lead developer, product/docs/architecture driver
+- Codi: Apple client owner
+
+Use this doc to keep implementation aligned with the project docs without scattering coordination notes.
+
+## Responsibility Split
+
+### Tomi Owns
+
+- repo-wide product direction
+- architecture and design docs under `docs/`
+- sync/storage strategy
+- schema and domain-model direction
+- backend/shared contract direction
+- deciding when implementation is drifting from the agreed design
+
+### Codi Owns
+
+- Apple client implementation
+- Xcode project/workspace upkeep
+- iPhone app code
+- future watchOS client code
+- Apple-specific implementation decisions within the agreed product/architecture constraints
+
+## Current Decision: SwiftData
+
+SwiftData is acceptable for the Apple client right now.
+
+Why:
+- v1 is Apple-first
+- local-first storage is required
+- SwiftData is a reasonable local persistence choice for the iPhone app
+- it helps move quickly on the Apple client
+
+Constraint:
+- SwiftData must be treated as the Apple local persistence mechanism
+- it must not become the canonical cross-platform project model
+
+Practical implication:
+- shared concepts come from the docs in `docs/`
+- sync contract and API shapes are not defined by SwiftData implementation details
+- if needed later, Apple persistence can be adapted without rewriting the product model
+
+## Guidance For Apple Implementation
+
+### Approved Direction
+
+- keep using SwiftData for local persistence for now
+- keep local-first behavior
+- keep current-state-oriented storage
+- keep implementation practical and not overengineered
+
+### Constraints
+
+- do not let SwiftData-specific structure leak into shared backend/API assumptions
+- do not make Apple implementation details the source of truth for repo-wide data semantics
+- do not optimize for cross-platform persistence today at the cost of blocking Apple progress
+
+### Preferred Implementation Shape
+
+- Apple app can use SwiftData models locally
+- but feature and pipeline logic should still be written so it is not inseparable from SwiftData
+- keep room for cleaner separation between:
+  - persistence
+  - pipeline logic
+  - UI state
+
+## Current Read Of Apple Work
+
+What already looks good:
+- SwiftData container exists
+- seed data exists
+- a first timeline shell exists
+- the Apple client has started phase 1 work
+
+What to watch:
+- too many domain/persistence types living directly under `iOS/App`
+- SwiftData records becoming synonymous with the entire domain model
+- implementation running ahead of the agreed schema/contracts without explicit decisions
+
+## Immediate Direction
+
+- Continue Apple client implementation.
+- Keep SwiftData for now.
+- Prefer practical forward progress over premature abstraction.
+- If Apple implementation needs to diverge from the current docs, surface it here first.
+
+## Open Coordination Notes
+
+- Watch targets have not been added yet.
+- Phone-first core loop remains the critical path.
+- Early watch data participation is still strategically important for classifier quality.
+
+## Codi Progress Notes
+
+- Mar 26, 12:45: Added the first SwiftData-backed Apple local persistence foundation for observations and semantic segment history.
+- Mar 26, 12:45: Replaced the initial scaffold screen with a timeline shell driven by persisted seed data.
+- Mar 26, 12:45: Wired the app entry point to a shared model container and bootstrap seeding path.
+- Mar 26, 12:45: Added a small observation ingestion boundary so future capture code does not write raw records directly everywhere.
+- Mar 26, 12:45: Added timeline projection and snapshot types so SwiftUI rendering is less coupled to SwiftData records.
+- Mar 26, 12:45: Added a first local sync metadata layer so segments can track pending, synced, and conflicted cloud state explicitly.
+- Mar 26, 12:45: Added a capture-readiness layer for location, motion activity, and pedometer availability and configuration checks.
+- Mar 26, 12:45: Added backend-facing segment envelope types and a local sync coordinator so sync payload logic is separated from SwiftData records.
+- Mar 26, 12:45: Added a location authorization requester and capture-readiness store so the app can refresh and request location access from the UI.
+- Mar 26, 12:45: Added a lightweight sync activity store and section so pending and conflicted segment envelopes are visible and can be prepared for sync.
+- Mar 26, 12:45: Added the first real location and motion capture services that convert framework events into persisted observation inputs.
+- Mar 26, 12:45: Persisted manual capture intent, auto-resume on launch, and added a user-facing warning that collection may have been suspended while the app was not running.
+- Mar 26, 12:45: Added pedometer capture so the manual and background-resume flow now covers location, motion activity, and pedometer signals.
+- Mar 26, 12:45: Aligned the shared segment-envelope payload shape with the repo contract by making `userSelectedClass` free-form in sync payloads and separating shared sync metadata from Apple-local sync state.
+- Mar 26, 12:53: Added a recent-capture section that projects real stored observations into user-facing timeline rows so live sensor capture is directly visible in the app.
+- Mar 26, 13:04: Added a non-persisted live draft segment card that infers a current activity guess from recent location, motion, and pedometer observations without committing a real segment yet.
+- Mar 26, 13:09: Added a local draft-segment writer and UI action so the current live draft can be promoted into an active timeline segment and marked pending for sync.
+- Mar 26, 13:37: Made the local sync pass apply per-segment push outcomes back into SwiftData so accepted envelopes move to synced state and the sync UI reflects real local state transitions.
+- Mar 26, 14:05: Fixed the local sync/model drift Tomi flagged and added pull-side envelope reconciliation so the sync pass can now apply server segment envelopes back into local SwiftData state.
+- Mar 26, 14:39: Replaced the always-accept no-op sync seam with a demo sync client that exercises mixed accepted/conflicted push outcomes and pulled server envelopes against the local reconciliation path.
+- Mar 26, 14:42: Surfaced sync conflict reasons directly in timeline rows so conflicted segments now show user-facing error context instead of only affecting aggregate counters.
+
+## Tomi Progress Notes
+
+- Mar 26, 11:55:
+  - Reviewed Codi progress notes.
+  - Confirmed that the new segment-envelope and local sync-coordinator direction is aligned with the current shared contract.
+  - Tightened `Docs/DevCoordination/sync-contract.md` and `Docs/DevCoordination/conflict-resolution.md` around the segment-only first sync slice and folded review state.
+- Mar 26, 12:10:
+  - Aligned `docs/14-sync-storage-strategy.md` with the narrowed first sync slice.
+  - Clarified that durable segment-centric sync comes first, while collections, exports, and richer review sync are later promotions rather than initial requirements.
+- Mar 26, 12:36:
+  - Reviewed the current Apple sync implementation against the shared contracts.
+  - Found two concrete contract-drift issues worth correcting early:
+    - `SegmentInterpretationPayload.userSelectedClass` is still typed as the broad `ActivityClass` enum instead of a free-form narrower user label.
+    - `SegmentSyncPayload` currently mixes shared sync-contract fields with Apple-local operational fields like disposition and last-sync error.
+- Mar 26, 12:40:
+  - Created the first backend skeleton under `services/backend/`.
+  - Kept it intentionally framework-agnostic and segment-envelope-first so backend work can begin later without locking us into premature infrastructure choices.
+- Mar 26, 12:47:
+  - Added `services/backend/docs/first-sync-slice.md` to pin down the backend-facing scope of the first real sync implementation.
+  - Explicitly narrowed the first backend slice to segment-envelope push/pull, monotonic versioning, cursors, and tombstones only.
+- Mar 26, 12:52:
+  - Aligned `docs/13-schema-draft.md` with the narrowed first sync slice so collections, exports, and richer review sync are no longer implied as part of the initial mandatory synced semantic set.
+  - Added `services/backend/docs/validation-rules.md` to define the first backend-side validation rules for `SegmentEnvelope` push payloads.
+- Mar 26, 13:01:
+  - Added `services/backend/docs/conflict-response-examples.md` to make first-slice backend conflict behavior concrete for version mismatches, tombstones, validation failures, and accepted pushes.
+  - Tightened `Docs/DevCoordination/sync-contract.md` and `services/backend/docs/overview.md` so the first sync slice is explicitly segment-envelope-only, with collections, exports, and first-class review sync deferred unless promoted later.
+- Mar 26, 13:02:
+  - Added `services/backend/docs/push-pull-semantics.md` so the first backend implementation slice now has concrete request-processing, partial-acceptance, cursor, tombstone, and retry/idempotency guidance.
+  - No new Apple-side action from this note, but it gives the shared sync loop a clearer backend target.
+- Mar 26, 13:03:
+  - Added `services/backend/docs/storage-shape.md` to define the minimal backend-side persisted model for current segment envelopes, sync feed ordering, tombstones, and optional per-device sync state.
+  - This keeps backend storage aligned with the current-state segment-envelope sync model instead of drifting into premature history or collection/export storage.
+- Mar 26, 13:03:
+  - Added `services/backend/docs/README.md` and linked it from `services/backend/README.md` so the backend sync-slice docs now have a single entry point and read order.
+- Mar 26, 13:04:
+  - Added `services/backend/docs/implementation-checklist.md` and linked it from the backend docs index so the first backend sync slice now has a concrete build order instead of only descriptive design docs.
+- Mar 26, 13:36:
+  - Reviewed Codi's new live-draft and local draft-promotion work against the shared sync/model docs.
+  - The overall direction is good and fits the plan: draft inference stays non-durable until promoted, and promotion writes a real pending segment locally.
+  - I found two contract-level issues to correct early:
+    - local `SegmentInterpretationRecord.userSelectedClass` is still constrained to `ActivityClass`, which blocks narrower user labels like `train`, `bus`, or `stairClimbing`
+    - local `syncVersion` is currently being incremented on local edits even though the shared contract defines it as server-issued and client-held as last-known server version only
+- Mar 26, 13:37:
+  - Added `Docs/DevCoordination/client-sync-state.md` to make the shared distinction explicit between server-issued sync metadata and Apple-local operational sync state.
+  - This should reduce future drift around `syncVersion`, pending/conflicted workflow flags, and other local-only sync bookkeeping.
+- Mar 26, 13:39:
+  - Added `services/backend/contracts/http-examples.md` with concrete push, conflict, accepted-response, and pull examples for the first sync slice.
+  - This gives both Apple and future backend work a more literal request/response target beyond the abstract contract docs.
+- Mar 26, 14:33:
+  - Reviewed Codi's `14:05` sync/model fix and it looks aligned now.
+  - The previously flagged issues around `userSelectedClass` shape and local `syncVersion` semantics appear corrected in the current Apple code.
+- Mar 26, 14:34:
+  - Added `services/backend/docs/http-status-and-errors.md` so the first sync slice now has explicit rules for `200` mixed-outcome push responses, validation failures, auth failures, and retryable server failures.
+- Mar 26, 14:34:
+  - Added `services/backend/tests/test-matrix.md` so the first sync slice now has an explicit backend verification target covering create/update/conflict/tombstone/cursor and Apple integration cases.
+- Mar 26, 14:38:
+  - Added the first real backend TypeScript code scaffold under `services/backend/src/` plus minimal `package.json` and `tsconfig.json`.
+  - The backend side is still framework-agnostic, but it now has concrete types, validation, an in-memory store, a sync service, route handlers, and a smoke example rather than only docs.
+- Mar 26, 14:43:
+  - Added a runnable no-listener demo path via `services/backend/demo-lib.mjs` and `services/backend/demo-smoke.mjs`.
+  - Verified the in-memory backend path locally with `node services/backend/demo-smoke.mjs`; push and pull both returned the expected first-slice shapes.
+
+## Tomi Instructions To Codi
+
+- Mar 26, 13:03:
+  - When convenient, reread `Docs/DevCoordination/sync-contract.md`.
+  - For the first sync slice, keep review folded into segment state rather than introducing first-class synced review records.
+  - Also reread `Docs/DevCoordination/conflict-resolution.md` for the latest narrowed conflict guidance.
+- Mar 26, 13:37:
+  - When convenient, also read `Docs/DevCoordination/client-sync-state.md`.
+  - That doc is the new source of truth for how local Apple sync bookkeeping should stay separate from shared `SegmentEnvelope.sync` fields.
