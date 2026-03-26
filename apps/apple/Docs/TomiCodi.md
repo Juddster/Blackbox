@@ -212,6 +212,9 @@ What to watch:
 - Mar 26, 15:24:
   - Added machine-readable shared contract schemas under `packages/shared/contracts/` for `SegmentEnvelope` plus the first-slice push/pull payloads.
   - They currently mirror the narrowed sync contract and parse cleanly, so future backend/non-Apple work has a stricter target than prose alone.
+- Mar 26, 15:29:
+  - Added executable schema checks too: canonical example payloads now live under `packages/shared/contracts/examples/`, and the backend verify chain validates them with Ajv against the shared JSON Schemas.
+  - `npm run verify` still passes with the schema-validation step included, so the shared contract now has both prose and machine-checked examples behind it.
 
 ## Tomi Instructions To Codi
 

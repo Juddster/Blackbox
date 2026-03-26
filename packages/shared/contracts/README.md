@@ -6,6 +6,7 @@ Current scope:
 - `SegmentEnvelope`
 - push request/response
 - pull request/response
+- canonical valid example payloads
 
 Source of truth alignment:
 - `Docs/DevCoordination/api-shapes.md`
@@ -16,3 +17,6 @@ Intent:
 - give backend and future non-Apple clients a concrete payload target
 - keep the first sync slice narrow
 - avoid silently drifting from the shared contract prose
+
+Current executable check:
+- `cd services/backend && npm run test:schemas`

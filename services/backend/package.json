@@ -6,6 +6,8 @@
   "description": "Framework-agnostic backend sync slice scaffold for Blackbox",
   "devDependencies": {
     "@types/node": "^25.5.0",
+    "ajv": "^8.18.0",
+    "ajv-formats": "^3.0.1",
     "typescript": "^5.6.3"
   },
   "scripts": {
@@ -13,10 +15,11 @@
     "test:demo": "node tests/demo-backend-check.mjs",
     "test:built": "node tests/built-backend-check.mjs",
     "test:http": "node tests/http-handler-check.mjs",
+    "test:schemas": "node tests/schema-contract-check.mjs",
     "demo:smoke": "node demo-smoke.mjs",
     "demo:server": "node demo-server.mjs",
     "demo:server:built": "node dist/server/start.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "verify": "npm run typecheck && npm run build && npm run test:demo && npm run test:built && npm run test:http"
+    "verify": "npm run typecheck && npm run build && npm run test:demo && npm run test:built && npm run test:http && npm run test:schemas"
   }
 }

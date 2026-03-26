@@ -1,0 +1,50 @@
+{
+  "deviceID": "iphone-1",
+  "accountID": "account-123",
+  "changes": [
+    {
+      "baseSyncVersion": 0,
+      "segmentEnvelope": {
+        "segment": {
+          "id": "segment-1",
+          "startTime": "2026-03-26T08:00:00Z",
+          "endTime": "2026-03-26T08:45:00Z",
+          "lifecycleState": "settled",
+          "originType": "system",
+          "primaryDeviceHint": "iPhone",
+          "title": "Morning walk",
+          "createdAt": "2026-03-26T08:46:00Z",
+          "updatedAt": "2026-03-26T09:00:00Z"
+        },
+        "interpretation": {
+          "id": "segment-1-interpretation",
+          "segmentID": "segment-1",
+          "visibleClass": "walking",
+          "userSelectedClass": null,
+          "confidence": 0.82,
+          "ambiguityState": "clear",
+          "needsReview": false,
+          "interpretationOrigin": "system",
+          "updatedAt": "2026-03-26T09:00:00Z"
+        },
+        "summary": {
+          "id": "segment-1-summary",
+          "segmentID": "segment-1",
+          "durationSeconds": 2700,
+          "distanceMeters": 3200,
+          "elevationGainMeters": 30,
+          "averageSpeedMetersPerSecond": 1.18,
+          "maxSpeedMetersPerSecond": 1.9,
+          "pauseCount": 0,
+          "updatedAt": "2026-03-26T09:00:00Z"
+        },
+        "sync": {
+          "lastModifiedByDeviceID": "iphone-1",
+          "lastModifiedAt": "2026-03-26T09:00:00Z",
+          "syncVersion": 0,
+          "isDeleted": false
+        }
+      }
+    }
+  ]
+}
