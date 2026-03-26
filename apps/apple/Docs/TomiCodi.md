@@ -123,6 +123,8 @@ What to watch:
 - Mar 26, 15:04: Added explicit supported-orientation declarations to the app plist and cleared the remaining actionable Xcode warning; only the generic recommended-settings warning remains.
 - Mar 26, 15:07: Made draft promotion boundary-aware so a materially different live activity now rolls the current active system segment to unsettled and starts a new active segment instead of mutating one segment across a real boundary.
 - Mar 26, 15:07: Added explicit draft-save result messaging so the UI now tells the user whether a live draft updated the current segment or started a new one.
+- Mar 26, 16:13: Aligned the Apple sync boundary with the shared contract by making sync metadata mandatory in local envelope projection, fixing stale finalized summary duration, and disabling ordinary `Keep Local Version` for tombstone conflicts.
+- Mar 26, 17:07: Added a real demo tombstone-conflict path so `deletedOnServer` is now exercised in-app, with `Apply Server Version` allowed for the tombstone and ordinary `Keep Local Version` blocked.
 
 ## Tomi Progress Notes
 

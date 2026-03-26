@@ -1,0 +1,671 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		06D4CC452F7455F40059DBA9 /* ActivityClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC442F7455F40059DBA9 /* ActivityClass.swift */; };
+		06D4CC472F7455F40059DBA9 /* AmbiguityState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC462F7455F40059DBA9 /* AmbiguityState.swift */; };
+		06D4CC492F7455F50059DBA9 /* InterpretationOrigin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC482F7455F50059DBA9 /* InterpretationOrigin.swift */; };
+		06D4CC4B2F7455F50059DBA9 /* ObservationSourceDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC4A2F7455F50059DBA9 /* ObservationSourceDevice.swift */; };
+		06D4CC4D2F7455F50059DBA9 /* ObservationSourceType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC4C2F7455F50059DBA9 /* ObservationSourceType.swift */; };
+		06D4CC4F2F7455F50059DBA9 /* SegmentLifecycleState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC4E2F7455F50059DBA9 /* SegmentLifecycleState.swift */; };
+		06D4CC512F7455F50059DBA9 /* SegmentOriginType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC502F7455F50059DBA9 /* SegmentOriginType.swift */; };
+		06D4CC532F7455F50059DBA9 /* ObservationRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC522F7455F50059DBA9 /* ObservationRecord.swift */; };
+		06D4CC552F7455F50059DBA9 /* SegmentInterpretationRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC542F7455F50059DBA9 /* SegmentInterpretationRecord.swift */; };
+		06D4CC572F7455F50059DBA9 /* SegmentSummaryRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC562F7455F50059DBA9 /* SegmentSummaryRecord.swift */; };
+		06D4CC592F7455F50059DBA9 /* BlackboxModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC582F7455F50059DBA9 /* BlackboxModelContainer.swift */; };
+		06D4CC5B2F7455F50059DBA9 /* SegmentRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC5A2F7455F50059DBA9 /* SegmentRecord.swift */; };
+		06D4CC5D2F7455F50059DBA9 /* AppBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC5C2F7455F50059DBA9 /* AppBootstrap.swift */; };
+		06D4CC5F2F7455F50059DBA9 /* TimelineDayGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC5E2F7455F50059DBA9 /* TimelineDayGroup.swift */; };
+		06D4CC612F7455F60059DBA9 /* TimelineRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC602F7455F60059DBA9 /* TimelineRowView.swift */; };
+		06D4CC632F7455F60059DBA9 /* TimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC622F7455F60059DBA9 /* TimelineView.swift */; };
+		06D4CC652F7467610059DBA9 /* ObservationInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC642F7467610059DBA9 /* ObservationInput.swift */; };
+		06D4CC672F7467610059DBA9 /* ObservationIngesting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC662F7467610059DBA9 /* ObservationIngesting.swift */; };
+		06D4CC692F7467610059DBA9 /* LocalObservationRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC682F7467610059DBA9 /* LocalObservationRecorder.swift */; };
+		06D4CC6B2F7467610059DBA9 /* SegmentSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC6A2F7467610059DBA9 /* SegmentSnapshot.swift */; };
+		06D4CC6D2F7467610059DBA9 /* TimelineSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC6C2F7467610059DBA9 /* TimelineSummary.swift */; };
+		06D4CC6F2F7467620059DBA9 /* TimelineProjection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC6E2F7467620059DBA9 /* TimelineProjection.swift */; };
+		06D4CC712F7467620059DBA9 /* TimelineSummarySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC702F7467620059DBA9 /* TimelineSummarySection.swift */; };
+		06D4CC732F7469CC0059DBA9 /* SyncDisposition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC722F7469CC0059DBA9 /* SyncDisposition.swift */; };
+		06D4CC752F7469CC0059DBA9 /* SegmentSyncStateRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC742F7469CC0059DBA9 /* SegmentSyncStateRecord.swift */; };
+		06D4CC772F7469CC0059DBA9 /* SyncSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC762F7469CC0059DBA9 /* SyncSummary.swift */; };
+		06D4CC792F7469CC0059DBA9 /* SyncProjection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC782F7469CC0059DBA9 /* SyncProjection.swift */; };
+		06D4CC7B2F746D430059DBA9 /* CaptureServiceKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC7A2F746D430059DBA9 /* CaptureServiceKind.swift */; };
+		06D4CC7D2F746D430059DBA9 /* CaptureAuthorizationState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC7C2F746D430059DBA9 /* CaptureAuthorizationState.swift */; };
+		06D4CC7F2F746D430059DBA9 /* CaptureServiceStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC7E2F746D430059DBA9 /* CaptureServiceStatus.swift */; };
+		06D4CC812F746D440059DBA9 /* CaptureStatusProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC802F746D440059DBA9 /* CaptureStatusProviding.swift */; };
+		06D4CC832F746D440059DBA9 /* LocationCaptureStatusProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC822F746D440059DBA9 /* LocationCaptureStatusProvider.swift */; };
+		06D4CC852F746D440059DBA9 /* MotionActivityCaptureStatusProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC842F746D440059DBA9 /* MotionActivityCaptureStatusProvider.swift */; };
+		06D4CC872F746D440059DBA9 /* PedometerCaptureStatusProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC862F746D440059DBA9 /* PedometerCaptureStatusProvider.swift */; };
+		06D4CC892F746D440059DBA9 /* CaptureProjection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC882F746D440059DBA9 /* CaptureProjection.swift */; };
+		06D4CC8B2F746D440059DBA9 /* CaptureStatusSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC8A2F746D440059DBA9 /* CaptureStatusSection.swift */; };
+		06D4CC8D2F746DF20059DBA9 /* SegmentEnvelope.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC8C2F746DF20059DBA9 /* SegmentEnvelope.swift */; };
+		06D4CC8F2F746DF30059DBA9 /* SyncEnvelopeProjection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC8E2F746DF30059DBA9 /* SyncEnvelopeProjection.swift */; };
+		06D4CC912F746DF30059DBA9 /* SegmentSyncing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC902F746DF30059DBA9 /* SegmentSyncing.swift */; };
+		06D4CC932F746DF30059DBA9 /* NoopSegmentSyncClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC922F746DF30059DBA9 /* NoopSegmentSyncClient.swift */; };
+		06D4CC952F746E230059DBA9 /* LocalSyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC942F746E230059DBA9 /* LocalSyncCoordinator.swift */; };
+		06D4CC982F75294C0059DBA9 /* LocationAuthorizationRequesting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC972F75294C0059DBA9 /* LocationAuthorizationRequesting.swift */; };
+		06D4CC9A2F75294C0059DBA9 /* LocationAuthorizationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC992F75294C0059DBA9 /* LocationAuthorizationController.swift */; };
+		06D4CC9C2F75294C0059DBA9 /* CaptureReadinessStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC9B2F75294C0059DBA9 /* CaptureReadinessStore.swift */; };
+		06D4CC9E2F7529860059DBA9 /* LocationAuthorizationDelegateProxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC9D2F7529860059DBA9 /* LocationAuthorizationDelegateProxy.swift */; };
+		06D4CCA02F7529D30059DBA9 /* SyncActivityStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC9F2F7529D30059DBA9 /* SyncActivityStore.swift */; };
+		06D4CCA22F7529D30059DBA9 /* SyncStatusSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCA12F7529D30059DBA9 /* SyncStatusSection.swift */; };
+		06D4CCA42F752B2B0059DBA9 /* ObservationCapturing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCA32F752B2B0059DBA9 /* ObservationCapturing.swift */; };
+		06D4CCA62F752B2B0059DBA9 /* LocationObservationDelegateProxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCA52F752B2B0059DBA9 /* LocationObservationDelegateProxy.swift */; };
+		06D4CCA82F752B2B0059DBA9 /* LocationObservationCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCA72F752B2B0059DBA9 /* LocationObservationCaptureService.swift */; };
+		06D4CCAA2F752B2C0059DBA9 /* MotionActivityObservationCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCA92F752B2C0059DBA9 /* MotionActivityObservationCaptureService.swift */; };
+		06D4CCAC2F752B2C0059DBA9 /* CaptureControlSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCAB2F752B2C0059DBA9 /* CaptureControlSection.swift */; };
+		06D4CCAE2F752B2C0059DBA9 /* CaptureControlStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCAD2F752B2C0059DBA9 /* CaptureControlStore.swift */; };
+		06D4CCB02F7538AC0059DBA9 /* PedometerObservationCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCAF2F7538AC0059DBA9 /* PedometerObservationCaptureService.swift */; };
+		06D4CCB22F7547820059DBA9 /* ObservationSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCB12F7547820059DBA9 /* ObservationSnapshot.swift */; };
+		06D4CCB42F7547830059DBA9 /* RecentObservationsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCB32F7547830059DBA9 /* RecentObservationsSection.swift */; };
+		06D4CCB62F7547830059DBA9 /* ObservationProjection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCB52F7547830059DBA9 /* ObservationProjection.swift */; };
+		06D4CCB82F754A3A0059DBA9 /* LiveDraftSegmentSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCB72F754A3A0059DBA9 /* LiveDraftSegmentSnapshot.swift */; };
+		06D4CCBA2F754A3A0059DBA9 /* LiveDraftSegmentProjection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCB92F754A3A0059DBA9 /* LiveDraftSegmentProjection.swift */; };
+		06D4CCBC2F754A3A0059DBA9 /* LiveDraftSegmentSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCBB2F754A3A0059DBA9 /* LiveDraftSegmentSection.swift */; };
+		06D4CCBE2F754B260059DBA9 /* LocalDraftSegmentWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCBD2F754B260059DBA9 /* LocalDraftSegmentWriter.swift */; };
+		06D4CCC02F7551C20059DBA9 /* SegmentPushOutcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCBF2F7551C20059DBA9 /* SegmentPushOutcome.swift */; };
+		06D4CCC22F75585E0059DBA9 /* LocalSegmentEnvelopeApplier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCC12F75585E0059DBA9 /* LocalSegmentEnvelopeApplier.swift */; };
+		06D4CCC42F7560150059DBA9 /* DemoSegmentSyncClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCC32F7560150059DBA9 /* DemoSegmentSyncClient.swift */; };
+		06D4CCC62F7566580059DBA9 /* SyncConflictSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCC52F7566580059DBA9 /* SyncConflictSnapshot.swift */; };
+		06D4CCC82F7567070059DBA9 /* DraftSegmentWriteResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCC72F7567070059DBA9 /* DraftSegmentWriteResult.swift */; };
+		19A697EEE4D0AD58741AE352 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7D45B32E742E2F674B8DA9FB /* Assets.xcassets */; };
+		4ED77E5CE3273FF3758CC576 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BB7B834AE865D38AF11D2B3 /* ContentView.swift */; };
+		AB9C4D41A551E578EF5C7029 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 66487777336FFAEB6FB088F0 /* Foundation.framework */; };
+		DA332FD6E9EFF38E46F0F841 /* BlackboxApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B72BF4F385F913A7565CD858 /* BlackboxApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		06D4CC442F7455F40059DBA9 /* ActivityClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityClass.swift; sourceTree = "<group>"; };
+		06D4CC462F7455F40059DBA9 /* AmbiguityState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbiguityState.swift; sourceTree = "<group>"; };
+		06D4CC482F7455F50059DBA9 /* InterpretationOrigin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterpretationOrigin.swift; sourceTree = "<group>"; };
+		06D4CC4A2F7455F50059DBA9 /* ObservationSourceDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservationSourceDevice.swift; sourceTree = "<group>"; };
+		06D4CC4C2F7455F50059DBA9 /* ObservationSourceType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservationSourceType.swift; sourceTree = "<group>"; };
+		06D4CC4E2F7455F50059DBA9 /* SegmentLifecycleState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentLifecycleState.swift; sourceTree = "<group>"; };
+		06D4CC502F7455F50059DBA9 /* SegmentOriginType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentOriginType.swift; sourceTree = "<group>"; };
+		06D4CC522F7455F50059DBA9 /* ObservationRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservationRecord.swift; sourceTree = "<group>"; };
+		06D4CC542F7455F50059DBA9 /* SegmentInterpretationRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentInterpretationRecord.swift; sourceTree = "<group>"; };
+		06D4CC562F7455F50059DBA9 /* SegmentSummaryRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentSummaryRecord.swift; sourceTree = "<group>"; };
+		06D4CC582F7455F50059DBA9 /* BlackboxModelContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlackboxModelContainer.swift; sourceTree = "<group>"; };
+		06D4CC5A2F7455F50059DBA9 /* SegmentRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentRecord.swift; sourceTree = "<group>"; };
+		06D4CC5C2F7455F50059DBA9 /* AppBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBootstrap.swift; sourceTree = "<group>"; };
+		06D4CC5E2F7455F50059DBA9 /* TimelineDayGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineDayGroup.swift; sourceTree = "<group>"; };
+		06D4CC602F7455F60059DBA9 /* TimelineRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineRowView.swift; sourceTree = "<group>"; };
+		06D4CC622F7455F60059DBA9 /* TimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineView.swift; sourceTree = "<group>"; };
+		06D4CC642F7467610059DBA9 /* ObservationInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservationInput.swift; sourceTree = "<group>"; };
+		06D4CC662F7467610059DBA9 /* ObservationIngesting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservationIngesting.swift; sourceTree = "<group>"; };
+		06D4CC682F7467610059DBA9 /* LocalObservationRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalObservationRecorder.swift; sourceTree = "<group>"; };
+		06D4CC6A2F7467610059DBA9 /* SegmentSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentSnapshot.swift; sourceTree = "<group>"; };
+		06D4CC6C2F7467610059DBA9 /* TimelineSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineSummary.swift; sourceTree = "<group>"; };
+		06D4CC6E2F7467620059DBA9 /* TimelineProjection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineProjection.swift; sourceTree = "<group>"; };
+		06D4CC702F7467620059DBA9 /* TimelineSummarySection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineSummarySection.swift; sourceTree = "<group>"; };
+		06D4CC722F7469CC0059DBA9 /* SyncDisposition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncDisposition.swift; sourceTree = "<group>"; };
+		06D4CC742F7469CC0059DBA9 /* SegmentSyncStateRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentSyncStateRecord.swift; sourceTree = "<group>"; };
+		06D4CC762F7469CC0059DBA9 /* SyncSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSummary.swift; sourceTree = "<group>"; };
+		06D4CC782F7469CC0059DBA9 /* SyncProjection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncProjection.swift; sourceTree = "<group>"; };
+		06D4CC7A2F746D430059DBA9 /* CaptureServiceKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureServiceKind.swift; sourceTree = "<group>"; };
+		06D4CC7C2F746D430059DBA9 /* CaptureAuthorizationState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureAuthorizationState.swift; sourceTree = "<group>"; };
+		06D4CC7E2F746D430059DBA9 /* CaptureServiceStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureServiceStatus.swift; sourceTree = "<group>"; };
+		06D4CC802F746D440059DBA9 /* CaptureStatusProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureStatusProviding.swift; sourceTree = "<group>"; };
+		06D4CC822F746D440059DBA9 /* LocationCaptureStatusProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationCaptureStatusProvider.swift; sourceTree = "<group>"; };
+		06D4CC842F746D440059DBA9 /* MotionActivityCaptureStatusProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionActivityCaptureStatusProvider.swift; sourceTree = "<group>"; };
+		06D4CC862F746D440059DBA9 /* PedometerCaptureStatusProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PedometerCaptureStatusProvider.swift; sourceTree = "<group>"; };
+		06D4CC882F746D440059DBA9 /* CaptureProjection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureProjection.swift; sourceTree = "<group>"; };
+		06D4CC8A2F746D440059DBA9 /* CaptureStatusSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureStatusSection.swift; sourceTree = "<group>"; };
+		06D4CC8C2F746DF20059DBA9 /* SegmentEnvelope.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentEnvelope.swift; sourceTree = "<group>"; };
+		06D4CC8E2F746DF30059DBA9 /* SyncEnvelopeProjection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncEnvelopeProjection.swift; sourceTree = "<group>"; };
+		06D4CC902F746DF30059DBA9 /* SegmentSyncing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentSyncing.swift; sourceTree = "<group>"; };
+		06D4CC922F746DF30059DBA9 /* NoopSegmentSyncClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoopSegmentSyncClient.swift; sourceTree = "<group>"; };
+		06D4CC942F746E230059DBA9 /* LocalSyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalSyncCoordinator.swift; sourceTree = "<group>"; };
+		06D4CC962F7525230059DBA9 /* Blackbox-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Blackbox-Info.plist"; sourceTree = "<group>"; };
+		06D4CC972F75294C0059DBA9 /* LocationAuthorizationRequesting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationAuthorizationRequesting.swift; sourceTree = "<group>"; };
+		06D4CC992F75294C0059DBA9 /* LocationAuthorizationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationAuthorizationController.swift; sourceTree = "<group>"; };
+		06D4CC9B2F75294C0059DBA9 /* CaptureReadinessStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureReadinessStore.swift; sourceTree = "<group>"; };
+		06D4CC9D2F7529860059DBA9 /* LocationAuthorizationDelegateProxy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationAuthorizationDelegateProxy.swift; sourceTree = "<group>"; };
+		06D4CC9F2F7529D30059DBA9 /* SyncActivityStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncActivityStore.swift; sourceTree = "<group>"; };
+		06D4CCA12F7529D30059DBA9 /* SyncStatusSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatusSection.swift; sourceTree = "<group>"; };
+		06D4CCA32F752B2B0059DBA9 /* ObservationCapturing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservationCapturing.swift; sourceTree = "<group>"; };
+		06D4CCA52F752B2B0059DBA9 /* LocationObservationDelegateProxy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationObservationDelegateProxy.swift; sourceTree = "<group>"; };
+		06D4CCA72F752B2B0059DBA9 /* LocationObservationCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationObservationCaptureService.swift; sourceTree = "<group>"; };
+		06D4CCA92F752B2C0059DBA9 /* MotionActivityObservationCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionActivityObservationCaptureService.swift; sourceTree = "<group>"; };
+		06D4CCAB2F752B2C0059DBA9 /* CaptureControlSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureControlSection.swift; sourceTree = "<group>"; };
+		06D4CCAD2F752B2C0059DBA9 /* CaptureControlStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureControlStore.swift; sourceTree = "<group>"; };
+		06D4CCAF2F7538AC0059DBA9 /* PedometerObservationCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PedometerObservationCaptureService.swift; sourceTree = "<group>"; };
+		06D4CCB12F7547820059DBA9 /* ObservationSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservationSnapshot.swift; sourceTree = "<group>"; };
+		06D4CCB32F7547830059DBA9 /* RecentObservationsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentObservationsSection.swift; sourceTree = "<group>"; };
+		06D4CCB52F7547830059DBA9 /* ObservationProjection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservationProjection.swift; sourceTree = "<group>"; };
+		06D4CCB72F754A3A0059DBA9 /* LiveDraftSegmentSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveDraftSegmentSnapshot.swift; sourceTree = "<group>"; };
+		06D4CCB92F754A3A0059DBA9 /* LiveDraftSegmentProjection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveDraftSegmentProjection.swift; sourceTree = "<group>"; };
+		06D4CCBB2F754A3A0059DBA9 /* LiveDraftSegmentSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveDraftSegmentSection.swift; sourceTree = "<group>"; };
+		06D4CCBD2F754B260059DBA9 /* LocalDraftSegmentWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDraftSegmentWriter.swift; sourceTree = "<group>"; };
+		06D4CCBF2F7551C20059DBA9 /* SegmentPushOutcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentPushOutcome.swift; sourceTree = "<group>"; };
+		06D4CCC12F75585E0059DBA9 /* LocalSegmentEnvelopeApplier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalSegmentEnvelopeApplier.swift; sourceTree = "<group>"; };
+		06D4CCC32F7560150059DBA9 /* DemoSegmentSyncClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoSegmentSyncClient.swift; sourceTree = "<group>"; };
+		06D4CCC52F7566580059DBA9 /* SyncConflictSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncConflictSnapshot.swift; sourceTree = "<group>"; };
+		06D4CCC72F7567070059DBA9 /* DraftSegmentWriteResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftSegmentWriteResult.swift; sourceTree = "<group>"; };
+		55605AB54A1DDDC5BC7BD70E /* Blackbox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Blackbox.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5BB7B834AE865D38AF11D2B3 /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		66487777336FFAEB6FB088F0 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS14.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		7D45B32E742E2F674B8DA9FB /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B72BF4F385F913A7565CD858 /* BlackboxApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlackboxApp.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		07A1C97606D3BFE8BA9065D5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AB9C4D41A551E578EF5C7029 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		06D4CC3F2F7447750059DBA9 /* Docs */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Docs;
+			sourceTree = "<group>";
+		};
+		06D4CC402F74545C0059DBA9 /* Domain 2 */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = "Domain 2";
+			sourceTree = "<group>";
+		};
+		06D4CC412F74545C0059DBA9 /* Features 2 */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = "Features 2";
+			sourceTree = "<group>";
+		};
+		404BB26A43AEC514DA3F9B5D = {
+			isa = PBXGroup;
+			children = (
+				06D4CC962F7525230059DBA9 /* Blackbox-Info.plist */,
+				9CC08F9CC55AF7FF7903D859 /* Products */,
+				5B7D502ECB0063C3BA3103CB /* Frameworks */,
+				F889BC479D38291859A0B9A0 /* apps */,
+			);
+			sourceTree = "<group>";
+		};
+		48465A968D166412CEE10584 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				66487777336FFAEB6FB088F0 /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		5B7D502ECB0063C3BA3103CB /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				48465A968D166412CEE10584 /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		66EB21EDB6514C20E311359D /* apple */ = {
+			isa = PBXGroup;
+			children = (
+				F56A68F6A9343C8513FE2CE9 /* iOS */,
+				06D4CC3F2F7447750059DBA9 /* Docs */,
+			);
+			name = apple;
+			sourceTree = "<group>";
+		};
+		75FB99F8AF5352C752483394 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				7D45B32E742E2F674B8DA9FB /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		9CC08F9CC55AF7FF7903D859 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				55605AB54A1DDDC5BC7BD70E /* Blackbox.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		EA407DA9D2A304B8D3AF7002 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				B72BF4F385F913A7565CD858 /* BlackboxApp.swift */,
+				5BB7B834AE865D38AF11D2B3 /* ContentView.swift */,
+				06D4CC442F7455F40059DBA9 /* ActivityClass.swift */,
+				06D4CC462F7455F40059DBA9 /* AmbiguityState.swift */,
+				06D4CC482F7455F50059DBA9 /* InterpretationOrigin.swift */,
+				06D4CC4A2F7455F50059DBA9 /* ObservationSourceDevice.swift */,
+				06D4CC4C2F7455F50059DBA9 /* ObservationSourceType.swift */,
+				06D4CC4E2F7455F50059DBA9 /* SegmentLifecycleState.swift */,
+				06D4CC502F7455F50059DBA9 /* SegmentOriginType.swift */,
+				06D4CC522F7455F50059DBA9 /* ObservationRecord.swift */,
+				06D4CC542F7455F50059DBA9 /* SegmentInterpretationRecord.swift */,
+				06D4CC562F7455F50059DBA9 /* SegmentSummaryRecord.swift */,
+				06D4CC582F7455F50059DBA9 /* BlackboxModelContainer.swift */,
+				06D4CC5A2F7455F50059DBA9 /* SegmentRecord.swift */,
+				06D4CC5C2F7455F50059DBA9 /* AppBootstrap.swift */,
+				06D4CC5E2F7455F50059DBA9 /* TimelineDayGroup.swift */,
+				06D4CC602F7455F60059DBA9 /* TimelineRowView.swift */,
+				06D4CC622F7455F60059DBA9 /* TimelineView.swift */,
+				06D4CC642F7467610059DBA9 /* ObservationInput.swift */,
+				06D4CC662F7467610059DBA9 /* ObservationIngesting.swift */,
+				06D4CC682F7467610059DBA9 /* LocalObservationRecorder.swift */,
+				06D4CC6A2F7467610059DBA9 /* SegmentSnapshot.swift */,
+				06D4CC6C2F7467610059DBA9 /* TimelineSummary.swift */,
+				06D4CC6E2F7467620059DBA9 /* TimelineProjection.swift */,
+				06D4CC702F7467620059DBA9 /* TimelineSummarySection.swift */,
+				06D4CC722F7469CC0059DBA9 /* SyncDisposition.swift */,
+				06D4CC742F7469CC0059DBA9 /* SegmentSyncStateRecord.swift */,
+				06D4CC762F7469CC0059DBA9 /* SyncSummary.swift */,
+				06D4CC782F7469CC0059DBA9 /* SyncProjection.swift */,
+				06D4CC7A2F746D430059DBA9 /* CaptureServiceKind.swift */,
+				06D4CC7C2F746D430059DBA9 /* CaptureAuthorizationState.swift */,
+				06D4CC7E2F746D430059DBA9 /* CaptureServiceStatus.swift */,
+				06D4CC802F746D440059DBA9 /* CaptureStatusProviding.swift */,
+				06D4CC822F746D440059DBA9 /* LocationCaptureStatusProvider.swift */,
+				06D4CC842F746D440059DBA9 /* MotionActivityCaptureStatusProvider.swift */,
+				06D4CC862F746D440059DBA9 /* PedometerCaptureStatusProvider.swift */,
+				06D4CC882F746D440059DBA9 /* CaptureProjection.swift */,
+				06D4CC8A2F746D440059DBA9 /* CaptureStatusSection.swift */,
+				06D4CC8C2F746DF20059DBA9 /* SegmentEnvelope.swift */,
+				06D4CC8E2F746DF30059DBA9 /* SyncEnvelopeProjection.swift */,
+				06D4CC902F746DF30059DBA9 /* SegmentSyncing.swift */,
+				06D4CC922F746DF30059DBA9 /* NoopSegmentSyncClient.swift */,
+				06D4CC942F746E230059DBA9 /* LocalSyncCoordinator.swift */,
+				06D4CC972F75294C0059DBA9 /* LocationAuthorizationRequesting.swift */,
+				06D4CC992F75294C0059DBA9 /* LocationAuthorizationController.swift */,
+				06D4CC9B2F75294C0059DBA9 /* CaptureReadinessStore.swift */,
+				06D4CC9D2F7529860059DBA9 /* LocationAuthorizationDelegateProxy.swift */,
+				06D4CC9F2F7529D30059DBA9 /* SyncActivityStore.swift */,
+				06D4CCA12F7529D30059DBA9 /* SyncStatusSection.swift */,
+				06D4CCA32F752B2B0059DBA9 /* ObservationCapturing.swift */,
+				06D4CCA52F752B2B0059DBA9 /* LocationObservationDelegateProxy.swift */,
+				06D4CCA72F752B2B0059DBA9 /* LocationObservationCaptureService.swift */,
+				06D4CCA92F752B2C0059DBA9 /* MotionActivityObservationCaptureService.swift */,
+				06D4CCAB2F752B2C0059DBA9 /* CaptureControlSection.swift */,
+				06D4CCAD2F752B2C0059DBA9 /* CaptureControlStore.swift */,
+				06D4CCAF2F7538AC0059DBA9 /* PedometerObservationCaptureService.swift */,
+				06D4CCB12F7547820059DBA9 /* ObservationSnapshot.swift */,
+				06D4CCB32F7547830059DBA9 /* RecentObservationsSection.swift */,
+				06D4CCB52F7547830059DBA9 /* ObservationProjection.swift */,
+				06D4CCB72F754A3A0059DBA9 /* LiveDraftSegmentSnapshot.swift */,
+				06D4CCB92F754A3A0059DBA9 /* LiveDraftSegmentProjection.swift */,
+				06D4CCBB2F754A3A0059DBA9 /* LiveDraftSegmentSection.swift */,
+				06D4CCBD2F754B260059DBA9 /* LocalDraftSegmentWriter.swift */,
+				06D4CCBF2F7551C20059DBA9 /* SegmentPushOutcome.swift */,
+				06D4CCC12F75585E0059DBA9 /* LocalSegmentEnvelopeApplier.swift */,
+				06D4CCC32F7560150059DBA9 /* DemoSegmentSyncClient.swift */,
+				06D4CCC52F7566580059DBA9 /* SyncConflictSnapshot.swift */,
+				06D4CCC72F7567070059DBA9 /* DraftSegmentWriteResult.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		F56A68F6A9343C8513FE2CE9 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				EA407DA9D2A304B8D3AF7002 /* App */,
+				75FB99F8AF5352C752483394 /* Resources */,
+				06D4CC402F74545C0059DBA9 /* Domain 2 */,
+				06D4CC412F74545C0059DBA9 /* Features 2 */,
+			);
+			path = iOS;
+			sourceTree = "<group>";
+		};
+		F889BC479D38291859A0B9A0 /* apps */ = {
+			isa = PBXGroup;
+			children = (
+				66EB21EDB6514C20E311359D /* apple */,
+			);
+			name = apps;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		40DF1382E67EE9921E979A39 /* Blackbox */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E23CFC11E2CEBE47580A06C9 /* Build configuration list for PBXNativeTarget "Blackbox" */;
+			buildPhases = (
+				1F76F297EE26290C944B399A /* Sources */,
+				07A1C97606D3BFE8BA9065D5 /* Frameworks */,
+				E3D0156CE19AC43D24534255 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Blackbox;
+			productName = Blackbox;
+			productReference = 55605AB54A1DDDC5BC7BD70E /* Blackbox.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		68F288836F147F57E8D76272 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 2630;
+				LastUpgradeCheck = 2630;
+				TargetAttributes = {
+					40DF1382E67EE9921E979A39 = {
+						DevelopmentTeam = 2TXPN3QJQN;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 8E3B1F286BCA3E4D0E787FBA /* Build configuration list for PBXProject "Blackbox" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 404BB26A43AEC514DA3F9B5D;
+			productRefGroup = 9CC08F9CC55AF7FF7903D859 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				40DF1382E67EE9921E979A39 /* Blackbox */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		E3D0156CE19AC43D24534255 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				19A697EEE4D0AD58741AE352 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		1F76F297EE26290C944B399A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				06D4CC832F746D440059DBA9 /* LocationCaptureStatusProvider.swift in Sources */,
+				06D4CC512F7455F50059DBA9 /* SegmentOriginType.swift in Sources */,
+				06D4CCC02F7551C20059DBA9 /* SegmentPushOutcome.swift in Sources */,
+				06D4CC912F746DF30059DBA9 /* SegmentSyncing.swift in Sources */,
+				06D4CC7D2F746D430059DBA9 /* CaptureAuthorizationState.swift in Sources */,
+				06D4CC6D2F7467610059DBA9 /* TimelineSummary.swift in Sources */,
+				06D4CCBC2F754A3A0059DBA9 /* LiveDraftSegmentSection.swift in Sources */,
+				06D4CC932F746DF30059DBA9 /* NoopSegmentSyncClient.swift in Sources */,
+				06D4CC552F7455F50059DBA9 /* SegmentInterpretationRecord.swift in Sources */,
+				06D4CC592F7455F50059DBA9 /* BlackboxModelContainer.swift in Sources */,
+				06D4CC812F746D440059DBA9 /* CaptureStatusProviding.swift in Sources */,
+				06D4CC6B2F7467610059DBA9 /* SegmentSnapshot.swift in Sources */,
+				06D4CC9A2F75294C0059DBA9 /* LocationAuthorizationController.swift in Sources */,
+				06D4CC452F7455F40059DBA9 /* ActivityClass.swift in Sources */,
+				06D4CC532F7455F50059DBA9 /* ObservationRecord.swift in Sources */,
+				06D4CC6F2F7467620059DBA9 /* TimelineProjection.swift in Sources */,
+				06D4CC7B2F746D430059DBA9 /* CaptureServiceKind.swift in Sources */,
+				06D4CC672F7467610059DBA9 /* ObservationIngesting.swift in Sources */,
+				06D4CC952F746E230059DBA9 /* LocalSyncCoordinator.swift in Sources */,
+				06D4CCB02F7538AC0059DBA9 /* PedometerObservationCaptureService.swift in Sources */,
+				06D4CCB62F7547830059DBA9 /* ObservationProjection.swift in Sources */,
+				06D4CCAA2F752B2C0059DBA9 /* MotionActivityObservationCaptureService.swift in Sources */,
+				06D4CC612F7455F60059DBA9 /* TimelineRowView.swift in Sources */,
+				06D4CCC22F75585E0059DBA9 /* LocalSegmentEnvelopeApplier.swift in Sources */,
+				06D4CCC42F7560150059DBA9 /* DemoSegmentSyncClient.swift in Sources */,
+				06D4CC982F75294C0059DBA9 /* LocationAuthorizationRequesting.swift in Sources */,
+				06D4CCC82F7567070059DBA9 /* DraftSegmentWriteResult.swift in Sources */,
+				06D4CC472F7455F40059DBA9 /* AmbiguityState.swift in Sources */,
+				06D4CC8F2F746DF30059DBA9 /* SyncEnvelopeProjection.swift in Sources */,
+				06D4CC772F7469CC0059DBA9 /* SyncSummary.swift in Sources */,
+				06D4CCC62F7566580059DBA9 /* SyncConflictSnapshot.swift in Sources */,
+				06D4CCA22F7529D30059DBA9 /* SyncStatusSection.swift in Sources */,
+				06D4CC792F7469CC0059DBA9 /* SyncProjection.swift in Sources */,
+				06D4CC712F7467620059DBA9 /* TimelineSummarySection.swift in Sources */,
+				06D4CCB42F7547830059DBA9 /* RecentObservationsSection.swift in Sources */,
+				06D4CC8B2F746D440059DBA9 /* CaptureStatusSection.swift in Sources */,
+				06D4CC9E2F7529860059DBA9 /* LocationAuthorizationDelegateProxy.swift in Sources */,
+				06D4CC892F746D440059DBA9 /* CaptureProjection.swift in Sources */,
+				06D4CC652F7467610059DBA9 /* ObservationInput.swift in Sources */,
+				06D4CC692F7467610059DBA9 /* LocalObservationRecorder.swift in Sources */,
+				06D4CCA62F752B2B0059DBA9 /* LocationObservationDelegateProxy.swift in Sources */,
+				06D4CC632F7455F60059DBA9 /* TimelineView.swift in Sources */,
+				06D4CC572F7455F50059DBA9 /* SegmentSummaryRecord.swift in Sources */,
+				06D4CC5F2F7455F50059DBA9 /* TimelineDayGroup.swift in Sources */,
+				DA332FD6E9EFF38E46F0F841 /* BlackboxApp.swift in Sources */,
+				06D4CCBE2F754B260059DBA9 /* LocalDraftSegmentWriter.swift in Sources */,
+				4ED77E5CE3273FF3758CC576 /* ContentView.swift in Sources */,
+				06D4CC4D2F7455F50059DBA9 /* ObservationSourceType.swift in Sources */,
+				06D4CC8D2F746DF20059DBA9 /* SegmentEnvelope.swift in Sources */,
+				06D4CC9C2F75294C0059DBA9 /* CaptureReadinessStore.swift in Sources */,
+				06D4CC4B2F7455F50059DBA9 /* ObservationSourceDevice.swift in Sources */,
+				06D4CCA82F752B2B0059DBA9 /* LocationObservationCaptureService.swift in Sources */,
+				06D4CC5D2F7455F50059DBA9 /* AppBootstrap.swift in Sources */,
+				06D4CCA42F752B2B0059DBA9 /* ObservationCapturing.swift in Sources */,
+				06D4CC5B2F7455F50059DBA9 /* SegmentRecord.swift in Sources */,
+				06D4CCB22F7547820059DBA9 /* ObservationSnapshot.swift in Sources */,
+				06D4CC752F7469CC0059DBA9 /* SegmentSyncStateRecord.swift in Sources */,
+				06D4CCA02F7529D30059DBA9 /* SyncActivityStore.swift in Sources */,
+				06D4CC492F7455F50059DBA9 /* InterpretationOrigin.swift in Sources */,
+				06D4CC872F746D440059DBA9 /* PedometerCaptureStatusProvider.swift in Sources */,
+				06D4CCB82F754A3A0059DBA9 /* LiveDraftSegmentSnapshot.swift in Sources */,
+				06D4CCBA2F754A3A0059DBA9 /* LiveDraftSegmentProjection.swift in Sources */,
+				06D4CC852F746D440059DBA9 /* MotionActivityCaptureStatusProvider.swift in Sources */,
+				06D4CCAC2F752B2C0059DBA9 /* CaptureControlSection.swift in Sources */,
+				06D4CCAE2F752B2C0059DBA9 /* CaptureControlStore.swift in Sources */,
+				06D4CC732F7469CC0059DBA9 /* SyncDisposition.swift in Sources */,
+				06D4CC7F2F746D430059DBA9 /* CaptureServiceStatus.swift in Sources */,
+				06D4CC4F2F7455F50059DBA9 /* SegmentLifecycleState.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		744F9AD14F026C27BCEABAC6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		AED8D13AA8483F88D83B9A33 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2TXPN3QJQN;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Blackbox-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Blackbox;
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Blackbox uses your location to reconstruct movement history and activity segments.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Blackbox uses your location to reconstruct movement history and activity segments.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "Blackbox uses motion data to classify movement and improve passive activity capture.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.contity.Blackbox;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B9EE29A9D5F0B4DAE12926C7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2TXPN3QJQN;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Blackbox-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Blackbox;
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Blackbox uses your location to reconstruct movement history and activity segments.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Blackbox uses your location to reconstruct movement history and activity segments.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "Blackbox uses motion data to classify movement and improve passive activity capture.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.contity.Blackbox;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		C9DA04CA0A624E10CAB37EB0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		8E3B1F286BCA3E4D0E787FBA /* Build configuration list for PBXProject "Blackbox" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C9DA04CA0A624E10CAB37EB0 /* Debug */,
+				744F9AD14F026C27BCEABAC6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E23CFC11E2CEBE47580A06C9 /* Build configuration list for PBXNativeTarget "Blackbox" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B9EE29A9D5F0B4DAE12926C7 /* Release */,
+				AED8D13AA8483F88D83B9A33 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 68F288836F147F57E8D76272 /* Project object */;
+}
