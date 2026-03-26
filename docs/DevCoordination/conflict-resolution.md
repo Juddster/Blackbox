@@ -41,6 +41,10 @@ If one side deleted a segment:
 - return the tombstone to the other side
 - allow restoration only as an explicit future action, not an automatic merge
 
+Practical v1 implication:
+- a normal "keep local version" retry path must not automatically recreate a tombstoned server segment
+- deleted-on-server conflicts should stay conflicted until the product has an explicit restore action
+
 ## Automatic Resolution Matrix
 
 ### Safe To Resolve Automatically

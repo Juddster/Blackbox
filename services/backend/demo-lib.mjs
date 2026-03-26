@@ -26,6 +26,14 @@ function validateEnvelope(envelope) {
 }
 
 export function createDemoBackend() {
+  const nextFeedPositionByAccount = new Map();
+
+  function nextFeedPosition(accountID) {
+    const next = (nextFeedPositionByAccount.get(accountID) ?? 0) + 1;
+    nextFeedPositionByAccount.set(accountID, next);
+    return next;
+  }
+
   return {
     push(body) {
       if (!body?.accountID || !Array.isArray(body?.changes)) {
@@ -54,6 +62,15 @@ export function createDemoBackend() {
           continue;
         }
 
+        if (existing?.isDeleted && envelope.sync.isDeleted === false) {
+          conflicts.push({
+            segmentID: envelope.segment.id,
+            reason: "deletedOnServer",
+            serverEnvelope: existing.envelope,
+          });
+          continue;
+        }
+
         const nextVersion = existing ? existing.syncVersion + 1 : 1;
         const storedEnvelope = {
           ...envelope,
@@ -74,7 +91,7 @@ export function createDemoBackend() {
 
         feed.push({
           accountID: body.accountID,
-          feedPosition: feedPositionFromVersion(nextVersion, envelope.segment.id),
+          feedPosition: nextFeedPosition(body.accountID),
           segmentID: envelope.segment.id,
           syncVersion: nextVersion,
           changedAt: storedEnvelope.sync.lastModifiedAt,

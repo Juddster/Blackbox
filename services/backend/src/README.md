@@ -14,6 +14,8 @@ Current concrete scaffold:
 - `domain/sync-service.ts`
 - `storage/interfaces.ts`
 - `storage/memory.ts`
+- `routes/http-types.ts`
+- `routes/request-validation.ts`
 - `routes/sync-handlers.ts`
 - `demo/smoke-example.ts`
 - `index.ts`

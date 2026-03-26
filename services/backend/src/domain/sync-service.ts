@@ -37,6 +37,15 @@ export class SyncService {
         continue;
       }
 
+      if (existing?.isDeleted && envelope.sync.isDeleted === false) {
+        conflicts.push({
+          segmentID: envelope.segment.id,
+          reason: "deletedOnServer",
+          serverEnvelope: existing.envelope,
+        });
+        continue;
+      }
+
       const nextVersion = existing ? existing.syncVersion + 1 : 1;
       const acceptedEnvelope = this.withServerVersion(envelope, nextVersion);
       const stored: StoredSegmentEnvelope = {
@@ -51,7 +60,6 @@ export class SyncService {
       await this.envelopeStore.put(stored);
       await this.feedStore.append({
         accountID: request.accountID,
-        feedPosition: this.feedPositionFromVersion(nextVersion, acceptedEnvelope.segment.id),
         segmentID: acceptedEnvelope.segment.id,
         syncVersion: nextVersion,
         changedAt: acceptedEnvelope.sync.lastModifiedAt,
@@ -93,11 +101,5 @@ export class SyncService {
         syncVersion,
       },
     };
-  }
-
-  // Placeholder monotonic feed position until real storage supplies one.
-  private feedPositionFromVersion(syncVersion: number, segmentID: string): number {
-    const suffix = Number.parseInt(segmentID.replace(/[^0-9]/g, "").slice(-6) || "0", 10);
-    return syncVersion * 1_000_000 + suffix;
   }
 }

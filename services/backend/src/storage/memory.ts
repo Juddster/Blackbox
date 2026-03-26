@@ -19,9 +19,16 @@ export class InMemoryEnvelopeStore implements EnvelopeStore {
 
 export class InMemorySyncFeedStore implements SyncFeedStore {
   private readonly entries: SyncFeedEntry[] = [];
+  private readonly nextFeedPositionByAccount = new Map<string, number>();
 
-  async append(entry: SyncFeedEntry): Promise<void> {
-    this.entries.push(entry);
+  async append(entry: Omit<SyncFeedEntry, "feedPosition">): Promise<SyncFeedEntry> {
+    const nextFeedPosition = this.nextFeedPosition(entry.accountID);
+    const storedEntry: SyncFeedEntry = {
+      ...entry,
+      feedPosition: nextFeedPosition,
+    };
+    this.entries.push(storedEntry);
+    return storedEntry;
   }
 
   async listAfter(accountID: string, cursor?: string, limit = 100): Promise<{
@@ -40,5 +47,11 @@ export class InMemorySyncFeedStore implements SyncFeedStore {
       nextCursor: String(lastPosition),
       hasMore: filtered.length > page.length,
     };
+  }
+
+  private nextFeedPosition(accountID: string): number {
+    const next = (this.nextFeedPositionByAccount.get(accountID) ?? 0) + 1;
+    this.nextFeedPositionByAccount.set(accountID, next);
+    return next;
   }
 }

@@ -15,7 +15,7 @@ export interface EnvelopeStore {
 }
 
 export interface SyncFeedStore {
-  append(entry: SyncFeedEntry): Promise<void>;
+  append(entry: Omit<SyncFeedEntry, "feedPosition">): Promise<SyncFeedEntry>;
   listAfter(accountID: string, cursor?: string, limit?: number): Promise<{
     entries: SyncFeedEntry[];
     nextCursor: string;

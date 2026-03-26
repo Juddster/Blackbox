@@ -76,6 +76,12 @@ It covers only:
 - client pushes an edit for a segment now deleted on server
 - backend returns conflict with deleted server envelope
 
+### C2a. Restore Attempt Against Tombstone
+
+- client pushes a non-deletion write against a tombstoned server segment
+- backend still returns `deletedOnServer`
+- backend does not silently recreate the segment
+
 ### C3. User Beats System
 
 - server has only system-authored interpretation change

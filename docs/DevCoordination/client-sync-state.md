@@ -63,6 +63,10 @@ When the user or system changes a local segment:
 
 Do not bump `syncVersion` locally just because the client edited the segment.
 
+If the current conflict is `deletedOnServer`:
+- do not treat ordinary local requeue as an automatic restore path
+- keep the conflict explicit until the product has a deliberate restore action
+
 ## Why This Matters
 
 If the client increments `syncVersion` locally:

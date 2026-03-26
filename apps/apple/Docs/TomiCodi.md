@@ -119,6 +119,10 @@ What to watch:
 - Mar 26, 14:42: Surfaced sync conflict reasons directly in timeline rows so conflicted segments now show user-facing error context instead of only affecting aggregate counters.
 - Mar 26, 14:44: Added local conflict resolution by storing conflicted server envelopes and exposing an `Apply Server Version` action on conflicted timeline rows.
 - Mar 26, 14:55: Added a `Keep Local Version` conflict path that rebases the local pending change onto the server version and requeues it for the next sync pass.
+- Mar 26, 15:04: Expanded the sync section to show concrete conflicted segments and last sync-pass recency so sync state is visible without scanning the whole timeline.
+- Mar 26, 15:04: Added explicit supported-orientation declarations to the app plist and cleared the remaining actionable Xcode warning; only the generic recommended-settings warning remains.
+- Mar 26, 15:07: Made draft promotion boundary-aware so a materially different live activity now rolls the current active system segment to unsettled and starts a new active segment instead of mutating one segment across a real boundary.
+- Mar 26, 15:07: Added explicit draft-save result messaging so the UI now tells the user whether a live draft updated the current segment or started a new one.
 
 ## Tomi Progress Notes
 
@@ -183,6 +187,13 @@ What to watch:
   - Verified the in-memory backend path locally with `node services/backend/demo-smoke.mjs`; push and pull both returned the expected first-slice shapes.
 - Mar 26, 14:44:
   - Added lightweight README stubs for the reserved multi-platform folders so the repo structure is now self-explanatory without depending on prior conversation context.
+- Mar 26, 15:07:
+  - Fixed the backend scaffold's fake feed-position logic so cursors now advance from a true per-account monotonic feed sequence instead of a `syncVersion`/ID-derived placeholder.
+  - Extended the executable backend demo test to cover multi-segment ordering, tombstone pull visibility, and `deletedOnServer` conflict behavior.
+  - Re-ran `npm run test:demo` and `npm run typecheck` in `services/backend`; both passed.
+- Mar 26, 15:08:
+  - Fixed a backend/shared policy gap where a normal retry could have recreated a tombstoned server segment if the base version matched the tombstone.
+  - The backend scaffold and demo path now keep `deletedOnServer` conflicted until the product has an explicit restore action.
 
 ## Tomi Instructions To Codi
 
@@ -193,3 +204,6 @@ What to watch:
 - Mar 26, 13:37:
   - When convenient, also read `Docs/DevCoordination/client-sync-state.md`.
   - That doc is the new source of truth for how local Apple sync bookkeeping should stay separate from shared `SegmentEnvelope.sync` fields.
+- Mar 26, 15:08:
+  - One new conflict-policy constraint from the shared side: do not offer ordinary `Keep Local Version` as an automatic restore path when the conflict reason is `deletedOnServer`.
+  - Tombstoned server segments should stay conflicted until there is an explicit restore action in the product model.

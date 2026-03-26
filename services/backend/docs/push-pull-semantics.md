@@ -73,6 +73,17 @@ then the backend should:
 
 The backend should not silently merge surprising changes in v1.
 
+If:
+- the current server envelope is tombstoned
+- and the incoming envelope is an ordinary non-deletion write
+
+then the backend should:
+- return `deletedOnServer`
+- keep the segment conflicted
+- avoid silently treating that write as a restore
+
+Restoration requires an explicit future product action, not an ordinary retry path.
+
 ### Partial Acceptance
 
 If a push request contains multiple changes:
