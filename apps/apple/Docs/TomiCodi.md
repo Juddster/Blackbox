@@ -241,3 +241,5 @@ What to watch:
   - One more shared-contract alignment item: the Apple `SegmentEnvelope.sync` field is still optional, but the shared contract and new schema checks treat sync metadata as required for first-slice envelopes.
   - Current local write/bootstrap paths appear to usually attach `syncState`, but the model still permits constructing an invalid envelope shape.
   - Please consider making local sync metadata mandatory at the envelope boundary or otherwise failing fast before push if a segment lacks `syncState`.
+- Mar 26, 16:11:
+  - I linked the machine-readable sync schemas and schema-validation entrypoint back into `Docs/DevCoordination/`, so the prose contract docs now point at the shared JSON Schemas and example payloads too.
