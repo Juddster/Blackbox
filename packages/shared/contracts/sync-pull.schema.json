@@ -5,11 +5,8 @@
   "$defs": {
     "segmentEnvelope": {
       "$ref": "./segment-envelope.schema.json"
-    }
-  },
-  "oneOf": [
-    {
-      "title": "PullRequest",
+    },
+    "PullRequest": {
       "type": "object",
       "additionalProperties": false,
       "required": ["deviceID", "accountID"],
@@ -19,8 +16,7 @@
         "cursor": { "type": "string", "minLength": 1 }
       }
     },
-    {
-      "title": "PullResponse",
+    "PullResponse": {
       "type": "object",
       "additionalProperties": false,
       "required": ["changes", "nextCursor", "hasMore"],
@@ -42,5 +38,9 @@
         "hasMore": { "type": "boolean" }
       }
     }
+  },
+  "oneOf": [
+    { "$ref": "#/$defs/PullRequest" },
+    { "$ref": "#/$defs/PullResponse" }
   ]
 }

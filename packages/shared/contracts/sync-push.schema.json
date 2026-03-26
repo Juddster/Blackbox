@@ -44,11 +44,8 @@
           "$ref": "#/$defs/segmentEnvelope"
         }
       }
-    }
-  },
-  "oneOf": [
-    {
-      "title": "PushRequest",
+    },
+    "PushRequest": {
       "type": "object",
       "additionalProperties": false,
       "required": ["deviceID", "accountID", "changes"],
@@ -61,8 +58,7 @@
         }
       }
     },
-    {
-      "title": "PushResponse",
+    "PushResponse": {
       "type": "object",
       "additionalProperties": false,
       "required": ["accepted", "conflicts"],
@@ -77,5 +73,9 @@
         }
       }
     }
+  },
+  "oneOf": [
+    { "$ref": "#/$defs/PushRequest" },
+    { "$ref": "#/$defs/PushResponse" }
   ]
 }

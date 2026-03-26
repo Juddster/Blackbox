@@ -1,0 +1,151 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Blackbox Sync API",
+    "version": "0.1.0",
+    "description": "First sync-slice API for Blackbox semantic segment sync."
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "responses": {
+          "200": {
+            "description": "Backend is reachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["ok"],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/sync/push": {
+      "post": {
+        "summary": "Push segment-envelope changes",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "../../../packages/shared/contracts/sync-push.schema.json#/$defs/PushRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Push processed with accepted and/or conflicted changes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../../../packages/shared/contracts/sync-push.schema.json#/$defs/PushResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request shape",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Semantically invalid envelope payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected backend failure"
+          },
+          "503": {
+            "description": "Temporary service failure"
+          }
+        }
+      }
+    },
+    "/v1/sync/pull": {
+      "post": {
+        "summary": "Pull segment-envelope changes after a cursor",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "../../../packages/shared/contracts/sync-pull.schema.json#/$defs/PullRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pull processed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../../../packages/shared/contracts/sync-pull.schema.json#/$defs/PullResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request shape",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected backend failure"
+          },
+          "503": {
+            "description": "Temporary service failure"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ValidationError": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": ["invalidPayload"]
+          },
+          "message": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

@@ -13,7 +13,8 @@ Read them in this order:
 7. [implementation-checklist.md](/Users/judd/DevProjects/Blackbox/services/backend/docs/implementation-checklist.md)
 8. [http-status-and-errors.md](/Users/judd/DevProjects/Blackbox/services/backend/docs/http-status-and-errors.md)
 9. [../contracts/http-examples.md](/Users/judd/DevProjects/Blackbox/services/backend/contracts/http-examples.md)
-10. [local-demo-server.md](/Users/judd/DevProjects/Blackbox/services/backend/docs/local-demo-server.md)
+10. [../contracts/openapi.json](/Users/judd/DevProjects/Blackbox/services/backend/contracts/openapi.json)
+11. [local-demo-server.md](/Users/judd/DevProjects/Blackbox/services/backend/docs/local-demo-server.md)
 
 Supporting contract source of truth:
 - [sync-contract.md](/Users/judd/DevProjects/Blackbox/Docs/DevCoordination/sync-contract.md)
@@ -30,6 +31,7 @@ The current backend direction is intentionally narrow:
 
 Verification entrypoint:
 - `npm run verify`
+- includes OpenAPI contract parsing alongside the backend and shared-schema checks
 
 Automation:
 - `.github/workflows/backend-verify.yml`

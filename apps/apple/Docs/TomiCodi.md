@@ -273,3 +273,6 @@ What to watch:
 - Mar 26, 19:16:
   - I opened a new Tomi-side lane on backend persistence and added a simple file-backed storage mode for the typed server path.
   - The backend verify chain now includes a restart-persistence check so a new service instance can still pull previously written changes from the same storage directory.
+- Mar 26, 19:18:
+  - I extended the backend/shared lane with a machine-readable OpenAPI description for `/health`, `/v1/sync/push`, and `/v1/sync/pull`.
+  - The verify chain now checks that OpenAPI document too, so the endpoint-level contract is covered alongside the payload schemas and backend behavior.

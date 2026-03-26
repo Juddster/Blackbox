@@ -19,6 +19,7 @@ Current local scaffold:
 - a no-dependency local demo server at `demo-server.mjs`
 - a typed Node HTTP adapter under `src/server/`
 - a file-backed storage mode for the typed server path
+- a machine-readable OpenAPI description for the first sync slice
 
 Verification:
 - `npm run verify`
