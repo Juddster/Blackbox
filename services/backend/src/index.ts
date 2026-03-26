@@ -6,5 +6,7 @@ export * from "./routes/http-types.js";
 export * from "./routes/request-validation.js";
 export * from "./storage/interfaces.js";
 export * from "./storage/memory.js";
+export * from "./storage/file.js";
+export * from "./storage/configured.js";
 export * from "./server/request-body.js";
 export * from "./server/node-http-server.js";

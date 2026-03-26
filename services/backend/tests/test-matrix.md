@@ -124,6 +124,12 @@ It covers only:
 
 - repeated identical accepted push does not create duplicate segment records
 
+### O4. File-Backed Persistence Survives Restart
+
+- a file-backed store accepts a push
+- a new service instance using the same storage directory can still pull that change
+- feed cursor progression remains intact across the restart
+
 ## Apple Integration Cases
 
 ### A1. Accepted Push Updates Local Sync State

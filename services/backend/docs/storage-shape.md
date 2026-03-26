@@ -5,6 +5,10 @@ This document proposes the minimal backend-side persisted shape for the first sy
 It is not tied to a specific database engine.
 Its purpose is to keep backend implementation simple while preserving the semantics already defined in the shared contracts.
 
+Current scaffold note:
+- the repo now includes both in-memory storage and a simple file-backed storage mode for local development
+- the file-backed mode is not the final production storage choice, but it is useful for restart persistence and end-to-end local testing
+
 ## Goal
 
 Store enough to support:

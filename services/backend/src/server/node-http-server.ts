@@ -47,8 +47,10 @@ async function handlePullRequest(
 }
 
 export function createNodeHttpServer(
-  service = new SyncService(new InMemoryEnvelopeStore(), new InMemorySyncFeedStore())
+  envelopeStore: EnvelopeStore = new InMemoryEnvelopeStore(),
+  feedStore: SyncFeedStore = new InMemorySyncFeedStore()
 ) {
+  const service = new SyncService(envelopeStore, feedStore);
   return createServer(async (request, response) => {
     if (request.method === "POST" && request.url === "/v1/sync/push") {
       await handlePushRequest(request, response, service);
@@ -73,5 +75,5 @@ export function createDefaultNodeHttpServer(
   envelopeStore: EnvelopeStore = new InMemoryEnvelopeStore(),
   feedStore: SyncFeedStore = new InMemorySyncFeedStore()
 ) {
-  return createNodeHttpServer(new SyncService(envelopeStore, feedStore));
+  return createNodeHttpServer(envelopeStore, feedStore);
 }

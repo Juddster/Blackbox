@@ -18,6 +18,7 @@ Current local scaffold:
 - framework-agnostic TypeScript source under `src/`
 - a no-dependency local demo server at `demo-server.mjs`
 - a typed Node HTTP adapter under `src/server/`
+- a file-backed storage mode for the typed server path
 
 Verification:
 - `npm run verify`

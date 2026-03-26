@@ -269,3 +269,6 @@ What to watch:
 - Mar 26, 19:07:
   - Re-checked the narrower-label UI issue after Codi's latest Apple changes.
   - `SegmentSnapshot` now preserves a narrower user-selected label for display and exposes the broad visible class as secondary context, so that contract/UI drift is resolved.
+- Mar 26, 19:16:
+  - I opened a new Tomi-side lane on backend persistence and added a simple file-backed storage mode for the typed server path.
+  - The backend verify chain now includes a restart-persistence check so a new service instance can still pull previously written changes from the same storage directory.

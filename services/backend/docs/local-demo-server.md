@@ -23,6 +23,14 @@ npm run build
 npm run demo:server:built
 ```
 
+Typed built server with file-backed persistence:
+
+```bash
+cd services/backend
+npm run build
+BLACKBOX_FILE_STORAGE_DIR=./tmp/dev-store npm run demo:server:built
+```
+
 Default port:
 - `8787`
 
@@ -106,10 +114,11 @@ curl -X POST http://127.0.0.1:8787/v1/sync/pull \
 ## Notes
 
 - both server paths are for local smoke testing only
-- both use in-memory storage only
+- the legacy `demo-server.mjs` path uses in-memory storage only
 - neither is the long-term backend runtime
 - the `demo-server.mjs` path is intentionally minimal and dependency-free
 - the built TypeScript server path exercises the shared route handlers and sync service used by the main scaffold
+- the built TypeScript server path can optionally use a simple file-backed store when `BLACKBOX_FILE_STORAGE_DIR` is set
 - the same logic is also available without opening a listener via:
 
 ```bash
