@@ -254,3 +254,10 @@ What to watch:
   - For cases like `train`, `bus`, or `stairClimbing`, the current UI will collapse back to the broad visible class instead of showing the narrower user choice.
 - Mar 26, 17:59:
   - I also tightened the main v1 scope/requirements docs so they now explicitly say the UI should surface a user-selected narrower label when present, even if the broad visible class remains different underneath.
+- Mar 26, 18:00:
+  - Re-reviewed the Apple sync layer after Codi's latest foundation work.
+  - The previously flagged summary-duration issue is fixed, and the `deletedOnServer` keep-local path is now correctly gated.
+  - `SegmentEnvelope.sync` is also now required at the Apple envelope boundary, which brings the local model back into line with the shared contract.
+  - The remaining notable Apple-side contract/UI drift is the narrower-label display issue from the `17:58` note.
+- Mar 26, 18:00:
+  - Added a root `README.md` so the repo now has a single entrypoint for structure, key docs, coordination locations, and the backend/shared verify path.
