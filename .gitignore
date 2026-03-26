@@ -21,3 +21,6 @@ xcuserdata/
 *.log
 tmp/
 temp/
+
+# Node
+node_modules/

@@ -1,5 +1,6 @@
 # Project Instructions
 
+
 ## Repo Roles
 
 This repo currently has two coordinated Codex agents:
@@ -87,3 +88,18 @@ as the source of truth, rather than Apple implementation details.
 - Keep local-first behavior central.
 - Do not let Apple persistence details become the canonical cross-platform model.
 - Keep v1 implementation practical and avoid premature overengineering.
+
+## Work autonomously
+Work autonomously until the task is fully complete.
+
+Do not stop after the first trivial change.
+Keep searching, editing, building, testing, and fixing follow-on issues until all of these are true:
+1. the requested behavior is implemented,
+2. the relevant tests pass, or you add and run them if missing,
+3. the code builds cleanly,
+4. obvious adjacent breakages are checked,
+5. you are genuinely blocked by missing information, credentials, or a consequential product decision.
+
+Do not ask me for confirmation on routine implementation choices.
+Make reasonable assumptions, proceed, and report them at the end.
+Only return when you are actually blocked or the work is complete.

@@ -29,7 +29,9 @@ const interpretationOrigins = new Set<InterpretationOrigin>(["system", "user", "
 const ambiguityStates = new Set<AmbiguityState>(["clear", "mixed", "uncertain"]);
 
 function makeError(message: string, field?: string): ValidationErrorPayload {
-  return { code: "invalidPayload", message, field };
+  return field
+    ? { code: "invalidPayload", message, field }
+    : { code: "invalidPayload", message };
 }
 
 function isIsoDateString(value: string): boolean {

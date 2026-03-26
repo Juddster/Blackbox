@@ -118,6 +118,7 @@ What to watch:
 - Mar 26, 14:39: Replaced the always-accept no-op sync seam with a demo sync client that exercises mixed accepted/conflicted push outcomes and pulled server envelopes against the local reconciliation path.
 - Mar 26, 14:42: Surfaced sync conflict reasons directly in timeline rows so conflicted segments now show user-facing error context instead of only affecting aggregate counters.
 - Mar 26, 14:44: Added local conflict resolution by storing conflicted server envelopes and exposing an `Apply Server Version` action on conflicted timeline rows.
+- Mar 26, 14:55: Added a `Keep Local Version` conflict path that rebases the local pending change onto the server version and requeues it for the next sync pass.
 
 ## Tomi Progress Notes
 
