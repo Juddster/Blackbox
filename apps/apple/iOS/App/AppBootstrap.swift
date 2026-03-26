@@ -52,6 +52,7 @@ enum AppBootstrap {
             title: "Afternoon commute",
             interpretation: SegmentInterpretationRecord(
                 visibleClass: .vehicle,
+                userSelectedClass: "train",
                 confidence: 0.74,
                 ambiguityState: .mixed,
                 needsReview: true,

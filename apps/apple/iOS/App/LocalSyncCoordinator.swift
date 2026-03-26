@@ -65,9 +65,8 @@ final class LocalSyncCoordinator {
         for segmentID: UUID,
         modelContext: ModelContext
     ) throws {
-        let records = try modelContext.fetch(FetchDescriptor<SegmentRecord>())
         guard
-            let record = records.first(where: { $0.id == segmentID }),
+            let record = try record(for: segmentID, modelContext: modelContext),
             let syncState = record.syncState,
             let data = syncState.pendingServerEnvelopeData
         else {
@@ -79,6 +78,33 @@ final class LocalSyncCoordinator {
             return
         }
         syncState.syncVersion = envelope.sync.syncVersion
+        syncState.disposition = .pendingUpload
+        syncState.lastSyncError = nil
+        syncState.pendingServerEnvelopeData = nil
+        syncState.lastModifiedAt = .now
+        try modelContext.save()
+    }
+
+    func restoreDeletedSegment(
+        for segmentID: UUID,
+        modelContext: ModelContext
+    ) throws {
+        guard
+            let record = try record(for: segmentID, modelContext: modelContext),
+            let syncState = record.syncState,
+            let data = syncState.pendingServerEnvelopeData
+        else {
+            return
+        }
+
+        let envelope = try decoder.decode(SegmentEnvelope.self, from: data)
+        guard envelope.sync.isDeleted else {
+            return
+        }
+
+        record.lifecycleState = .unsettled
+        syncState.syncVersion = envelope.sync.syncVersion
+        syncState.isDeleted = false
         syncState.disposition = .pendingUpload
         syncState.lastSyncError = nil
         syncState.pendingServerEnvelopeData = nil
@@ -106,6 +132,14 @@ final class LocalSyncCoordinator {
         return records.filter {
             $0.syncState?.disposition == disposition
         }
+    }
+
+    private func record(
+        for segmentID: UUID,
+        modelContext: ModelContext
+    ) throws -> SegmentRecord? {
+        let records = try modelContext.fetch(FetchDescriptor<SegmentRecord>())
+        return records.first(where: { $0.id == segmentID })
     }
 
     private func apply(

@@ -84,7 +84,9 @@ struct DemoSegmentSyncClient: SegmentSyncing {
     }
 
     private func conflictReason(for envelope: SegmentEnvelope) -> String? {
-        if envelope.segment.title.localizedCaseInsensitiveContains("commute") {
+        if envelope.segment.title.localizedCaseInsensitiveContains("commute")
+            && envelope.sync.syncVersion < 2
+        {
             return "deletedOnServer"
         }
 

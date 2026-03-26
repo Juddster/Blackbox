@@ -128,6 +128,7 @@ What to watch:
 - Mar 26, 18:34: Added explicit in-progress sync state in the UI so duplicate sync taps are blocked and the sync section shows when a local sync pass is actively running.
 - Mar 26, 18:45: Fixed narrower user-selected label display so labels like `train` or `bus` now show in the timeline while still preserving the broader visible class underneath.
 - Mar 26, 19:03: Hid deleted/tombstoned segments from the main user timeline and segment count while still keeping them in local sync state for conflict and deletion handling.
+- Mar 26, 19:13: Added an explicit `Restore Segment` tombstone-resolution path and updated the seed commute data to demonstrate narrower labels like `train` in the timeline.
 
 ## Tomi Progress Notes
 

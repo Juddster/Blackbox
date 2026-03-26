@@ -15,6 +15,7 @@ struct SegmentSnapshot: Identifiable {
     let syncErrorMessage: String?
     let canApplyServerVersion: Bool
     let canKeepLocalVersion: Bool
+    let canRestoreDeletedSegment: Bool
 
     init(record: SegmentRecord) {
         let selectedClass = record.interpretation?.userSelectedClass.flatMap(ActivityClass.init(rawValue:))
@@ -48,5 +49,7 @@ struct SegmentSnapshot: Identifiable {
         canApplyServerVersion = record.syncState?.pendingServerEnvelopeData != nil
         canKeepLocalVersion = record.syncState?.pendingServerEnvelopeData != nil
             && syncErrorMessage != "deletedOnServer"
+        canRestoreDeletedSegment = record.syncState?.pendingServerEnvelopeData != nil
+            && syncErrorMessage == "deletedOnServer"
     }
 }

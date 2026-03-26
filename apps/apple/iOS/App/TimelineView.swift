@@ -73,6 +73,9 @@ struct TimelineView: View {
                                     : nil,
                                 onKeepLocalVersion: segment.canKeepLocalVersion
                                     ? { await keepLocalVersion(for: segment.id) }
+                                    : nil,
+                                onRestoreDeletedSegment: segment.canRestoreDeletedSegment
+                                    ? { await restoreDeletedSegment(for: segment.id) }
                                     : nil
                             )
                         }
@@ -212,6 +215,20 @@ struct TimelineView: View {
             refreshSyncActivity()
         } catch {
             syncActivity.lastPushMessage = "Could not requeue the local version for that conflict."
+        }
+    }
+
+    private func restoreDeletedSegment(for segmentID: UUID) async {
+        do {
+            let coordinator = LocalSyncCoordinator()
+            try coordinator.restoreDeletedSegment(
+                for: segmentID,
+                modelContext: modelContext
+            )
+            syncActivity.lastPushMessage = "Requeued the deleted segment as an explicit restore."
+            refreshSyncActivity()
+        } catch {
+            syncActivity.lastPushMessage = "Could not restore that deleted segment."
         }
     }
 }

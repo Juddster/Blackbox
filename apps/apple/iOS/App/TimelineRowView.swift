@@ -4,6 +4,7 @@ struct TimelineRowView: View {
     let segment: SegmentSnapshot
     let onApplyServerVersion: (() async -> Void)?
     let onKeepLocalVersion: (() async -> Void)?
+    let onRestoreDeletedSegment: (() async -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -75,6 +76,15 @@ struct TimelineRowView: View {
                         Button("Keep Local Version") {
                             Task {
                                 await onKeepLocalVersion()
+                            }
+                        }
+                        .font(.caption)
+                    }
+
+                    if segment.canRestoreDeletedSegment, let onRestoreDeletedSegment {
+                        Button("Restore Segment") {
+                            Task {
+                                await onRestoreDeletedSegment()
                             }
                         }
                         .font(.caption)
