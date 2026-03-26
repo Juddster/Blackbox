@@ -132,6 +132,7 @@ What to watch:
 - Mar 26, 19:15: Auto-ran the local sync pass after draft saves and restore-or-keep-local conflict actions so those flows now complete without an extra manual sync tap.
 - Mar 26, 19:17: Added a local tombstone delete action on timeline rows so segments can be hidden immediately and synced as deletions instead of being hard-removed from storage.
 - Mar 26, 19:19: Added a user-editable narrower activity-label flow so timeline rows can now be corrected to labels like `train` or `bus` and immediately re-synced.
+- Mar 26, 19:46: Guarded background-location APIs behind the actual `UIBackgroundModes/location` config so the iPhone build no longer crashes just from enabling location capture before the app is provisioned for background location updates.
 
 ## Tomi Progress Notes
 

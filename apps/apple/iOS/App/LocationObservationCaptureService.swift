@@ -6,6 +6,7 @@ final class LocationObservationCaptureService: ObservationCapturing {
     private let recorder: ObservationIngesting
     private let locationManager: CLLocationManager
     private let delegateProxy: LocationObservationDelegateProxy
+    private let supportsBackgroundLocation: Bool
 
     private(set) var isCapturing: Bool = false
     private var authorizationContinuation: CheckedContinuation<CLAuthorizationStatus, Never>?
@@ -14,6 +15,7 @@ final class LocationObservationCaptureService: ObservationCapturing {
         self.recorder = recorder
         self.locationManager = CLLocationManager()
         self.delegateProxy = LocationObservationDelegateProxy()
+        self.supportsBackgroundLocation = Self.supportsBackgroundLocationUpdates()
 
         delegateProxy.onAuthorizationChange = { [weak self] status in
             self?.handleAuthorizationChange(status)
@@ -30,8 +32,10 @@ final class LocationObservationCaptureService: ObservationCapturing {
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.activityType = .fitness
         locationManager.pausesLocationUpdatesAutomatically = false
-        locationManager.allowsBackgroundLocationUpdates = true
-        locationManager.showsBackgroundLocationIndicator = true
+        if supportsBackgroundLocation {
+            locationManager.allowsBackgroundLocationUpdates = true
+            locationManager.showsBackgroundLocationIndicator = true
+        }
     }
 
     func start() async throws {
@@ -46,7 +50,9 @@ final class LocationObservationCaptureService: ObservationCapturing {
 
         isCapturing = true
         locationManager.startUpdatingLocation()
-        locationManager.startMonitoringSignificantLocationChanges()
+        if supportsBackgroundLocation {
+            locationManager.startMonitoringSignificantLocationChanges()
+        }
     }
 
     func stop() {
@@ -56,7 +62,9 @@ final class LocationObservationCaptureService: ObservationCapturing {
 
         isCapturing = false
         locationManager.stopUpdatingLocation()
-        locationManager.stopMonitoringSignificantLocationChanges()
+        if supportsBackgroundLocation {
+            locationManager.stopMonitoringSignificantLocationChanges()
+        }
     }
 
     private func ensureAuthorization() async -> CLAuthorizationStatus {
@@ -135,5 +143,13 @@ final class LocationObservationCaptureService: ObservationCapturing {
         }
 
         return nil
+    }
+
+    private static func supportsBackgroundLocationUpdates() -> Bool {
+        guard let backgroundModes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String] else {
+            return false
+        }
+
+        return backgroundModes.contains("location")
     }
 }
