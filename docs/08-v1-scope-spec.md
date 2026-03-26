@@ -107,6 +107,7 @@ Updated conclusion:
 - Hiking should be tentatively in scope as a visible v1 class when confidence is good enough.
 - It should not force the classifier to overcommit; walking remains the safer fallback when signals are ambiguous.
 - Subclasses such as driving, motorcycle, train, and similar should remain out of scope for automatic visible inference, but should be available for user-driven manual reclassification if the user cares.
+- When the user chooses one of those narrower labels, the UI should surface that user-selected label rather than collapsing everything back to the broad visible class.
 
 
 ### 4. Segment Semantics
@@ -143,6 +144,7 @@ In scope:
 - delete
 - add note/tag
 - add segment to collection
+- show a user-selected narrower label when one exists
 
 Not required in v1:
 - point-by-point route editing

@@ -252,3 +252,5 @@ What to watch:
   - I added a machine-checked shared-contract example for a narrower user-selected label: visible class `vehicle` with `userSelectedClass = "train"`.
   - That surfaced a current Apple UI drift: `SegmentSnapshot` still only shows the user-selected label if it parses back into the broad `ActivityClass` enum.
   - For cases like `train`, `bus`, or `stairClimbing`, the current UI will collapse back to the broad visible class instead of showing the narrower user choice.
+- Mar 26, 17:59:
+  - I also tightened the main v1 scope/requirements docs so they now explicitly say the UI should surface a user-selected narrower label when present, even if the broad visible class remains different underneath.

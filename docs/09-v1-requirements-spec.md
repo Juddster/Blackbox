@@ -193,6 +193,7 @@ Provide a timeline-first experience that feels like a useful semantic record of 
 - The timeline must group content by day.
 - The timeline must display segments, collections, and important overlays/events.
 - The timeline must visually tag low-confidence and needs-review items.
+- When a segment has a user-selected narrower label, the timeline should surface that label instead of showing only the broad automatic visible class.
 - The timeline must support filtering by:
   - activity type
   - review state
@@ -229,6 +230,7 @@ Provide enough context for the user to understand and correct a segment.
 - Segment detail must show:
   - map/route when relevant
   - visible class
+  - user-selected narrower label when present
   - summary stats
   - confidence/quality context when relevant
   - pause information when available
@@ -268,6 +270,7 @@ Let the user correct meaning without requiring raw-point editing.
   - add notes/tags
   - add a segment to a collection
 - Reclassification must support user-chosen labels beyond the automatic visible inference set.
+- If a user-chosen label is narrower than the broad visible class, the effective displayed label should follow the user choice while the broad visible class can remain available underneath.
 - Segment summaries must remain coherent after edits.
 
 **JF Note**
