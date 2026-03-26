@@ -8,6 +8,9 @@ Current scope:
 - pull request/response
 - canonical valid example payloads
 
+Notable covered case:
+- narrower user-selected labels that do not belong to the broad visible-class enum, such as `train` under visible class `vehicle`
+
 Source of truth alignment:
 - `Docs/DevCoordination/api-shapes.md`
 - `Docs/DevCoordination/sync-contract.md`

@@ -1,0 +1,50 @@
+{
+  "deviceID": "iphone-1",
+  "accountID": "account-123",
+  "changes": [
+    {
+      "baseSyncVersion": 3,
+      "segmentEnvelope": {
+        "segment": {
+          "id": "segment-vehicle-1",
+          "startTime": "2026-03-26T10:00:00Z",
+          "endTime": "2026-03-26T10:35:00Z",
+          "lifecycleState": "settled",
+          "originType": "system",
+          "primaryDeviceHint": "iPhone",
+          "title": "Commute",
+          "createdAt": "2026-03-26T10:36:00Z",
+          "updatedAt": "2026-03-26T10:40:00Z"
+        },
+        "interpretation": {
+          "id": "segment-vehicle-1-interpretation",
+          "segmentID": "segment-vehicle-1",
+          "visibleClass": "vehicle",
+          "userSelectedClass": "train",
+          "confidence": 0.76,
+          "ambiguityState": "clear",
+          "needsReview": false,
+          "interpretationOrigin": "user",
+          "updatedAt": "2026-03-26T10:40:00Z"
+        },
+        "summary": {
+          "id": "segment-vehicle-1-summary",
+          "segmentID": "segment-vehicle-1",
+          "durationSeconds": 2100,
+          "distanceMeters": 14200,
+          "elevationGainMeters": 0,
+          "averageSpeedMetersPerSecond": 6.76,
+          "maxSpeedMetersPerSecond": 18.2,
+          "pauseCount": 0,
+          "updatedAt": "2026-03-26T10:40:00Z"
+        },
+        "sync": {
+          "lastModifiedByDeviceID": "iphone-1",
+          "lastModifiedAt": "2026-03-26T10:40:00Z",
+          "syncVersion": 3,
+          "isDeleted": false
+        }
+      }
+    }
+  ]
+}

@@ -248,3 +248,7 @@ What to watch:
 - Mar 26, 16:12:
   - Added a GitHub Actions workflow for the Tomi/shared lane so backend verify now runs automatically on pushes and PRs that touch backend, shared contract schemas, or coordination docs.
   - Re-ran the same local verify chain after wiring CI; it still passes cleanly.
+- Mar 26, 17:58:
+  - I added a machine-checked shared-contract example for a narrower user-selected label: visible class `vehicle` with `userSelectedClass = "train"`.
+  - That surfaced a current Apple UI drift: `SegmentSnapshot` still only shows the user-selected label if it parses back into the broad `ActivityClass` enum.
+  - For cases like `train`, `bus`, or `stairClimbing`, the current UI will collapse back to the broad visible class instead of showing the narrower user choice.

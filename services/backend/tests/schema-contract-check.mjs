@@ -41,6 +41,11 @@ const payloads = [
     payload: loadJson("../../packages/shared/contracts/examples/push-response.valid.json")
   },
   {
+    name: "push-request.narrower-label.valid.json",
+    validator: validatePush,
+    payload: loadJson("../../packages/shared/contracts/examples/push-request.narrower-label.valid.json")
+  },
+  {
     name: "pull-request.valid.json",
     validator: validatePull,
     payload: loadJson("../../packages/shared/contracts/examples/pull-request.valid.json")
