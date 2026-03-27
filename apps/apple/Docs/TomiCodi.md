@@ -293,3 +293,5 @@ What to watch:
 
 - Mar 27, 19:10:
   - Added the first Apple manual segment-marking flow on top of stored observations, so timeline users can now create a real user-owned segment with a chosen time window, broad class, optional narrower label, and optional known distance without mutating the raw observation stream.
+- Mar 27, 19:18:
+  - Added a first Apple segment-evidence inspection flow: tapping a timeline row now shows the raw local observations captured inside that marked window, including per-source counts and replayable observation details for labeling/classifier iteration.

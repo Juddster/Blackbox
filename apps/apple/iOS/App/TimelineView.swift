@@ -9,6 +9,7 @@ struct TimelineView: View {
     @State private var syncActivity = SyncActivityStore()
     @State private var liveDraftStatusMessage: String?
     @State private var editingSegment: SegmentSnapshot?
+    @State private var inspectingSegment: SegmentSnapshot?
     @State private var editedActivityLabel = ""
     @State private var isPresentingManualSegmentSheet = false
     @State private var manualSegmentStartTime = Date.now.addingTimeInterval(-30 * 60)
@@ -93,6 +94,10 @@ struct TimelineView: View {
                                     ? { await restoreDeletedSegment(for: segment.id) }
                                     : nil
                             )
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                inspectingSegment = segment
+                            }
                             .swipeActions(edge: .leading, allowsFullSwipe: false) {
                                 Button {
                                     editingSegment = segment
@@ -245,6 +250,85 @@ struct TimelineView: View {
                             }
                         }
                         .disabled(manualSegmentEndTime <= manualSegmentStartTime)
+                    }
+                }
+            }
+        }
+        .sheet(item: $inspectingSegment) { segment in
+            NavigationStack {
+                List {
+                    Section("Segment") {
+                        LabeledContent("Title", value: segment.title)
+                        LabeledContent("Activity", value: segment.activityLabel)
+                        if let visibleClassLabel = segment.visibleClassLabel {
+                            LabeledContent("Broad Class", value: visibleClassLabel)
+                        }
+                        LabeledContent(
+                            "Window",
+                            value: "\(segment.startTime.formatted(date: .abbreviated, time: .shortened)) - \(segment.endTime.formatted(date: .omitted, time: .shortened))"
+                        )
+                        LabeledContent(
+                            "Duration",
+                            value: Duration.seconds(segment.durationSeconds).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated))
+                        )
+                        if let distanceMeters = segment.distanceMeters {
+                            LabeledContent(
+                                "Distance",
+                                value: Measurement(value: distanceMeters, unit: UnitLength.meters)
+                                    .formatted(.measurement(width: .abbreviated, usage: .road))
+                            )
+                        }
+                    }
+
+                    Section("Recorded Evidence") {
+                        ForEach(observationSummaryRows(for: segment), id: \.label) { row in
+                            LabeledContent(row.label, value: "\(row.count)")
+                        }
+
+                        if segmentObservations(for: segment).isEmpty {
+                            Text("No local observations fall inside this marked time window yet.")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Section("Observations In Window") {
+                        let snapshots = observationSnapshots(for: segment)
+                        if snapshots.isEmpty {
+                            Text("No local observations available for replay in this window.")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(snapshots) { observation in
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack {
+                                        Text(observation.title)
+                                            .font(.subheadline.weight(.semibold))
+                                        Spacer()
+                                        Text(observation.timestamp.formatted(date: .omitted, time: .standard))
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+
+                                    Text(observation.detail)
+                                        .font(.subheadline)
+
+                                    if let qualityHint = observation.qualityHint {
+                                        Text(qualityHint)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                .padding(.vertical, 4)
+                            }
+                        }
+                    }
+                }
+                .navigationTitle("Segment Evidence")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") {
+                            inspectingSegment = nil
+                        }
                     }
                 }
             }
@@ -476,5 +560,44 @@ struct TimelineView: View {
         }
 
         return Double(trimmed.replacingOccurrences(of: ",", with: ""))
+    }
+
+    private func segmentObservations(for segment: SegmentSnapshot) -> [ObservationRecord] {
+        observations.filter { observation in
+            observation.timestamp >= segment.startTime && observation.timestamp <= segment.endTime
+        }
+    }
+
+    private func observationSnapshots(for segment: SegmentSnapshot) -> [ObservationSnapshot] {
+        ObservationProjection.recent(from: segmentObservations(for: segment), limit: 50)
+    }
+
+    private func observationSummaryRows(for segment: SegmentSnapshot) -> [(label: String, count: Int)] {
+        let groupedCounts = Dictionary(grouping: segmentObservations(for: segment), by: \.sourceType)
+            .map { sourceType, observations in
+                (label: sourceTypeLabel(sourceType), count: observations.count)
+            }
+            .sorted { $0.label < $1.label }
+
+        return groupedCounts.isEmpty ? [("Total", 0)] : [("Total", segmentObservations(for: segment).count)] + groupedCounts
+    }
+
+    private func sourceTypeLabel(_ sourceType: ObservationSourceType) -> String {
+        switch sourceType {
+        case .location:
+            "Location"
+        case .motion:
+            "Motion"
+        case .pedometer:
+            "Pedometer"
+        case .heartRate:
+            "Heart Rate"
+        case .deviceState:
+            "Device State"
+        case .connectivity:
+            "Connectivity"
+        case .other:
+            "Other"
+        }
     }
 }
