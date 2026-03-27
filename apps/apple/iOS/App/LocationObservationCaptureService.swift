@@ -18,6 +18,7 @@ final class LocationObservationCaptureService: ObservationCapturing {
     private(set) var isCapturing: Bool = false
     private var authorizationContinuation: CheckedContinuation<CLAuthorizationStatus, Never>?
     private var lastRecordedLocation: CLLocation?
+    private var isInBackgroundMode = false
 
     init(recorder: ObservationIngesting) {
         self.recorder = recorder
@@ -58,11 +59,9 @@ final class LocationObservationCaptureService: ObservationCapturing {
         }
 
         isCapturing = true
+        isInBackgroundMode = false
         lastRecordedLocation = nil
-        locationManager.startUpdatingLocation()
-        if supportsBackgroundLocation {
-            locationManager.startMonitoringSignificantLocationChanges()
-        }
+        startLocationFeeds()
     }
 
     func stop() {
@@ -71,10 +70,26 @@ final class LocationObservationCaptureService: ObservationCapturing {
         }
 
         isCapturing = false
-        locationManager.stopUpdatingLocation()
-        if supportsBackgroundLocation {
-            locationManager.stopMonitoringSignificantLocationChanges()
+        isInBackgroundMode = false
+        stopLocationFeeds()
+    }
+
+    func enterBackgroundMode() {
+        guard isCapturing else {
+            return
         }
+
+        isInBackgroundMode = true
+        reconfigureLocationFeeds()
+    }
+
+    func enterForegroundMode() {
+        guard isCapturing else {
+            return
+        }
+
+        isInBackgroundMode = false
+        reconfigureLocationFeeds()
     }
 
     private func ensureAuthorization() async -> CLAuthorizationStatus {
@@ -199,6 +214,28 @@ final class LocationObservationCaptureService: ObservationCapturing {
 
     private func sanitizedSpeed(_ speed: CLLocationSpeed) -> CLLocationSpeed {
         max(speed, 0)
+    }
+
+    private func reconfigureLocationFeeds() {
+        stopLocationFeeds()
+        startLocationFeeds()
+    }
+
+    private func startLocationFeeds() {
+        if isInBackgroundMode == false {
+            locationManager.startUpdatingLocation()
+        }
+
+        if supportsBackgroundLocation {
+            locationManager.startMonitoringSignificantLocationChanges()
+        }
+    }
+
+    private func stopLocationFeeds() {
+        locationManager.stopUpdatingLocation()
+        if supportsBackgroundLocation {
+            locationManager.stopMonitoringSignificantLocationChanges()
+        }
     }
 
     private static func supportsBackgroundLocationUpdates() -> Bool {

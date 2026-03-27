@@ -1,3 +1,4 @@
+import CoreLocation
 import Foundation
 import Observation
 import SwiftData
@@ -37,7 +38,9 @@ final class CaptureControlStore {
     }
 
     func handleDidEnterBackground() {
-        let affectedSources = expectedInterruptedSources()
+        locationCaptureService?.enterBackgroundMode()
+
+        let affectedSources = expectedSourcesForBackgroundAssessment()
         guard affectedSources.isEmpty == false else {
             clearPendingGap()
             return
@@ -51,6 +54,8 @@ final class CaptureControlStore {
         defer {
             clearPendingGap()
         }
+
+        locationCaptureService?.enterForegroundMode()
 
         let startInterval = defaults.double(forKey: Keys.expectedCaptureGapStart)
         guard startInterval > 0 else {
@@ -77,13 +82,17 @@ final class CaptureControlStore {
             to: endTime,
             expectedSources: affectedSources
         )
-        let unresolvedSources = affectedSources.filter { recoveredSources.contains($0) == false }
+        let blockingReasons = backgroundBlockingReasons(for: affectedSources)
+        guard blockingReasons.isEmpty == false else {
+            gapNotice = nil
+            return
+        }
 
         gapNotice = CaptureGapNotice(
             startTime: startTime,
             endTime: endTime,
-            affectedSources: unresolvedSources,
-            recoveredSources: recoveredSources
+            recoveredSources: recoveredSources,
+            blockingReasons: blockingReasons
         )
     }
 
@@ -209,10 +218,10 @@ final class CaptureControlStore {
         statusMessage = "Pedometer capture stopped."
     }
 
-    private func expectedInterruptedSources() -> [CaptureServiceKind] {
+    private func expectedSourcesForBackgroundAssessment() -> [CaptureServiceKind] {
         var sources = [CaptureServiceKind]()
 
-        if defaults.bool(forKey: Keys.locationEnabled), supportsBackgroundLocationUpdates() == false {
+        if defaults.bool(forKey: Keys.locationEnabled) {
             sources.append(.location)
         }
 
@@ -225,6 +234,28 @@ final class CaptureControlStore {
         }
 
         return sources
+    }
+
+    private func backgroundBlockingReasons(for sources: [CaptureServiceKind]) -> [String] {
+        var reasons = [String]()
+
+        if sources.contains(.location) {
+            let authorizationStatus = CLLocationManager().authorizationStatus
+
+            if supportsBackgroundLocationUpdates() == false {
+                reasons.append("Background location is not enabled for this build.")
+            } else if authorizationStatus == .authorizedWhenInUse {
+                reasons.append("Location access is set to While Using App, which prevents background location collection.")
+            } else if authorizationStatus == .denied {
+                reasons.append("Location access is denied in Settings.")
+            } else if authorizationStatus == .restricted {
+                reasons.append("Location access is restricted on this device.")
+            } else if authorizationStatus == .notDetermined {
+                reasons.append("Background location permission has not been granted yet.")
+            }
+        }
+
+        return reasons
     }
 
     private func recoverQueryableSources(
