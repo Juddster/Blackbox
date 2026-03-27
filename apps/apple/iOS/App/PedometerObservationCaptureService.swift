@@ -40,19 +40,50 @@ final class PedometerObservationCaptureService: ObservationCapturing {
         pedometer.stopUpdates()
     }
 
+    func backfill(from startDate: Date, to endDate: Date) async -> Bool {
+        guard CMPedometer.isStepCountingAvailable(), endDate > startDate else {
+            return false
+        }
+
+        return await withCheckedContinuation { continuation in
+            pedometer.queryPedometerData(from: startDate, to: endDate) { [weak self] data, error in
+                guard let self, let data, error == nil else {
+                    continuation.resume(returning: false)
+                    return
+                }
+
+                let input = ObservationInput(
+                    timestamp: data.endDate,
+                    sourceDevice: .iPhone,
+                    sourceType: .pedometer,
+                    payload: self.payload(for: data, startDate: startDate, endDate: endDate)
+                )
+
+                do {
+                    try self.recorder.record(input)
+                    continuation.resume(returning: true)
+                } catch {
+                    continuation.resume(returning: false)
+                }
+            }
+        }
+    }
+
     private func record(data: CMPedometerData) throws {
         let input = ObservationInput(
             timestamp: data.endDate,
             sourceDevice: .iPhone,
             sourceType: .pedometer,
-            payload: payload(for: data)
+            payload: payload(for: data, startDate: data.startDate, endDate: data.endDate)
         )
 
         try recorder.record(input)
     }
 
-    private func payload(for data: CMPedometerData) -> String {
+    private func payload(for data: CMPedometerData, startDate: Date, endDate: Date) -> String {
         var components = [
+            "start=\(startDate.timeIntervalSince1970)",
+            "end=\(endDate.timeIntervalSince1970)",
             "steps=\(data.numberOfSteps)",
         ]
 

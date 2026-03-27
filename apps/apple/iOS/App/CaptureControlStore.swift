@@ -47,7 +47,7 @@ final class CaptureControlStore {
         defaults.set(affectedSources.map(\.rawValue), forKey: Keys.expectedCaptureGapKinds)
     }
 
-    func handleDidBecomeActive() {
+    func handleDidBecomeActive() async {
         defer {
             clearPendingGap()
         }
@@ -72,10 +72,18 @@ final class CaptureControlStore {
             return
         }
 
+        let recoveredSources = await recoverQueryableSources(
+            from: startTime,
+            to: endTime,
+            expectedSources: affectedSources
+        )
+        let unresolvedSources = affectedSources.filter { recoveredSources.contains($0) == false }
+
         gapNotice = CaptureGapNotice(
             startTime: startTime,
             endTime: endTime,
-            affectedSources: affectedSources
+            affectedSources: unresolvedSources,
+            recoveredSources: recoveredSources
         )
     }
 
@@ -217,6 +225,28 @@ final class CaptureControlStore {
         }
 
         return sources
+    }
+
+    private func recoverQueryableSources(
+        from startTime: Date,
+        to endTime: Date,
+        expectedSources: [CaptureServiceKind]
+    ) async -> [CaptureServiceKind] {
+        var recoveredSources = [CaptureServiceKind]()
+
+        if expectedSources.contains(.motionActivity),
+           let motionCaptureService,
+           let _ = await motionCaptureService.backfill(from: startTime, to: endTime) {
+            recoveredSources.append(.motionActivity)
+        }
+
+        if expectedSources.contains(.pedometer),
+           let pedometerCaptureService,
+           await pedometerCaptureService.backfill(from: startTime, to: endTime) {
+            recoveredSources.append(.pedometer)
+        }
+
+        return recoveredSources
     }
 
     private func supportsBackgroundLocationUpdates() -> Bool {

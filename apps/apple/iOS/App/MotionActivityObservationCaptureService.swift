@@ -40,6 +40,45 @@ final class MotionActivityObservationCaptureService: ObservationCapturing {
         activityManager.stopActivityUpdates()
     }
 
+    func backfill(from startDate: Date, to endDate: Date) async -> Int? {
+        guard CMMotionActivityManager.isActivityAvailable(), endDate > startDate else {
+            return nil
+        }
+
+        return await withCheckedContinuation { continuation in
+            activityManager.queryActivityStarting(from: startDate, to: endDate, to: .main) { [weak self] activities, error in
+                guard let self else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                guard error == nil else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                let inputs = (activities ?? []).map { activity in
+                    ObservationInput(
+                        timestamp: activity.startDate,
+                        sourceDevice: .iPhone,
+                        sourceType: .motion,
+                        payload: self.activityPayload(for: activity),
+                        qualityHint: self.confidenceHint(for: activity.confidence)
+                    )
+                }
+
+                do {
+                    if inputs.isEmpty == false {
+                        try self.recorder.record(inputs)
+                    }
+                    continuation.resume(returning: inputs.count)
+                } catch {
+                    continuation.resume(returning: nil)
+                }
+            }
+        }
+    }
+
     private func record(activity: CMMotionActivity) throws {
         let input = ObservationInput(
             timestamp: activity.startDate,

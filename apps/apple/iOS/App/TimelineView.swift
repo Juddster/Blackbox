@@ -116,7 +116,7 @@ struct TimelineView: View {
         }
         .task {
             configureCapture()
-            captureControl.handleDidBecomeActive()
+            await captureControl.handleDidBecomeActive()
             await resumeCaptureIfNeeded()
             backgroundCollectionNotificationCoordinator.cancelPendingNotification()
             refreshCaptureReadiness()
@@ -126,7 +126,7 @@ struct TimelineView: View {
             if scenePhase == .active {
                 Task {
                     backgroundCollectionNotificationCoordinator.cancelPendingNotification()
-                    captureControl.handleDidBecomeActive()
+                    await captureControl.handleDidBecomeActive()
                     await resumeCaptureIfNeeded()
                 }
             } else if scenePhase == .background {
