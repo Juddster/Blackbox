@@ -134,6 +134,7 @@ What to watch:
 - Mar 26, 19:19: Added a user-editable narrower activity-label flow so timeline rows can now be corrected to labels like `train` or `bus` and immediately re-synced.
 - Mar 26, 19:46: Guarded background-location APIs behind the actual `UIBackgroundModes/location` config so the iPhone build no longer crashes just from enabling location capture before the app is provisioned for background location updates.
 - Mar 27, 14:05: Removed automatic demo seeding from normal app launches, purged old seed records from existing stores, and replaced the sticky background-warning banner with a scheduled local notification when capture is enabled and the app moves to the background.
+- Mar 27, 14:26: Added explicit capture-gap reporting on re-entry so the app now tells the user the exact likely-missed time window and affected sources when capture was expected while the app was inactive.
 
 ## Tomi Progress Notes
 

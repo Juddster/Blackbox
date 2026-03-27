@@ -5,6 +5,7 @@ struct CaptureControlSection: View {
     let isMotionCapturing: Bool
     let isPedometerCapturing: Bool
     let statusMessage: String?
+    let gapNotice: CaptureGapNotice?
     let onStartLocation: () async -> Void
     let onStopLocation: () -> Void
     let onStartMotion: () async -> Void
@@ -39,6 +40,12 @@ struct CaptureControlSection: View {
                 Text(statusMessage)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+
+            if let gapNotice {
+                Text(gapNotice.message)
+                    .font(.caption)
+                    .foregroundStyle(.orange)
             }
         }
     }

@@ -42,6 +42,7 @@ struct TimelineView: View {
                     isMotionCapturing: captureControl.isMotionCapturing,
                     isPedometerCapturing: captureControl.isPedometerCapturing,
                     statusMessage: captureControl.statusMessage,
+                    gapNotice: captureControl.gapNotice,
                     onStartLocation: startLocationCapture,
                     onStopLocation: stopLocationCapture,
                     onStartMotion: startMotionCapture,
@@ -115,6 +116,7 @@ struct TimelineView: View {
         }
         .task {
             configureCapture()
+            captureControl.handleDidBecomeActive()
             await resumeCaptureIfNeeded()
             backgroundCollectionNotificationCoordinator.cancelPendingNotification()
             refreshCaptureReadiness()
@@ -124,9 +126,11 @@ struct TimelineView: View {
             if scenePhase == .active {
                 Task {
                     backgroundCollectionNotificationCoordinator.cancelPendingNotification()
+                    captureControl.handleDidBecomeActive()
                     await resumeCaptureIfNeeded()
                 }
             } else if scenePhase == .background {
+                captureControl.handleDidEnterBackground()
                 Task {
                     await backgroundCollectionNotificationCoordinator.scheduleIfNeeded(
                         captureIsEnabled: captureControl.hasCaptureIntentEnabled

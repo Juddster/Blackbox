@@ -9,6 +9,7 @@ final class CaptureControlStore {
     var isMotionCapturing = false
     var isPedometerCapturing = false
     var statusMessage: String?
+    var gapNotice: CaptureGapNotice?
 
     private var locationCaptureService: LocationObservationCaptureService?
     private var motionCaptureService: MotionActivityObservationCaptureService?
@@ -21,6 +22,8 @@ final class CaptureControlStore {
         static let locationEnabled = "capture.location.enabled"
         static let motionEnabled = "capture.motion.enabled"
         static let pedometerEnabled = "capture.pedometer.enabled"
+        static let expectedCaptureGapStart = "capture.expected-gap.start"
+        static let expectedCaptureGapKinds = "capture.expected-gap.kinds"
     }
 
     init(defaults: UserDefaults = .standard) {
@@ -31,6 +34,49 @@ final class CaptureControlStore {
         defaults.bool(forKey: Keys.locationEnabled)
             || defaults.bool(forKey: Keys.motionEnabled)
             || defaults.bool(forKey: Keys.pedometerEnabled)
+    }
+
+    func handleDidEnterBackground() {
+        let affectedSources = expectedInterruptedSources()
+        guard affectedSources.isEmpty == false else {
+            clearPendingGap()
+            return
+        }
+
+        defaults.set(Date.now.timeIntervalSince1970, forKey: Keys.expectedCaptureGapStart)
+        defaults.set(affectedSources.map(\.rawValue), forKey: Keys.expectedCaptureGapKinds)
+    }
+
+    func handleDidBecomeActive() {
+        defer {
+            clearPendingGap()
+        }
+
+        let startInterval = defaults.double(forKey: Keys.expectedCaptureGapStart)
+        guard startInterval > 0 else {
+            gapNotice = nil
+            return
+        }
+
+        let kindValues = defaults.stringArray(forKey: Keys.expectedCaptureGapKinds) ?? []
+        let affectedSources = kindValues.compactMap(CaptureServiceKind.init(rawValue:))
+        guard affectedSources.isEmpty == false else {
+            gapNotice = nil
+            return
+        }
+
+        let startTime = Date(timeIntervalSince1970: startInterval)
+        let endTime = Date.now
+        guard endTime > startTime else {
+            gapNotice = nil
+            return
+        }
+
+        gapNotice = CaptureGapNotice(
+            startTime: startTime,
+            endTime: endTime,
+            affectedSources: affectedSources
+        )
     }
 
     func configure(modelContext: ModelContext) {
@@ -153,5 +199,36 @@ final class CaptureControlStore {
         isPedometerCapturing = false
         defaults.set(false, forKey: Keys.pedometerEnabled)
         statusMessage = "Pedometer capture stopped."
+    }
+
+    private func expectedInterruptedSources() -> [CaptureServiceKind] {
+        var sources = [CaptureServiceKind]()
+
+        if defaults.bool(forKey: Keys.locationEnabled), supportsBackgroundLocationUpdates() == false {
+            sources.append(.location)
+        }
+
+        if defaults.bool(forKey: Keys.motionEnabled) {
+            sources.append(.motionActivity)
+        }
+
+        if defaults.bool(forKey: Keys.pedometerEnabled) {
+            sources.append(.pedometer)
+        }
+
+        return sources
+    }
+
+    private func supportsBackgroundLocationUpdates() -> Bool {
+        guard let backgroundModes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String] else {
+            return false
+        }
+
+        return backgroundModes.contains("location")
+    }
+
+    private func clearPendingGap() {
+        defaults.removeObject(forKey: Keys.expectedCaptureGapStart)
+        defaults.removeObject(forKey: Keys.expectedCaptureGapKinds)
     }
 }
