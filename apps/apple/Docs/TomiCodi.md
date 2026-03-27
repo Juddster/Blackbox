@@ -136,6 +136,8 @@ What to watch:
 - Mar 27, 14:05: Removed automatic demo seeding from normal app launches, purged old seed records from existing stores, and replaced the sticky background-warning banner with a scheduled local notification when capture is enabled and the app moves to the background.
 - Mar 27, 14:26: Added explicit capture-gap reporting on re-entry so the app now tells the user the exact likely-missed time window and affected sources when capture was expected while the app was inactive.
 - Mar 27, 14:49: Added resume-time motion-history and pedometer-history backfill so the app now queries what iOS can recover for the inactive window before reporting any remaining capture gaps.
+- Mar 27, 15:09: Removed the background notification warning again and changed re-entry warnings to report only concrete passive-collection blockers like missing background location mode or `While Using App` location access.
+- Mar 27, 15:43: Reduced passive location spam by lowering standard update aggressiveness and persisting only materially changed location fixes instead of every jittery callback.
 
 ## Tomi Progress Notes
 
