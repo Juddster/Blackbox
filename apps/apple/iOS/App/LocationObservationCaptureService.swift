@@ -10,6 +10,13 @@ final class LocationObservationCaptureService: ObservationCapturing {
         static let significantSpeedDeltaMetersPerSecond: CLLocationSpeed = 1.5
     }
 
+    private enum RuntimePolicy {
+        static let foregroundDesiredAccuracy = kCLLocationAccuracyNearestTenMeters
+        static let foregroundDistanceFilter: CLLocationDistance = 50
+        static let backgroundDesiredAccuracy = kCLLocationAccuracyNearestTenMeters
+        static let backgroundDistanceFilter: CLLocationDistance = 100
+    }
+
     private let recorder: ObservationIngesting
     private let locationManager: CLLocationManager
     private let delegateProxy: LocationObservationDelegateProxy
@@ -38,9 +45,9 @@ final class LocationObservationCaptureService: ObservationCapturing {
         }
 
         locationManager.delegate = delegateProxy
-        locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
-        locationManager.distanceFilter = RecordingThresholds.minimumDistanceMeters
-        locationManager.activityType = .otherNavigation
+        locationManager.desiredAccuracy = RuntimePolicy.foregroundDesiredAccuracy
+        locationManager.distanceFilter = RuntimePolicy.foregroundDistanceFilter
+        locationManager.activityType = .fitness
         locationManager.pausesLocationUpdatesAutomatically = true
         if supportsBackgroundLocation {
             locationManager.allowsBackgroundLocationUpdates = true
@@ -222,9 +229,8 @@ final class LocationObservationCaptureService: ObservationCapturing {
     }
 
     private func startLocationFeeds() {
-        if isInBackgroundMode == false {
-            locationManager.startUpdatingLocation()
-        }
+        applyRuntimePolicy()
+        locationManager.startUpdatingLocation()
 
         if supportsBackgroundLocation {
             locationManager.startMonitoringSignificantLocationChanges()
@@ -235,6 +241,16 @@ final class LocationObservationCaptureService: ObservationCapturing {
         locationManager.stopUpdatingLocation()
         if supportsBackgroundLocation {
             locationManager.stopMonitoringSignificantLocationChanges()
+        }
+    }
+
+    private func applyRuntimePolicy() {
+        if isInBackgroundMode {
+            locationManager.desiredAccuracy = RuntimePolicy.backgroundDesiredAccuracy
+            locationManager.distanceFilter = RuntimePolicy.backgroundDistanceFilter
+        } else {
+            locationManager.desiredAccuracy = RuntimePolicy.foregroundDesiredAccuracy
+            locationManager.distanceFilter = RuntimePolicy.foregroundDistanceFilter
         }
     }
 
