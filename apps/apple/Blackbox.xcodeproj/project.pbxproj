@@ -73,6 +73,10 @@
 		06D4CCC42F7560150059DBA9 /* DemoSegmentSyncClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCC32F7560150059DBA9 /* DemoSegmentSyncClient.swift */; };
 		06D4CCC62F7566580059DBA9 /* SyncConflictSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCC52F7566580059DBA9 /* SyncConflictSnapshot.swift */; };
 		06D4CCC82F7567070059DBA9 /* DraftSegmentWriteResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCC72F7567070059DBA9 /* DraftSegmentWriteResult.swift */; };
+		06D4CCCA2F75A1B90059DBA9 /* LocalSegmentTombstoner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCC92F75A1B90059DBA9 /* LocalSegmentTombstoner.swift */; };
+		06D4CCCC2F75A2390059DBA9 /* LocalSegmentInterpretationEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCCB2F75A2390059DBA9 /* LocalSegmentInterpretationEditor.swift */; };
+		06D4CCD02F76A0DB0059DBA9 /* CaptureGapNotice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCCF2F76A0DB0059DBA9 /* CaptureGapNotice.swift */; };
+		06D4CCD22F76E3D60059DBA9 /* LocalUserSegmentWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCD12F76E3D60059DBA9 /* LocalUserSegmentWriter.swift */; };
 		19A697EEE4D0AD58741AE352 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7D45B32E742E2F674B8DA9FB /* Assets.xcassets */; };
 		4ED77E5CE3273FF3758CC576 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BB7B834AE865D38AF11D2B3 /* ContentView.swift */; };
 		AB9C4D41A551E578EF5C7029 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 66487777336FFAEB6FB088F0 /* Foundation.framework */; };
@@ -147,6 +151,10 @@
 		06D4CCC32F7560150059DBA9 /* DemoSegmentSyncClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoSegmentSyncClient.swift; sourceTree = "<group>"; };
 		06D4CCC52F7566580059DBA9 /* SyncConflictSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncConflictSnapshot.swift; sourceTree = "<group>"; };
 		06D4CCC72F7567070059DBA9 /* DraftSegmentWriteResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftSegmentWriteResult.swift; sourceTree = "<group>"; };
+		06D4CCC92F75A1B90059DBA9 /* LocalSegmentTombstoner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalSegmentTombstoner.swift; sourceTree = "<group>"; };
+		06D4CCCB2F75A2390059DBA9 /* LocalSegmentInterpretationEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalSegmentInterpretationEditor.swift; sourceTree = "<group>"; };
+		06D4CCCF2F76A0DB0059DBA9 /* CaptureGapNotice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureGapNotice.swift; sourceTree = "<group>"; };
+		06D4CCD12F76E3D60059DBA9 /* LocalUserSegmentWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalUserSegmentWriter.swift; sourceTree = "<group>"; };
 		55605AB54A1DDDC5BC7BD70E /* Blackbox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Blackbox.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5BB7B834AE865D38AF11D2B3 /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		66487777336FFAEB6FB088F0 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS14.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
@@ -309,6 +317,10 @@
 				06D4CCC32F7560150059DBA9 /* DemoSegmentSyncClient.swift */,
 				06D4CCC52F7566580059DBA9 /* SyncConflictSnapshot.swift */,
 				06D4CCC72F7567070059DBA9 /* DraftSegmentWriteResult.swift */,
+				06D4CCC92F75A1B90059DBA9 /* LocalSegmentTombstoner.swift */,
+				06D4CCCB2F75A2390059DBA9 /* LocalSegmentInterpretationEditor.swift */,
+				06D4CCCF2F76A0DB0059DBA9 /* CaptureGapNotice.swift */,
+				06D4CCD12F76E3D60059DBA9 /* LocalUserSegmentWriter.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -408,6 +420,7 @@
 				06D4CC7D2F746D430059DBA9 /* CaptureAuthorizationState.swift in Sources */,
 				06D4CC6D2F7467610059DBA9 /* TimelineSummary.swift in Sources */,
 				06D4CCBC2F754A3A0059DBA9 /* LiveDraftSegmentSection.swift in Sources */,
+				06D4CCD02F76A0DB0059DBA9 /* CaptureGapNotice.swift in Sources */,
 				06D4CC932F746DF30059DBA9 /* NoopSegmentSyncClient.swift in Sources */,
 				06D4CC552F7455F50059DBA9 /* SegmentInterpretationRecord.swift in Sources */,
 				06D4CC592F7455F50059DBA9 /* BlackboxModelContainer.swift in Sources */,
@@ -429,6 +442,7 @@
 				06D4CC982F75294C0059DBA9 /* LocationAuthorizationRequesting.swift in Sources */,
 				06D4CCC82F7567070059DBA9 /* DraftSegmentWriteResult.swift in Sources */,
 				06D4CC472F7455F40059DBA9 /* AmbiguityState.swift in Sources */,
+				06D4CCCC2F75A2390059DBA9 /* LocalSegmentInterpretationEditor.swift in Sources */,
 				06D4CC8F2F746DF30059DBA9 /* SyncEnvelopeProjection.swift in Sources */,
 				06D4CC772F7469CC0059DBA9 /* SyncSummary.swift in Sources */,
 				06D4CCC62F7566580059DBA9 /* SyncConflictSnapshot.swift in Sources */,
@@ -445,6 +459,7 @@
 				06D4CC632F7455F60059DBA9 /* TimelineView.swift in Sources */,
 				06D4CC572F7455F50059DBA9 /* SegmentSummaryRecord.swift in Sources */,
 				06D4CC5F2F7455F50059DBA9 /* TimelineDayGroup.swift in Sources */,
+				06D4CCCA2F75A1B90059DBA9 /* LocalSegmentTombstoner.swift in Sources */,
 				DA332FD6E9EFF38E46F0F841 /* BlackboxApp.swift in Sources */,
 				06D4CCBE2F754B260059DBA9 /* LocalDraftSegmentWriter.swift in Sources */,
 				4ED77E5CE3273FF3758CC576 /* ContentView.swift in Sources */,
@@ -455,6 +470,7 @@
 				06D4CCA82F752B2B0059DBA9 /* LocationObservationCaptureService.swift in Sources */,
 				06D4CC5D2F7455F50059DBA9 /* AppBootstrap.swift in Sources */,
 				06D4CCA42F752B2B0059DBA9 /* ObservationCapturing.swift in Sources */,
+				06D4CCD22F76E3D60059DBA9 /* LocalUserSegmentWriter.swift in Sources */,
 				06D4CC5B2F7455F50059DBA9 /* SegmentRecord.swift in Sources */,
 				06D4CCB22F7547820059DBA9 /* ObservationSnapshot.swift in Sources */,
 				06D4CC752F7469CC0059DBA9 /* SegmentSyncStateRecord.swift in Sources */,
@@ -545,6 +561,8 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.contity.Blackbox;
@@ -572,6 +590,8 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.contity.Blackbox;

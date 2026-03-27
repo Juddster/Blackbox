@@ -290,3 +290,6 @@ What to watch:
   - That health shape is now covered in both the OpenAPI document and the verify chain.
 - Mar 26, 19:21:
   - I added a runtime-configuration doc for the typed backend path so `HOST`, `PORT`, and `BLACKBOX_FILE_STORAGE_DIR` are now spelled out in one place.
+
+- Mar 27, 19:10:
+  - Added the first Apple manual segment-marking flow on top of stored observations, so timeline users can now create a real user-owned segment with a chosen time window, broad class, optional narrower label, and optional known distance without mutating the raw observation stream.

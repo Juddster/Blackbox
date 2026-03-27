@@ -17,12 +17,16 @@ struct LocationCaptureStatusProvider: CaptureStatusProviding {
             )
         }
 
-        let authorizationState = authorizationState(for: CLLocationManager().authorizationStatus)
+        let authorizationStatus = CLLocationManager().authorizationStatus
+        let authorizationState = authorizationState(for: authorizationStatus)
         return CaptureServiceStatus(
             kind: kind,
             isAvailable: true,
             authorizationState: authorizationState,
-            note: nil
+            note: note(
+                for: authorizationStatus,
+                authorizationState: authorizationState
+            )
         )
     }
 
@@ -39,5 +43,37 @@ struct LocationCaptureStatusProvider: CaptureStatusProviding {
         @unknown default:
             .unknown
         }
+    }
+
+    private func note(
+        for status: CLAuthorizationStatus,
+        authorizationState: CaptureAuthorizationState
+    ) -> String? {
+        if supportsBackgroundLocationUpdates() == false {
+            return "This build does not currently declare background location mode, so passive background location collection will not work yet."
+        }
+
+        switch status {
+        case .authorizedWhenInUse:
+            return "Location access is only While Using App. Blackbox needs Always access for passive background collection."
+        case .authorizedAlways:
+            return "Background location is permitted."
+        case .denied:
+            return "Location access is denied in Settings."
+        case .restricted:
+            return "Location access is restricted on this device."
+        case .notDetermined:
+            return "Request Always location access to enable passive background collection."
+        @unknown default:
+            return authorizationState == .unknown ? "Location authorization state is unknown." : nil
+        }
+    }
+
+    private func supportsBackgroundLocationUpdates() -> Bool {
+        guard let backgroundModes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String] else {
+            return false
+        }
+
+        return backgroundModes.contains("location")
     }
 }

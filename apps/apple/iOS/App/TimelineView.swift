@@ -7,10 +7,15 @@ struct TimelineView: View {
     @State private var captureReadiness = CaptureReadinessStore()
     @State private var captureControl = CaptureControlStore()
     @State private var syncActivity = SyncActivityStore()
-    @State private var backgroundCollectionNotificationCoordinator = BackgroundCollectionNotificationCoordinator()
     @State private var liveDraftStatusMessage: String?
     @State private var editingSegment: SegmentSnapshot?
     @State private var editedActivityLabel = ""
+    @State private var isPresentingManualSegmentSheet = false
+    @State private var manualSegmentStartTime = Date.now.addingTimeInterval(-30 * 60)
+    @State private var manualSegmentEndTime = Date.now
+    @State private var manualSegmentActivityClass: ActivityClass = .walking
+    @State private var manualSegmentLabel = ""
+    @State private var manualSegmentDistanceMeters = ""
 
     @Query(
         sort: [
@@ -113,29 +118,32 @@ struct TimelineView: View {
                 }
             }
             .navigationTitle("Blackbox")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        prepareManualSegmentForm()
+                        isPresentingManualSegmentSheet = true
+                    } label: {
+                        Label("Mark Segment", systemImage: "plus")
+                    }
+                }
+            }
         }
         .task {
             configureCapture()
             await captureControl.handleDidBecomeActive()
             await resumeCaptureIfNeeded()
-            backgroundCollectionNotificationCoordinator.cancelPendingNotification()
             refreshCaptureReadiness()
             refreshSyncActivity()
         }
         .onChange(of: scenePhase) {
             if scenePhase == .active {
                 Task {
-                    backgroundCollectionNotificationCoordinator.cancelPendingNotification()
                     await captureControl.handleDidBecomeActive()
                     await resumeCaptureIfNeeded()
                 }
             } else if scenePhase == .background {
                 captureControl.handleDidEnterBackground()
-                Task {
-                    await backgroundCollectionNotificationCoordinator.scheduleIfNeeded(
-                        captureIsEnabled: captureControl.hasCaptureIntentEnabled
-                    )
-                }
             }
         }
         .sheet(item: $editingSegment) { segment in
@@ -170,6 +178,77 @@ struct TimelineView: View {
                 }
             }
         }
+        .sheet(isPresented: $isPresentingManualSegmentSheet) {
+            NavigationStack {
+                Form {
+                    Section("Time Window") {
+                        DatePicker(
+                            "Start",
+                            selection: $manualSegmentStartTime,
+                            displayedComponents: [.date, .hourAndMinute]
+                        )
+                        DatePicker(
+                            "End",
+                            selection: $manualSegmentEndTime,
+                            in: manualSegmentStartTime...,
+                            displayedComponents: [.date, .hourAndMinute]
+                        )
+                    }
+
+                    Section("Classification") {
+                        Picker("Broad Activity", selection: $manualSegmentActivityClass) {
+                            ForEach(ActivityClass.allCases) { activityClass in
+                                Label(activityClass.displayName, systemImage: activityClass.systemImage)
+                                    .tag(activityClass)
+                            }
+                        }
+
+                        TextField("run, train, bus, indoor walk...", text: $manualSegmentLabel)
+                            .textInputAutocapitalization(.words)
+                            .autocorrectionDisabled()
+
+                        Text("Use the broad class for baseline classification and the optional narrower label for what you know happened in that exact window.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Section("Known Metrics") {
+                        TextField("Distance meters (optional)", text: $manualSegmentDistanceMeters)
+                            .keyboardType(.decimalPad)
+
+                        Text("Add metrics you already know from another source, such as a workout distance, while keeping the raw captured observations unchanged.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if let observationCoverageDescription {
+                        Section("Recorded Evidence") {
+                            Text(observationCoverageDescription)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .navigationTitle("Mark Segment")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            isPresentingManualSegmentSheet = false
+                        }
+                    }
+
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Save") {
+                            Task {
+                                await saveManualSegment()
+                            }
+                        }
+                        .disabled(manualSegmentEndTime <= manualSegmentStartTime)
+                    }
+                }
+            }
+        }
     }
 
     private var summary: TimelineSummary {
@@ -190,6 +269,21 @@ struct TimelineView: View {
 
     private var liveDraftSegment: LiveDraftSegmentSnapshot? {
         LiveDraftSegmentProjection.make(from: observations)
+    }
+
+    private var observationCoverageDescription: String? {
+        guard
+            let newestObservation = observations.first?.timestamp,
+            let oldestObservation = observations.last?.timestamp
+        else {
+            return "No recorded observations yet. You can still mark a segment manually, but there is no captured evidence in local storage yet."
+        }
+
+        let formatter = DateIntervalFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+
+        return "Local observations currently cover \(formatter.string(from: oldestObservation, to: newestObservation))."
     }
 
     private func refreshCaptureReadiness() {
@@ -339,5 +433,48 @@ struct TimelineView: View {
 
     private func currentEditableLabel(for segment: SegmentSnapshot) -> String {
         segment.visibleClassLabel == nil ? "" : segment.activityLabel
+    }
+
+    private func prepareManualSegmentForm() {
+        let latestObservationTime = observations.first?.timestamp ?? .now
+        let earliestRecentObservationTime = observations.prefix(20).last?.timestamp
+            ?? latestObservationTime.addingTimeInterval(-30 * 60)
+
+        manualSegmentEndTime = latestObservationTime
+        manualSegmentStartTime = min(earliestRecentObservationTime, latestObservationTime)
+        if manualSegmentStartTime >= manualSegmentEndTime {
+            manualSegmentStartTime = latestObservationTime.addingTimeInterval(-15 * 60)
+        }
+        manualSegmentActivityClass = .walking
+        manualSegmentLabel = ""
+        manualSegmentDistanceMeters = ""
+    }
+
+    private func saveManualSegment() async {
+        do {
+            let writer = LocalUserSegmentWriter(modelContext: modelContext)
+            try writer.createSegment(
+                startTime: manualSegmentStartTime,
+                endTime: manualSegmentEndTime,
+                activityClass: manualSegmentActivityClass,
+                narrowerLabel: manualSegmentLabel,
+                distanceMeters: parseManualDistanceMeters()
+            )
+            isPresentingManualSegmentSheet = false
+            liveDraftStatusMessage = "Saved a user-marked \(manualSegmentActivityClass.displayName.lowercased()) segment."
+            refreshSyncActivity()
+            await pushPendingSync()
+        } catch {
+            syncActivity.lastPushMessage = "Could not save that marked segment."
+        }
+    }
+
+    private func parseManualDistanceMeters() -> Double? {
+        let trimmed = manualSegmentDistanceMeters.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.isEmpty == false else {
+            return nil
+        }
+
+        return Double(trimmed.replacingOccurrences(of: ",", with: ""))
     }
 }
