@@ -6,7 +6,7 @@ struct LiveDraftSegmentSection: View {
     let onPersistDraft: () async -> Void
 
     var body: some View {
-        Section("Live Draft") {
+        Section("Current Inference") {
             if let draft {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(alignment: .top, spacing: 12) {
@@ -73,7 +73,7 @@ struct LiveDraftSegmentSection: View {
                 }
                 .padding(.vertical, 8)
             } else {
-                Text("No live draft activity yet.")
+                Text("No current inferred activity yet. Blackbox needs recent real observations before it can infer a segment draft.")
                     .foregroundStyle(.secondary)
             }
 

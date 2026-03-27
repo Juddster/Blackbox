@@ -7,6 +7,7 @@ struct TimelineView: View {
     @State private var captureReadiness = CaptureReadinessStore()
     @State private var captureControl = CaptureControlStore()
     @State private var syncActivity = SyncActivityStore()
+    @State private var backgroundCollectionNotificationCoordinator = BackgroundCollectionNotificationCoordinator()
     @State private var liveDraftStatusMessage: String?
     @State private var editingSegment: SegmentSnapshot?
     @State private var editedActivityLabel = ""
@@ -41,7 +42,6 @@ struct TimelineView: View {
                     isMotionCapturing: captureControl.isMotionCapturing,
                     isPedometerCapturing: captureControl.isPedometerCapturing,
                     statusMessage: captureControl.statusMessage,
-                    warningMessage: captureControl.warningMessage,
                     onStartLocation: startLocationCapture,
                     onStopLocation: stopLocationCapture,
                     onStartMotion: startMotionCapture,
@@ -64,6 +64,13 @@ struct TimelineView: View {
                     lastSyncAt: syncActivity.lastSyncAt,
                     onPushPending: pushPendingSync
                 )
+
+                if groupedSegments.isEmpty {
+                    Section("Timeline") {
+                        Text("No saved real timeline segments yet. Recent captured observations appear above, and current inferred activity can be saved into the timeline.")
+                            .foregroundStyle(.secondary)
+                    }
+                }
 
                 ForEach(groupedSegments) { group in
                     Section(group.title) {
@@ -109,13 +116,21 @@ struct TimelineView: View {
         .task {
             configureCapture()
             await resumeCaptureIfNeeded()
+            backgroundCollectionNotificationCoordinator.cancelPendingNotification()
             refreshCaptureReadiness()
             refreshSyncActivity()
         }
         .onChange(of: scenePhase) {
             if scenePhase == .active {
                 Task {
+                    backgroundCollectionNotificationCoordinator.cancelPendingNotification()
                     await resumeCaptureIfNeeded()
+                }
+            } else if scenePhase == .background {
+                Task {
+                    await backgroundCollectionNotificationCoordinator.scheduleIfNeeded(
+                        captureIsEnabled: captureControl.hasCaptureIntentEnabled
+                    )
                 }
             }
         }

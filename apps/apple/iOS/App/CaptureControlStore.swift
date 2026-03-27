@@ -9,7 +9,6 @@ final class CaptureControlStore {
     var isMotionCapturing = false
     var isPedometerCapturing = false
     var statusMessage: String?
-    var warningMessage: String?
 
     private var locationCaptureService: LocationObservationCaptureService?
     private var motionCaptureService: MotionActivityObservationCaptureService?
@@ -26,6 +25,12 @@ final class CaptureControlStore {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+    }
+
+    var hasCaptureIntentEnabled: Bool {
+        defaults.bool(forKey: Keys.locationEnabled)
+            || defaults.bool(forKey: Keys.motionEnabled)
+            || defaults.bool(forKey: Keys.pedometerEnabled)
     }
 
     func configure(modelContext: ModelContext) {
@@ -49,10 +54,6 @@ final class CaptureControlStore {
         let shouldResumeLocation = defaults.bool(forKey: Keys.locationEnabled)
         let shouldResumeMotion = defaults.bool(forKey: Keys.motionEnabled)
         let shouldResumePedometer = defaults.bool(forKey: Keys.pedometerEnabled)
-
-        if shouldResumeLocation || shouldResumeMotion || shouldResumePedometer {
-            warningMessage = "Background collection may have been suspended while the app was not running. Blackbox is resuming collection now."
-        }
 
         if shouldResumeLocation {
             await startLocationCapture()

@@ -9,7 +9,7 @@ struct BlackboxApp: App {
         WindowGroup {
             ContentView()
                 .task {
-                    try? AppBootstrap.seedIfNeeded(modelContext: modelContainer.mainContext)
+                    try? AppBootstrap.prepareStore(modelContext: modelContainer.mainContext)
                 }
         }
         .modelContainer(modelContainer)

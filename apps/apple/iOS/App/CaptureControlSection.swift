@@ -5,7 +5,6 @@ struct CaptureControlSection: View {
     let isMotionCapturing: Bool
     let isPedometerCapturing: Bool
     let statusMessage: String?
-    let warningMessage: String?
     let onStartLocation: () async -> Void
     let onStopLocation: () -> Void
     let onStartMotion: () async -> Void
@@ -40,12 +39,6 @@ struct CaptureControlSection: View {
                 Text(statusMessage)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-            }
-
-            if let warningMessage {
-                Text(warningMessage)
-                    .font(.caption)
-                    .foregroundStyle(.orange)
             }
         }
     }

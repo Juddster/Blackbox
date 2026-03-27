@@ -4,9 +4,9 @@ struct RecentObservationsSection: View {
     let observations: [ObservationSnapshot]
 
     var body: some View {
-        Section("Recent Capture") {
+        Section("Recent Real Capture") {
             if observations.isEmpty {
-                Text("No captured observations yet.")
+                Text("No real captured observations yet. Start one of the capture services and new device samples will appear here.")
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(observations) { observation in
