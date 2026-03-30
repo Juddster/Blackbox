@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		069C5B782F7AFFC800BFCB7F /* CaptureResumeReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C5B772F7AFFC800BFCB7F /* CaptureResumeReport.swift */; };
+		069C5B7A2F7AFFC800BFCB7F /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C5B792F7AFFC800BFCB7F /* SettingsView.swift */; };
+		069C5B7C2F7AFFC900BFCB7F /* DataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C5B7B2F7AFFC900BFCB7F /* DataView.swift */; };
+		069C5B7E2F7AFFC900BFCB7F /* SegmentMapDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C5B7D2F7AFFC900BFCB7F /* SegmentMapDetailView.swift */; };
 		06D4CC452F7455F40059DBA9 /* ActivityClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC442F7455F40059DBA9 /* ActivityClass.swift */; };
 		06D4CC472F7455F40059DBA9 /* AmbiguityState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC462F7455F40059DBA9 /* AmbiguityState.swift */; };
 		06D4CC492F7455F50059DBA9 /* InterpretationOrigin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC482F7455F50059DBA9 /* InterpretationOrigin.swift */; };
@@ -84,6 +88,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		069C5B772F7AFFC800BFCB7F /* CaptureResumeReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureResumeReport.swift; sourceTree = "<group>"; };
+		069C5B792F7AFFC800BFCB7F /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		069C5B7B2F7AFFC900BFCB7F /* DataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataView.swift; sourceTree = "<group>"; };
+		069C5B7D2F7AFFC900BFCB7F /* SegmentMapDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentMapDetailView.swift; sourceTree = "<group>"; };
 		06D4CC442F7455F40059DBA9 /* ActivityClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityClass.swift; sourceTree = "<group>"; };
 		06D4CC462F7455F40059DBA9 /* AmbiguityState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbiguityState.swift; sourceTree = "<group>"; };
 		06D4CC482F7455F50059DBA9 /* InterpretationOrigin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterpretationOrigin.swift; sourceTree = "<group>"; };
@@ -321,6 +329,10 @@
 				06D4CCCB2F75A2390059DBA9 /* LocalSegmentInterpretationEditor.swift */,
 				06D4CCCF2F76A0DB0059DBA9 /* CaptureGapNotice.swift */,
 				06D4CCD12F76E3D60059DBA9 /* LocalUserSegmentWriter.swift */,
+				069C5B772F7AFFC800BFCB7F /* CaptureResumeReport.swift */,
+				069C5B792F7AFFC800BFCB7F /* SettingsView.swift */,
+				069C5B7B2F7AFFC900BFCB7F /* DataView.swift */,
+				069C5B7D2F7AFFC900BFCB7F /* SegmentMapDetailView.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -425,11 +437,13 @@
 				06D4CC552F7455F50059DBA9 /* SegmentInterpretationRecord.swift in Sources */,
 				06D4CC592F7455F50059DBA9 /* BlackboxModelContainer.swift in Sources */,
 				06D4CC812F746D440059DBA9 /* CaptureStatusProviding.swift in Sources */,
+				069C5B7E2F7AFFC900BFCB7F /* SegmentMapDetailView.swift in Sources */,
 				06D4CC6B2F7467610059DBA9 /* SegmentSnapshot.swift in Sources */,
 				06D4CC9A2F75294C0059DBA9 /* LocationAuthorizationController.swift in Sources */,
 				06D4CC452F7455F40059DBA9 /* ActivityClass.swift in Sources */,
 				06D4CC532F7455F50059DBA9 /* ObservationRecord.swift in Sources */,
 				06D4CC6F2F7467620059DBA9 /* TimelineProjection.swift in Sources */,
+				069C5B782F7AFFC800BFCB7F /* CaptureResumeReport.swift in Sources */,
 				06D4CC7B2F746D430059DBA9 /* CaptureServiceKind.swift in Sources */,
 				06D4CC672F7467610059DBA9 /* ObservationIngesting.swift in Sources */,
 				06D4CC952F746E230059DBA9 /* LocalSyncCoordinator.swift in Sources */,
@@ -455,6 +469,7 @@
 				06D4CC892F746D440059DBA9 /* CaptureProjection.swift in Sources */,
 				06D4CC652F7467610059DBA9 /* ObservationInput.swift in Sources */,
 				06D4CC692F7467610059DBA9 /* LocalObservationRecorder.swift in Sources */,
+				069C5B7A2F7AFFC800BFCB7F /* SettingsView.swift in Sources */,
 				06D4CCA62F752B2B0059DBA9 /* LocationObservationDelegateProxy.swift in Sources */,
 				06D4CC632F7455F60059DBA9 /* TimelineView.swift in Sources */,
 				06D4CC572F7455F50059DBA9 /* SegmentSummaryRecord.swift in Sources */,
@@ -468,6 +483,7 @@
 				06D4CC9C2F75294C0059DBA9 /* CaptureReadinessStore.swift in Sources */,
 				06D4CC4B2F7455F50059DBA9 /* ObservationSourceDevice.swift in Sources */,
 				06D4CCA82F752B2B0059DBA9 /* LocationObservationCaptureService.swift in Sources */,
+				069C5B7C2F7AFFC900BFCB7F /* DataView.swift in Sources */,
 				06D4CC5D2F7455F50059DBA9 /* AppBootstrap.swift in Sources */,
 				06D4CCA42F752B2B0059DBA9 /* ObservationCapturing.swift in Sources */,
 				06D4CCD22F76E3D60059DBA9 /* LocalUserSegmentWriter.swift in Sources */,

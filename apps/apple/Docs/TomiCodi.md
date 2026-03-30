@@ -295,3 +295,7 @@ What to watch:
   - Added the first Apple manual segment-marking flow on top of stored observations, so timeline users can now create a real user-owned segment with a chosen time window, broad class, optional narrower label, and optional known distance without mutating the raw observation stream.
 - Mar 27, 19:18:
   - Added a first Apple segment-evidence inspection flow: tapping a timeline row now shows the raw local observations captured inside that marked window, including per-source counts and replayable observation details for labeling/classifier iteration.
+- Mar 27, 19:29:
+  - Added quick Apple workout-window shortcuts in the timeline toolbar so a recent run or walk can open the manual segment sheet with a prefilled recent observation window and matching broad class for faster post-activity labeling.
+- Mar 27, 20:04:
+  - Split the Apple app into tabs so the main Activity tab now focuses on current inference and saved segments, moved controls/readiness into Settings, moved sync and raw recent-capture inspection into Data, added a resume popup summarizing captured point counts since background/relaunch, and replaced segment raw location dumps with a map-based segment detail.

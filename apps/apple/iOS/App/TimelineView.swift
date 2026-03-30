@@ -1,12 +1,10 @@
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 struct TimelineView: View {
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.scenePhase) private var scenePhase
-    @State private var captureReadiness = CaptureReadinessStore()
-    @State private var captureControl = CaptureControlStore()
-    @State private var syncActivity = SyncActivityStore()
+    let syncActivity: SyncActivityStore
+
     @State private var liveDraftStatusMessage: String?
     @State private var editingSegment: SegmentSnapshot?
     @State private var inspectingSegment: SegmentSnapshot?
@@ -20,7 +18,7 @@ struct TimelineView: View {
 
     @Query(
         sort: [
-            SortDescriptor(\SegmentRecord.startTime, order: .reverse)
+            SortDescriptor(\SegmentRecord.startTime, order: .reverse),
         ],
         animation: .snappy
     )
@@ -28,7 +26,7 @@ struct TimelineView: View {
 
     @Query(
         sort: [
-            SortDescriptor(\ObservationRecord.timestamp, order: .reverse)
+            SortDescriptor(\ObservationRecord.timestamp, order: .reverse),
         ],
         animation: .snappy
     )
@@ -37,44 +35,15 @@ struct TimelineView: View {
     var body: some View {
         NavigationStack {
             List {
-                TimelineSummarySection(summary: summary)
-                CaptureStatusSection(
-                    statuses: captureReadiness.statuses,
-                    onRefresh: refreshCaptureReadiness,
-                    onRequestLocation: requestLocationAuthorization
-                )
-                CaptureControlSection(
-                    isLocationCapturing: captureControl.isLocationCapturing,
-                    isMotionCapturing: captureControl.isMotionCapturing,
-                    isPedometerCapturing: captureControl.isPedometerCapturing,
-                    statusMessage: captureControl.statusMessage,
-                    gapNotice: captureControl.gapNotice,
-                    onStartLocation: startLocationCapture,
-                    onStopLocation: stopLocationCapture,
-                    onStartMotion: startMotionCapture,
-                    onStopMotion: stopMotionCapture,
-                    onStartPedometer: startPedometerCapture,
-                    onStopPedometer: stopPedometerCapture
-                )
                 LiveDraftSegmentSection(
                     draft: liveDraftSegment,
                     statusMessage: liveDraftStatusMessage,
                     onPersistDraft: persistLiveDraft
                 )
-                RecentObservationsSection(observations: recentObservations)
-                SyncStatusSection(
-                    pendingCount: syncActivity.pendingCount,
-                    conflictedCount: syncActivity.conflictedCount,
-                    conflicts: syncActivity.conflicts,
-                    isSyncing: syncActivity.isSyncing,
-                    lastPushMessage: syncActivity.lastPushMessage,
-                    lastSyncAt: syncActivity.lastSyncAt,
-                    onPushPending: pushPendingSync
-                )
 
                 if groupedSegments.isEmpty {
-                    Section("Timeline") {
-                        Text("No saved real timeline segments yet. Recent captured observations appear above, and current inferred activity can be saved into the timeline.")
+                    Section("Segments") {
+                        Text("No saved segments yet. When Blackbox infers a current activity, save it here or mark a time window yourself.")
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -122,33 +91,34 @@ struct TimelineView: View {
                     }
                 }
             }
-            .navigationTitle("Blackbox")
+            .navigationTitle("Activity")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        prepareManualSegmentForm()
-                        isPresentingManualSegmentSheet = true
+                    Menu {
+                        Button {
+                            prepareManualSegmentForm()
+                            isPresentingManualSegmentSheet = true
+                        } label: {
+                            Label("Mark Segment", systemImage: "square.and.pencil")
+                        }
+
+                        Button {
+                            prepareRecentWorkoutSegmentForm(activityClass: .running)
+                            isPresentingManualSegmentSheet = true
+                        } label: {
+                            Label("Mark Recent Run", systemImage: "figure.run")
+                        }
+
+                        Button {
+                            prepareRecentWorkoutSegmentForm(activityClass: .walking)
+                            isPresentingManualSegmentSheet = true
+                        } label: {
+                            Label("Mark Recent Walk", systemImage: "figure.walk")
+                        }
                     } label: {
                         Label("Mark Segment", systemImage: "plus")
                     }
                 }
-            }
-        }
-        .task {
-            configureCapture()
-            await captureControl.handleDidBecomeActive()
-            await resumeCaptureIfNeeded()
-            refreshCaptureReadiness()
-            refreshSyncActivity()
-        }
-        .onChange(of: scenePhase) {
-            if scenePhase == .active {
-                Task {
-                    await captureControl.handleDidBecomeActive()
-                    await resumeCaptureIfNeeded()
-                }
-            } else if scenePhase == .background {
-                captureControl.handleDidEnterBackground()
             }
         }
         .sheet(item: $editingSegment) { segment in
@@ -211,23 +181,15 @@ struct TimelineView: View {
                         TextField("run, train, bus, indoor walk...", text: $manualSegmentLabel)
                             .textInputAutocapitalization(.words)
                             .autocorrectionDisabled()
-
-                        Text("Use the broad class for baseline classification and the optional narrower label for what you know happened in that exact window.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
                     }
 
                     Section("Known Metrics") {
                         TextField("Distance meters (optional)", text: $manualSegmentDistanceMeters)
                             .keyboardType(.decimalPad)
-
-                        Text("Add metrics you already know from another source, such as a workout distance, while keeping the raw captured observations unchanged.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
                     }
 
                     if let observationCoverageDescription {
-                        Section("Recorded Evidence") {
+                        Section("Recorded Coverage") {
                             Text(observationCoverageDescription)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -255,100 +217,15 @@ struct TimelineView: View {
             }
         }
         .sheet(item: $inspectingSegment) { segment in
-            NavigationStack {
-                List {
-                    Section("Segment") {
-                        LabeledContent("Title", value: segment.title)
-                        LabeledContent("Activity", value: segment.activityLabel)
-                        if let visibleClassLabel = segment.visibleClassLabel {
-                            LabeledContent("Broad Class", value: visibleClassLabel)
-                        }
-                        LabeledContent(
-                            "Window",
-                            value: "\(segment.startTime.formatted(date: .abbreviated, time: .shortened)) - \(segment.endTime.formatted(date: .omitted, time: .shortened))"
-                        )
-                        LabeledContent(
-                            "Duration",
-                            value: Duration.seconds(segment.durationSeconds).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated))
-                        )
-                        if let distanceMeters = segment.distanceMeters {
-                            LabeledContent(
-                                "Distance",
-                                value: Measurement(value: distanceMeters, unit: UnitLength.meters)
-                                    .formatted(.measurement(width: .abbreviated, usage: .road))
-                            )
-                        }
-                    }
-
-                    Section("Recorded Evidence") {
-                        ForEach(observationSummaryRows(for: segment), id: \.label) { row in
-                            LabeledContent(row.label, value: "\(row.count)")
-                        }
-
-                        if segmentObservations(for: segment).isEmpty {
-                            Text("No local observations fall inside this marked time window yet.")
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    Section("Observations In Window") {
-                        let snapshots = observationSnapshots(for: segment)
-                        if snapshots.isEmpty {
-                            Text("No local observations available for replay in this window.")
-                                .foregroundStyle(.secondary)
-                        } else {
-                            ForEach(snapshots) { observation in
-                                VStack(alignment: .leading, spacing: 4) {
-                                    HStack {
-                                        Text(observation.title)
-                                            .font(.subheadline.weight(.semibold))
-                                        Spacer()
-                                        Text(observation.timestamp.formatted(date: .omitted, time: .standard))
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-
-                                    Text(observation.detail)
-                                        .font(.subheadline)
-
-                                    if let qualityHint = observation.qualityHint {
-                                        Text(qualityHint)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-                                .padding(.vertical, 4)
-                            }
-                        }
-                    }
-                }
-                .navigationTitle("Segment Evidence")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Done") {
-                            inspectingSegment = nil
-                        }
-                    }
-                }
-            }
+            SegmentMapDetailView(
+                segment: segment,
+                observations: segmentObservations(for: segment)
+            )
         }
-    }
-
-    private var summary: TimelineSummary {
-        TimelineProjection.summary(
-            segmentCount: TimelineProjection.visibleSegmentCount(from: segments),
-            observationCount: observations.count,
-            syncSummary: SyncProjection.summary(from: segments)
-        )
     }
 
     private var groupedSegments: [TimelineDayGroup] {
         TimelineProjection.groups(from: segments)
-    }
-
-    private var recentObservations: [ObservationSnapshot] {
-        ObservationProjection.recent(from: observations)
     }
 
     private var liveDraftSegment: LiveDraftSegmentSnapshot? {
@@ -360,7 +237,7 @@ struct TimelineView: View {
             let newestObservation = observations.first?.timestamp,
             let oldestObservation = observations.last?.timestamp
         else {
-            return "No recorded observations yet. You can still mark a segment manually, but there is no captured evidence in local storage yet."
+            return "No recorded observations yet."
         }
 
         let formatter = DateIntervalFormatter()
@@ -370,61 +247,9 @@ struct TimelineView: View {
         return "Local observations currently cover \(formatter.string(from: oldestObservation, to: newestObservation))."
     }
 
-    private func refreshCaptureReadiness() {
-        captureReadiness.refresh()
-    }
-
-    private func requestLocationAuthorization() async {
-        await captureReadiness.requestLocationAuthorization()
-    }
-
-    private func configureCapture() {
-        captureControl.configure(modelContext: modelContext)
-    }
-
-    private func resumeCaptureIfNeeded() async {
-        await captureControl.resumeIfNeeded()
-        refreshCaptureReadiness()
-    }
-
-    private func startLocationCapture() async {
-        await captureControl.startLocationCapture()
-        refreshCaptureReadiness()
-    }
-
-    private func stopLocationCapture() {
-        captureControl.stopLocationCapture()
-    }
-
-    private func startMotionCapture() async {
-        await captureControl.startMotionCapture()
-        refreshCaptureReadiness()
-    }
-
-    private func stopMotionCapture() {
-        captureControl.stopMotionCapture()
-    }
-
-    private func startPedometerCapture() async {
-        await captureControl.startPedometerCapture()
-        refreshCaptureReadiness()
-    }
-
-    private func stopPedometerCapture() {
-        captureControl.stopPedometerCapture()
-    }
-
-    private func refreshSyncActivity() {
-        syncActivity.refresh(using: modelContext)
-    }
-
-    private func pushPendingSync() async {
-        await syncActivity.pushPending(using: modelContext)
-    }
-
     private func persistLiveDraft() async {
         guard let liveDraftSegment else {
-            liveDraftStatusMessage = "No live draft available to save."
+            liveDraftStatusMessage = "No current inferred activity is available yet."
             return
         }
 
@@ -433,14 +258,14 @@ struct TimelineView: View {
             let result = try writer.upsert(from: liveDraftSegment)
             liveDraftStatusMessage = switch result.action {
             case .created:
-                "Started a new timeline segment for \(result.segment.title.lowercased())."
+                "Started a new segment for \(result.segment.title.lowercased())."
             case .updated:
-                "Updated the current timeline segment for \(result.segment.title.lowercased())."
+                "Updated the current segment for \(result.segment.title.lowercased())."
             }
             refreshSyncActivity()
             await pushPendingSync()
         } catch {
-            liveDraftStatusMessage = "Could not save draft to timeline."
+            liveDraftStatusMessage = "Could not save the current inference."
         }
     }
 
@@ -534,6 +359,21 @@ struct TimelineView: View {
         manualSegmentDistanceMeters = ""
     }
 
+    private func prepareRecentWorkoutSegmentForm(activityClass: ActivityClass) {
+        let latestObservationTime = observations.first?.timestamp ?? .now
+        let earliestRecentObservationTime = observations.prefix(80).last?.timestamp
+            ?? latestObservationTime.addingTimeInterval(-90 * 60)
+
+        manualSegmentEndTime = latestObservationTime
+        manualSegmentStartTime = min(earliestRecentObservationTime, latestObservationTime)
+        if manualSegmentStartTime >= manualSegmentEndTime {
+            manualSegmentStartTime = latestObservationTime.addingTimeInterval(-45 * 60)
+        }
+        manualSegmentActivityClass = activityClass
+        manualSegmentLabel = ""
+        manualSegmentDistanceMeters = ""
+    }
+
     private func saveManualSegment() async {
         do {
             let writer = LocalUserSegmentWriter(modelContext: modelContext)
@@ -568,36 +408,11 @@ struct TimelineView: View {
         }
     }
 
-    private func observationSnapshots(for segment: SegmentSnapshot) -> [ObservationSnapshot] {
-        ObservationProjection.recent(from: segmentObservations(for: segment), limit: 50)
+    private func refreshSyncActivity() {
+        syncActivity.refresh(using: modelContext)
     }
 
-    private func observationSummaryRows(for segment: SegmentSnapshot) -> [(label: String, count: Int)] {
-        let groupedCounts = Dictionary(grouping: segmentObservations(for: segment), by: \.sourceType)
-            .map { sourceType, observations in
-                (label: sourceTypeLabel(sourceType), count: observations.count)
-            }
-            .sorted { $0.label < $1.label }
-
-        return groupedCounts.isEmpty ? [("Total", 0)] : [("Total", segmentObservations(for: segment).count)] + groupedCounts
-    }
-
-    private func sourceTypeLabel(_ sourceType: ObservationSourceType) -> String {
-        switch sourceType {
-        case .location:
-            "Location"
-        case .motion:
-            "Motion"
-        case .pedometer:
-            "Pedometer"
-        case .heartRate:
-            "Heart Rate"
-        case .deviceState:
-            "Device State"
-        case .connectivity:
-            "Connectivity"
-        case .other:
-            "Other"
-        }
+    private func pushPendingSync() async {
+        await syncActivity.pushPending(using: modelContext)
     }
 }

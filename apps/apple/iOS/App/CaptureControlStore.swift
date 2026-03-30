@@ -16,6 +16,7 @@ final class CaptureControlStore {
     private var motionCaptureService: MotionActivityObservationCaptureService?
     private var pedometerCaptureService: PedometerObservationCaptureService?
     private var hasAppliedInitialResume = false
+    private var modelContext: ModelContext?
 
     private let defaults: UserDefaults
 
@@ -50,7 +51,7 @@ final class CaptureControlStore {
         defaults.set(affectedSources.map(\.rawValue), forKey: Keys.expectedCaptureGapKinds)
     }
 
-    func handleDidBecomeActive() async {
+    func handleDidBecomeActive() async -> CaptureResumeReport? {
         defer {
             clearPendingGap()
         }
@@ -60,43 +61,55 @@ final class CaptureControlStore {
         let startInterval = defaults.double(forKey: Keys.expectedCaptureGapStart)
         guard startInterval > 0 else {
             gapNotice = nil
-            return
+            return nil
         }
 
         let kindValues = defaults.stringArray(forKey: Keys.expectedCaptureGapKinds) ?? []
         let affectedSources = kindValues.compactMap(CaptureServiceKind.init(rawValue:))
         guard affectedSources.isEmpty == false else {
             gapNotice = nil
-            return
+            return nil
         }
 
         let startTime = Date(timeIntervalSince1970: startInterval)
         let endTime = Date.now
         guard endTime > startTime else {
             gapNotice = nil
-            return
+            return nil
         }
 
-        let recoveredSources = await recoverQueryableSources(
+        _ = await recoverQueryableSources(
             from: startTime,
             to: endTime,
             expectedSources: affectedSources
         )
         let blockingReasons = backgroundBlockingReasons(for: affectedSources)
-        guard blockingReasons.isEmpty == false else {
-            gapNotice = nil
-            return
-        }
+        let sourceCounts = observationCounts(
+            from: startTime,
+            to: endTime,
+            expectedSources: affectedSources
+        )
 
-        gapNotice = CaptureGapNotice(
+        gapNotice = blockingReasons.isEmpty ? nil : CaptureGapNotice(
             startTime: startTime,
             endTime: endTime,
-            recoveredSources: recoveredSources,
+            recoveredSources: sourceCounts
+                .filter { $0.count > 0 && $0.kind != CaptureServiceKind.location }
+                .map(\.kind),
+            blockingReasons: blockingReasons
+        )
+
+        return CaptureResumeReport(
+            startTime: startTime,
+            endTime: endTime,
+            sourceCounts: sourceCounts,
             blockingReasons: blockingReasons
         )
     }
 
     func configure(modelContext: ModelContext) {
+        self.modelContext = modelContext
+
         guard locationCaptureService == nil, motionCaptureService == nil, pedometerCaptureService == nil else {
             return
         }
@@ -288,8 +301,48 @@ final class CaptureControlStore {
         return backgroundModes.contains("location")
     }
 
+    private func observationCounts(
+        from startTime: Date,
+        to endTime: Date,
+        expectedSources: [CaptureServiceKind]
+    ) -> [CaptureResumeSourceCount] {
+        guard let modelContext else {
+            return expectedSources.map { CaptureResumeSourceCount(kind: $0, count: 0) }
+        }
+
+        let descriptor = FetchDescriptor<ObservationRecord>(
+            predicate: #Predicate<ObservationRecord> { observation in
+                observation.timestamp >= startTime && observation.timestamp <= endTime
+            }
+        )
+
+        let observations = (try? modelContext.fetch(descriptor)) ?? []
+        let countsBySource = Dictionary(grouping: observations, by: \.sourceType)
+            .mapValues(\.count)
+
+        return expectedSources.map { kind in
+            CaptureResumeSourceCount(
+                kind: kind,
+                count: countsBySource[kind.observationSourceType] ?? 0
+            )
+        }
+    }
+
     private func clearPendingGap() {
         defaults.removeObject(forKey: Keys.expectedCaptureGapStart)
         defaults.removeObject(forKey: Keys.expectedCaptureGapKinds)
+    }
+}
+
+private extension CaptureServiceKind {
+    var observationSourceType: ObservationSourceType {
+        switch self {
+        case .location:
+            .location
+        case .motionActivity:
+            .motion
+        case .pedometer:
+            .pedometer
+        }
     }
 }
