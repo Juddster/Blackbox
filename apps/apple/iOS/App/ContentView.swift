@@ -41,6 +41,7 @@ struct ContentView: View {
             configureCapture()
             presentedResumeReport = await captureControl.handleDidBecomeActive()
             await resumeCaptureIfNeeded()
+            backfillSegmentMetrics()
             refreshCaptureReadiness()
             refreshSyncActivity()
         }
@@ -49,6 +50,7 @@ struct ContentView: View {
                 Task {
                     presentedResumeReport = await captureControl.handleDidBecomeActive()
                     await resumeCaptureIfNeeded()
+                    backfillSegmentMetrics()
                     refreshSyncActivity()
                 }
             } else if scenePhase == .background {
@@ -122,6 +124,11 @@ struct ContentView: View {
 
     private func refreshSyncActivity() {
         syncActivity.refresh(using: modelContext)
+    }
+
+    private func backfillSegmentMetrics() {
+        let backfiller = LocalSegmentMetricBackfiller(modelContext: modelContext)
+        try? backfiller.backfillMissingDistanceMetrics()
     }
 }
 

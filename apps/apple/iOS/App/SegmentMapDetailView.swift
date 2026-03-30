@@ -69,7 +69,7 @@ struct SegmentMapDetailView: View {
     }
 
     private var locationCoordinates: [CLLocationCoordinate2D] {
-        observations.compactMap(locationCoordinate(from:))
+        SegmentObservationMetrics.locationCoordinates(from: observations)
     }
 
     private var startCoordinate: CLLocationCoordinate2D? {
@@ -143,30 +143,4 @@ struct SegmentMapDetailView: View {
         }
     }
 
-    private func locationCoordinate(from observation: ObservationRecord) -> CLLocationCoordinate2D? {
-        guard observation.sourceType == .location else {
-            return nil
-        }
-
-        let values = payloadValues(from: observation.payload)
-        guard
-            let latitude = values["lat"].flatMap(Double.init),
-            let longitude = values["lon"].flatMap(Double.init)
-        else {
-            return nil
-        }
-
-        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-    }
-
-    private func payloadValues(from payload: String) -> [String: String] {
-        payload.split(separator: ";").reduce(into: [String: String]()) { partialResult, pair in
-            let components = pair.split(separator: "=", maxSplits: 1)
-            guard components.count == 2 else {
-                return
-            }
-
-            partialResult[String(components[0])] = String(components[1])
-        }
-    }
 }

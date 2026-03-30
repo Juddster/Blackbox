@@ -28,6 +28,12 @@ final class CaptureControlStore {
         static let expectedCaptureGapKinds = "capture.expected-gap.kinds"
     }
 
+    private static let reportableSources: [CaptureServiceKind] = [
+        .location,
+        .motionActivity,
+        .pedometer,
+    ]
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
     }
@@ -41,14 +47,8 @@ final class CaptureControlStore {
     func handleDidEnterBackground() {
         locationCaptureService?.enterBackgroundMode()
 
-        let affectedSources = expectedSourcesForBackgroundAssessment()
-        guard affectedSources.isEmpty == false else {
-            clearPendingGap()
-            return
-        }
-
         defaults.set(Date.now.timeIntervalSince1970, forKey: Keys.expectedCaptureGapStart)
-        defaults.set(affectedSources.map(\.rawValue), forKey: Keys.expectedCaptureGapKinds)
+        defaults.set(Self.reportableSources.map(\.rawValue), forKey: Keys.expectedCaptureGapKinds)
     }
 
     func handleDidBecomeActive() async -> CaptureResumeReport? {
@@ -66,11 +66,6 @@ final class CaptureControlStore {
 
         let kindValues = defaults.stringArray(forKey: Keys.expectedCaptureGapKinds) ?? []
         let affectedSources = kindValues.compactMap(CaptureServiceKind.init(rawValue:))
-        guard affectedSources.isEmpty == false else {
-            gapNotice = nil
-            return nil
-        }
-
         let startTime = Date(timeIntervalSince1970: startInterval)
         let endTime = Date.now
         guard endTime > startTime else {
@@ -83,7 +78,7 @@ final class CaptureControlStore {
             to: endTime,
             expectedSources: affectedSources
         )
-        let blockingReasons = backgroundBlockingReasons(for: affectedSources)
+        let blockingReasons = backgroundBlockingReasons(for: expectedSourcesForBackgroundAssessment())
         let sourceCounts = observationCounts(
             from: startTime,
             to: endTime,

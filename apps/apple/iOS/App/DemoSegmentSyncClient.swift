@@ -2,9 +2,12 @@ import Foundation
 
 @MainActor
 struct DemoSegmentSyncClient: SegmentSyncing {
+    private static let deletedSegmentIDsKey = "demo-sync.deleted-segment-ids"
+
     func push(_ envelopes: [SegmentEnvelope]) async throws -> SegmentPushOutcome {
         var accepted = [AcceptedSegmentPush]()
         var conflicts = [ConflictedSegmentPush]()
+        var deletedSegmentIDs = storedDeletedSegmentIDs()
 
         for envelope in envelopes {
             if let conflictReason = conflictReason(for: envelope) {
@@ -16,6 +19,11 @@ struct DemoSegmentSyncClient: SegmentSyncing {
                     )
                 )
             } else {
+                if envelope.sync.isDeleted {
+                    deletedSegmentIDs.insert(envelope.id.uuidString)
+                } else {
+                    deletedSegmentIDs.remove(envelope.id.uuidString)
+                }
                 accepted.append(
                     AcceptedSegmentPush(
                         segmentID: envelope.id,
@@ -26,6 +34,8 @@ struct DemoSegmentSyncClient: SegmentSyncing {
             }
         }
 
+        storeDeletedSegmentIDs(deletedSegmentIDs)
+
         return SegmentPushOutcome(
             accepted: accepted,
             conflicts: conflicts
@@ -35,6 +45,9 @@ struct DemoSegmentSyncClient: SegmentSyncing {
     func pull() async throws -> [SegmentEnvelope] {
         let now = Date.now
         let segmentID = UUID(uuidString: "D0E29E42-8D64-4BEE-8C92-60B4F473A111") ?? UUID()
+        guard storedDeletedSegmentIDs().contains(segmentID.uuidString) == false else {
+            return []
+        }
         let interpretationID = UUID(uuidString: "0B2501AA-07AE-4E77-AF56-C3B63802F001") ?? UUID()
         let summaryID = UUID(uuidString: "E9FD45AB-5A36-4A1A-A68A-A6681C6C7001") ?? UUID()
 
@@ -133,5 +146,13 @@ struct DemoSegmentSyncClient: SegmentSyncing {
                 isDeleted: reason == "deletedOnServer"
             )
         )
+    }
+
+    private func storedDeletedSegmentIDs() -> Set<String> {
+        Set(UserDefaults.standard.stringArray(forKey: Self.deletedSegmentIDsKey) ?? [])
+    }
+
+    private func storeDeletedSegmentIDs(_ deletedSegmentIDs: Set<String>) {
+        UserDefaults.standard.set(Array(deletedSegmentIDs).sorted(), forKey: Self.deletedSegmentIDsKey)
     }
 }
