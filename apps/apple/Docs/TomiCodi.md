@@ -309,3 +309,5 @@ What to watch:
   - Reworked the Apple inactive-window popup so it now reports Blackbox-recorded points separately from motion and pedometer data recovered from iOS system history on resume, which makes it explicit when the phone retained historical data even though Blackbox live capture for that source was off.
 - Mar 30, 23:33:
   - Hardened Apple segment deletion by persisting a local deleted-ID registry, purging accepted tombstones from the local store after sync, and blocking later non-deleted pull envelopes for those IDs unless there is an explicit restore path.
+- Mar 30, 23:37:
+  - Followed up on Apple segment deletion by making the timeline projection hide locally deleted IDs immediately and forcing a local timeline refresh after delete/restore actions, so a tombstoned row does not linger or visually reappear while sync catches up.

@@ -15,6 +15,7 @@ struct TimelineView: View {
     @State private var manualSegmentActivityClass: ActivityClass = .walking
     @State private var manualSegmentLabel = ""
     @State private var manualSegmentDistanceMeters = ""
+    @State private var timelineRefreshNonce = 0
 
     @Query(
         sort: [
@@ -225,7 +226,8 @@ struct TimelineView: View {
     }
 
     private var groupedSegments: [TimelineDayGroup] {
-        TimelineProjection.groups(from: segments)
+        let _ = timelineRefreshNonce
+        return TimelineProjection.groups(from: segments)
     }
 
     private var liveDraftSegment: LiveDraftSegmentSnapshot? {
@@ -276,6 +278,7 @@ struct TimelineView: View {
                 for: segmentID,
                 modelContext: modelContext
             )
+            timelineRefreshNonce &+= 1
             refreshSyncActivity()
         } catch {
             syncActivity.lastPushMessage = "Could not apply the server version for that conflict."
@@ -289,6 +292,7 @@ struct TimelineView: View {
                 for: segmentID,
                 modelContext: modelContext
             )
+            timelineRefreshNonce &+= 1
             refreshSyncActivity()
             await pushPendingSync()
         } catch {
@@ -303,6 +307,7 @@ struct TimelineView: View {
                 for: segmentID,
                 modelContext: modelContext
             )
+            timelineRefreshNonce &+= 1
             refreshSyncActivity()
             await pushPendingSync()
         } catch {
@@ -314,6 +319,7 @@ struct TimelineView: View {
         do {
             let tombstoner = LocalSegmentTombstoner(modelContext: modelContext)
             try tombstoner.tombstone(segmentID: segmentID)
+            timelineRefreshNonce &+= 1
             refreshSyncActivity()
             await pushPendingSync()
         } catch {

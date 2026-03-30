@@ -36,7 +36,9 @@ enum TimelineProjection {
 
     private static func visibleRecords(from records: [SegmentRecord]) -> [SegmentRecord] {
         records.filter { record in
-            record.lifecycleState != .deleted && record.syncState?.isDeleted != true
+            record.lifecycleState != .deleted
+                && record.syncState?.isDeleted != true
+                && LocalDeletedSegmentStore.contains(record.id) == false
         }
     }
 }
