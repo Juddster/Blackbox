@@ -4,17 +4,19 @@ import Foundation
 @MainActor
 final class LocationObservationCaptureService: ObservationCapturing {
     private enum RecordingThresholds {
-        static let minimumTimeInterval: TimeInterval = 5 * 60
-        static let minimumDistanceMeters: CLLocationDistance = 50
-        static let significantAccuracyImprovementMeters: CLLocationAccuracy = 40
-        static let significantSpeedDeltaMetersPerSecond: CLLocationSpeed = 1.5
+        static let minimumTimeInterval: TimeInterval = 90
+        static let minimumDistanceMeters: CLLocationDistance = 20
+        static let movingTimeInterval: TimeInterval = 20
+        static let movingDistanceMeters: CLLocationDistance = 8
+        static let significantAccuracyImprovementMeters: CLLocationAccuracy = 20
+        static let significantSpeedDeltaMetersPerSecond: CLLocationSpeed = 0.8
     }
 
     private enum RuntimePolicy {
         static let foregroundDesiredAccuracy = kCLLocationAccuracyNearestTenMeters
-        static let foregroundDistanceFilter: CLLocationDistance = 50
+        static let foregroundDistanceFilter: CLLocationDistance = 10
         static let backgroundDesiredAccuracy = kCLLocationAccuracyNearestTenMeters
-        static let backgroundDistanceFilter: CLLocationDistance = 100
+        static let backgroundDistanceFilter: CLLocationDistance = 25
     }
 
     private let recorder: ObservationIngesting
@@ -193,12 +195,21 @@ final class LocationObservationCaptureService: ObservationCapturing {
         }
 
         let elapsedTime = location.timestamp.timeIntervalSince(lastRecordedLocation.timestamp)
-        if elapsedTime >= RecordingThresholds.minimumTimeInterval {
+        let currentSpeed = sanitizedSpeed(location.speed)
+        let previousSpeed = sanitizedSpeed(lastRecordedLocation.speed)
+        let isMoving = max(currentSpeed, previousSpeed) >= 2
+        let minimumTimeInterval = isMoving
+            ? RecordingThresholds.movingTimeInterval
+            : RecordingThresholds.minimumTimeInterval
+        if elapsedTime >= minimumTimeInterval {
             return true
         }
 
         let distance = location.distance(from: lastRecordedLocation)
-        if distance >= RecordingThresholds.minimumDistanceMeters {
+        let minimumDistanceMeters = isMoving
+            ? RecordingThresholds.movingDistanceMeters
+            : RecordingThresholds.minimumDistanceMeters
+        if distance >= minimumDistanceMeters {
             return true
         }
 
@@ -210,8 +221,6 @@ final class LocationObservationCaptureService: ObservationCapturing {
             return true
         }
 
-        let previousSpeed = sanitizedSpeed(lastRecordedLocation.speed)
-        let currentSpeed = sanitizedSpeed(location.speed)
         if abs(previousSpeed - currentSpeed) >= RecordingThresholds.significantSpeedDeltaMetersPerSecond {
             return true
         }

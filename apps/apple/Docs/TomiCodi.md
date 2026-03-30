@@ -299,3 +299,5 @@ What to watch:
   - Added quick Apple workout-window shortcuts in the timeline toolbar so a recent run or walk can open the manual segment sheet with a prefilled recent observation window and matching broad class for faster post-activity labeling.
 - Mar 27, 20:04:
   - Split the Apple app into tabs so the main Activity tab now focuses on current inference and saved segments, moved controls/readiness into Settings, moved sync and raw recent-capture inspection into Data, added a resume popup summarizing captured point counts since background/relaunch, and replaced segment raw location dumps with a map-based segment detail.
+- Mar 27, 20:18:
+  - Tightened the Apple post-run workflow and path quality: user-marked segments now derive distance from captured evidence when none is entered manually, segment map paths use chronological observations so start/end markers line up correctly, recent workout shortcuts infer a tighter recent active window, and moving location capture now persists more points for smoother replay paths.

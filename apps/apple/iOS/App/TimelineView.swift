@@ -360,15 +360,9 @@ struct TimelineView: View {
     }
 
     private func prepareRecentWorkoutSegmentForm(activityClass: ActivityClass) {
-        let latestObservationTime = observations.first?.timestamp ?? .now
-        let earliestRecentObservationTime = observations.prefix(80).last?.timestamp
-            ?? latestObservationTime.addingTimeInterval(-90 * 60)
-
-        manualSegmentEndTime = latestObservationTime
-        manualSegmentStartTime = min(earliestRecentObservationTime, latestObservationTime)
-        if manualSegmentStartTime >= manualSegmentEndTime {
-            manualSegmentStartTime = latestObservationTime.addingTimeInterval(-45 * 60)
-        }
+        let inferredWindow = inferredRecentWorkoutWindow(for: activityClass)
+        manualSegmentStartTime = inferredWindow.startTime
+        manualSegmentEndTime = inferredWindow.endTime
         manualSegmentActivityClass = activityClass
         manualSegmentLabel = ""
         manualSegmentDistanceMeters = ""
@@ -405,6 +399,89 @@ struct TimelineView: View {
     private func segmentObservations(for segment: SegmentSnapshot) -> [ObservationRecord] {
         observations.filter { observation in
             observation.timestamp >= segment.startTime && observation.timestamp <= segment.endTime
+        }
+        .sorted { $0.timestamp < $1.timestamp }
+    }
+
+    private func inferredRecentWorkoutWindow(for activityClass: ActivityClass) -> (startTime: Date, endTime: Date) {
+        let latestObservationTime = observations.first?.timestamp ?? .now
+        let fallbackStartTime = latestObservationTime.addingTimeInterval(-45 * 60)
+        let relevantObservations = observations
+            .filter { isRelevantRecentWorkoutObservation($0, activityClass: activityClass) }
+            .sorted { $0.timestamp > $1.timestamp }
+
+        guard let latestRelevantObservation = relevantObservations.first else {
+            return (fallbackStartTime, latestObservationTime)
+        }
+
+        var earliestTime = intervalStart(for: latestRelevantObservation)
+        var latestTime = intervalEnd(for: latestRelevantObservation)
+        var previousTimestamp = latestRelevantObservation.timestamp
+
+        for observation in relevantObservations.dropFirst() {
+            let gap = previousTimestamp.timeIntervalSince(observation.timestamp)
+            if gap > 10 * 60 {
+                break
+            }
+
+            earliestTime = min(earliestTime, intervalStart(for: observation))
+            latestTime = max(latestTime, intervalEnd(for: observation))
+            previousTimestamp = observation.timestamp
+        }
+
+        return (earliestTime, latestTime)
+    }
+
+    private func isRelevantRecentWorkoutObservation(
+        _ observation: ObservationRecord,
+        activityClass: ActivityClass
+    ) -> Bool {
+        switch observation.sourceType {
+        case .location:
+            return true
+        case .pedometer:
+            return true
+        case .motion:
+            let values = payloadValues(from: observation.payload)
+            switch activityClass {
+            case .running:
+                return values["running"] == "true"
+            case .walking:
+                return values["walking"] == "true"
+            default:
+                return true
+            }
+        default:
+            return false
+        }
+    }
+
+    private func intervalStart(for observation: ObservationRecord) -> Date {
+        let values = payloadValues(from: observation.payload)
+        if let startInterval = values["start"].flatMap(TimeInterval.init) {
+            return Date(timeIntervalSince1970: startInterval)
+        }
+
+        return observation.timestamp
+    }
+
+    private func intervalEnd(for observation: ObservationRecord) -> Date {
+        let values = payloadValues(from: observation.payload)
+        if let endInterval = values["end"].flatMap(TimeInterval.init) {
+            return Date(timeIntervalSince1970: endInterval)
+        }
+
+        return observation.timestamp
+    }
+
+    private func payloadValues(from payload: String) -> [String: String] {
+        payload.split(separator: ";").reduce(into: [String: String]()) { partialResult, pair in
+            let components = pair.split(separator: "=", maxSplits: 1)
+            guard components.count == 2 else {
+                return
+            }
+
+            partialResult[String(components[0])] = String(components[1])
         }
     }
 
