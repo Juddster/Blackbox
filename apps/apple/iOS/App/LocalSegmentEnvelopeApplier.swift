@@ -45,6 +45,10 @@ struct LocalSegmentEnvelopeApplier {
     }
 
     private func update(record: SegmentRecord, from envelope: SegmentEnvelope) {
+        if LocalDeletedSegmentStore.contains(envelope.id), envelope.sync.isDeleted == false {
+            return
+        }
+
         if record.syncState?.isDeleted == true, envelope.sync.isDeleted == false {
             return
         }

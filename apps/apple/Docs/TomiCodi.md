@@ -307,3 +307,5 @@ What to watch:
   - Fixed two more Apple regressions from field testing: inactive-window reporting now only backfills motion and pedometer history for sources that were actually enabled, and the local envelope applier now refuses to resurrect a locally deleted segment from a later non-deleted pull without an explicit restore path.
 - Mar 30, 23:18:
   - Reworked the Apple inactive-window popup so it now reports Blackbox-recorded points separately from motion and pedometer data recovered from iOS system history on resume, which makes it explicit when the phone retained historical data even though Blackbox live capture for that source was off.
+- Mar 30, 23:33:
+  - Hardened Apple segment deletion by persisting a local deleted-ID registry, purging accepted tombstones from the local store after sync, and blocking later non-deleted pull envelopes for those IDs unless there is an explicit restore path.

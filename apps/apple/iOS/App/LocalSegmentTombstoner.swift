@@ -36,5 +36,6 @@ struct LocalSegmentTombstoner {
         }
 
         try modelContext.save()
+        LocalDeletedSegmentStore.markDeleted(segmentID)
     }
 }

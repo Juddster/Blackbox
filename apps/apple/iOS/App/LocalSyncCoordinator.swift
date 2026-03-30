@@ -57,6 +57,9 @@ final class LocalSyncCoordinator {
         }
 
         let envelope = try decoder.decode(SegmentEnvelope.self, from: data)
+        if envelope.sync.isDeleted == false {
+            LocalDeletedSegmentStore.remove(segmentID)
+        }
         let applier = LocalSegmentEnvelopeApplier(modelContext: modelContext)
         _ = try applier.apply([envelope])
     }
@@ -110,6 +113,7 @@ final class LocalSyncCoordinator {
         syncState.pendingServerEnvelopeData = nil
         syncState.lastModifiedAt = .now
         try modelContext.save()
+        LocalDeletedSegmentStore.remove(segmentID)
     }
 
     private func envelopes(
@@ -154,12 +158,19 @@ final class LocalSyncCoordinator {
                 continue
             }
 
+            if record.lifecycleState == .deleted || record.syncState?.isDeleted == true {
+                LocalDeletedSegmentStore.markDeleted(accepted.segmentID)
+                modelContext.delete(record)
+                continue
+            }
+
             if let syncState = record.syncState {
                 syncState.syncVersion = accepted.syncVersion
                 syncState.lastModifiedAt = accepted.updatedAt
                 syncState.disposition = .synced
                 syncState.lastSyncError = nil
                 syncState.pendingServerEnvelopeData = nil
+                LocalDeletedSegmentStore.remove(accepted.segmentID)
             }
         }
 
@@ -176,5 +187,29 @@ final class LocalSyncCoordinator {
         }
 
         try modelContext.save()
+    }
+}
+
+enum LocalDeletedSegmentStore {
+    private static let key = "capture.locally-deleted-segment-ids"
+
+    static func contains(_ segmentID: UUID, defaults: UserDefaults = .standard) -> Bool {
+        storedIDs(defaults: defaults).contains(segmentID.uuidString)
+    }
+
+    static func markDeleted(_ segmentID: UUID, defaults: UserDefaults = .standard) {
+        var ids = storedIDs(defaults: defaults)
+        ids.insert(segmentID.uuidString)
+        defaults.set(Array(ids).sorted(), forKey: key)
+    }
+
+    static func remove(_ segmentID: UUID, defaults: UserDefaults = .standard) {
+        var ids = storedIDs(defaults: defaults)
+        ids.remove(segmentID.uuidString)
+        defaults.set(Array(ids).sorted(), forKey: key)
+    }
+
+    private static func storedIDs(defaults: UserDefaults) -> Set<String> {
+        Set(defaults.stringArray(forKey: key) ?? [])
     }
 }
