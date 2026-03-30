@@ -303,3 +303,5 @@ What to watch:
   - Tightened the Apple post-run workflow and path quality: user-marked segments now derive distance from captured evidence when none is entered manually, segment map paths use chronological observations so start/end markers line up correctly, recent workout shortcuts infer a tighter recent active window, and moving location capture now persists more points for smoother replay paths.
 - Mar 27, 20:34:
   - Fixed three Apple field-test regressions: existing segments now backfill missing distance from stored observations on active, the demo sync client now remembers server-segment deletions so tombstoned segments do not immediately reappear after delete, and the resume popup now reports captured counts for the inactive window even when capture intent was toggled off before backgrounding.
+- Mar 27, 20:43:
+  - Fixed two more Apple regressions from field testing: inactive-window reporting now only backfills motion and pedometer history for sources that were actually enabled, and the local envelope applier now refuses to resurrect a locally deleted segment from a later non-deleted pull without an explicit restore path.

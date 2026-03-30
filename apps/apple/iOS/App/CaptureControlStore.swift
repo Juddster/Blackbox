@@ -76,7 +76,7 @@ final class CaptureControlStore {
         _ = await recoverQueryableSources(
             from: startTime,
             to: endTime,
-            expectedSources: affectedSources
+            expectedSources: expectedSourcesForBackgroundAssessment()
         )
         let blockingReasons = backgroundBlockingReasons(for: expectedSourcesForBackgroundAssessment())
         let sourceCounts = observationCounts(

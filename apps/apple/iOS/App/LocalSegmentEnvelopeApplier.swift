@@ -45,6 +45,10 @@ struct LocalSegmentEnvelopeApplier {
     }
 
     private func update(record: SegmentRecord, from envelope: SegmentEnvelope) {
+        if record.syncState?.isDeleted == true, envelope.sync.isDeleted == false {
+            return
+        }
+
         record.startTime = envelope.segment.startTime
         record.endTime = envelope.segment.endTime
         record.lifecycleState = envelope.segment.lifecycleState
