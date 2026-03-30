@@ -305,3 +305,5 @@ What to watch:
   - Fixed three Apple field-test regressions: existing segments now backfill missing distance from stored observations on active, the demo sync client now remembers server-segment deletions so tombstoned segments do not immediately reappear after delete, and the resume popup now reports captured counts for the inactive window even when capture intent was toggled off before backgrounding.
 - Mar 27, 20:43:
   - Fixed two more Apple regressions from field testing: inactive-window reporting now only backfills motion and pedometer history for sources that were actually enabled, and the local envelope applier now refuses to resurrect a locally deleted segment from a later non-deleted pull without an explicit restore path.
+- Mar 30, 23:18:
+  - Reworked the Apple inactive-window popup so it now reports Blackbox-recorded points separately from motion and pedometer data recovered from iOS system history on resume, which makes it explicit when the phone retained historical data even though Blackbox live capture for that source was off.

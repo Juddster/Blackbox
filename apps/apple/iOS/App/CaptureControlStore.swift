@@ -25,7 +25,7 @@ final class CaptureControlStore {
         static let motionEnabled = "capture.motion.enabled"
         static let pedometerEnabled = "capture.pedometer.enabled"
         static let expectedCaptureGapStart = "capture.expected-gap.start"
-        static let expectedCaptureGapKinds = "capture.expected-gap.kinds"
+        static let enabledCaptureGapKinds = "capture.expected-gap.enabled-kinds"
     }
 
     private static let reportableSources: [CaptureServiceKind] = [
@@ -46,9 +46,10 @@ final class CaptureControlStore {
 
     func handleDidEnterBackground() {
         locationCaptureService?.enterBackgroundMode()
+        let enabledSources = expectedSourcesForBackgroundAssessment()
 
         defaults.set(Date.now.timeIntervalSince1970, forKey: Keys.expectedCaptureGapStart)
-        defaults.set(Self.reportableSources.map(\.rawValue), forKey: Keys.expectedCaptureGapKinds)
+        defaults.set(enabledSources.map(\.rawValue), forKey: Keys.enabledCaptureGapKinds)
     }
 
     func handleDidBecomeActive() async -> CaptureResumeReport? {
@@ -64,8 +65,9 @@ final class CaptureControlStore {
             return nil
         }
 
-        let kindValues = defaults.stringArray(forKey: Keys.expectedCaptureGapKinds) ?? []
-        let affectedSources = kindValues.compactMap(CaptureServiceKind.init(rawValue:))
+        let enabledSourceValues = defaults.stringArray(forKey: Keys.enabledCaptureGapKinds) ?? []
+        let enabledSources = enabledSourceValues.compactMap(CaptureServiceKind.init(rawValue:))
+        let reportableSources = Self.reportableSources
         let startTime = Date(timeIntervalSince1970: startInterval)
         let endTime = Date.now
         guard endTime > startTime else {
@@ -73,22 +75,23 @@ final class CaptureControlStore {
             return nil
         }
 
-        _ = await recoverQueryableSources(
+        let recordedCounts = observationCounts(
             from: startTime,
             to: endTime,
-            expectedSources: expectedSourcesForBackgroundAssessment()
+            expectedSources: reportableSources
         )
-        let blockingReasons = backgroundBlockingReasons(for: expectedSourcesForBackgroundAssessment())
-        let sourceCounts = observationCounts(
+        let recoveredCounts = await recoverQueryableSources(
             from: startTime,
             to: endTime,
-            expectedSources: affectedSources
+            enabledSources: enabledSources,
+            reportableSources: reportableSources
         )
+        let blockingReasons = backgroundBlockingReasons(for: enabledSources)
 
         gapNotice = blockingReasons.isEmpty ? nil : CaptureGapNotice(
             startTime: startTime,
             endTime: endTime,
-            recoveredSources: sourceCounts
+            recoveredSources: recoveredCounts
                 .filter { $0.count > 0 && $0.kind != CaptureServiceKind.location }
                 .map(\.kind),
             blockingReasons: blockingReasons
@@ -97,7 +100,9 @@ final class CaptureControlStore {
         return CaptureResumeReport(
             startTime: startTime,
             endTime: endTime,
-            sourceCounts: sourceCounts,
+            enabledSources: enabledSources,
+            recordedCounts: recordedCounts,
+            recoveredCounts: recoveredCounts,
             blockingReasons: blockingReasons
         )
     }
@@ -269,23 +274,39 @@ final class CaptureControlStore {
     private func recoverQueryableSources(
         from startTime: Date,
         to endTime: Date,
-        expectedSources: [CaptureServiceKind]
-    ) async -> [CaptureServiceKind] {
-        var recoveredSources = [CaptureServiceKind]()
+        enabledSources: [CaptureServiceKind],
+        reportableSources: [CaptureServiceKind]
+    ) async -> [CaptureResumeSourceCount] {
+        var recoveredCounts = [CaptureResumeSourceCount]()
 
-        if expectedSources.contains(.motionActivity),
-           let motionCaptureService,
-           let _ = await motionCaptureService.backfill(from: startTime, to: endTime) {
-            recoveredSources.append(.motionActivity)
+        for source in reportableSources {
+            let count: Int
+
+            switch source {
+            case .location:
+                count = 0
+            case .motionActivity:
+                if enabledSources.contains(.motionActivity), let motionCaptureService {
+                    count = await motionCaptureService.backfill(from: startTime, to: endTime) ?? 0
+                } else if let motionCaptureService {
+                    count = await motionCaptureService.historicalActivityCount(from: startTime, to: endTime) ?? 0
+                } else {
+                    count = 0
+                }
+            case .pedometer:
+                if enabledSources.contains(.pedometer), let pedometerCaptureService {
+                    count = await pedometerCaptureService.backfill(from: startTime, to: endTime) ? 1 : 0
+                } else if let pedometerCaptureService {
+                    count = await pedometerCaptureService.historicalDataPointCount(from: startTime, to: endTime) ?? 0
+                } else {
+                    count = 0
+                }
+            }
+
+            recoveredCounts.append(CaptureResumeSourceCount(kind: source, count: count))
         }
 
-        if expectedSources.contains(.pedometer),
-           let pedometerCaptureService,
-           await pedometerCaptureService.backfill(from: startTime, to: endTime) {
-            recoveredSources.append(.pedometer)
-        }
-
-        return recoveredSources
+        return recoveredCounts
     }
 
     private func supportsBackgroundLocationUpdates() -> Bool {
@@ -325,7 +346,7 @@ final class CaptureControlStore {
 
     private func clearPendingGap() {
         defaults.removeObject(forKey: Keys.expectedCaptureGapStart)
-        defaults.removeObject(forKey: Keys.expectedCaptureGapKinds)
+        defaults.removeObject(forKey: Keys.enabledCaptureGapKinds)
     }
 }
 

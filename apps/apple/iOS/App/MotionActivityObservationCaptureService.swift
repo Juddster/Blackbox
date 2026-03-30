@@ -41,13 +41,44 @@ final class MotionActivityObservationCaptureService: ObservationCapturing {
     }
 
     func backfill(from startDate: Date, to endDate: Date) async -> Int? {
+        let activities = await historicalActivities(from: startDate, to: endDate)
+        guard let activities else {
+            return nil
+        }
+
+        let inputs = activities.map { activity in
+            ObservationInput(
+                timestamp: activity.startDate,
+                sourceDevice: .iPhone,
+                sourceType: .motion,
+                payload: activityPayload(for: activity),
+                qualityHint: confidenceHint(for: activity.confidence)
+            )
+        }
+
+        do {
+            if inputs.isEmpty == false {
+                try self.recorder.record(inputs)
+            }
+            return inputs.count
+        } catch {
+            return nil
+        }
+    }
+
+    func historicalActivityCount(from startDate: Date, to endDate: Date) async -> Int? {
+        let activities = await historicalActivities(from: startDate, to: endDate)
+        return activities?.count
+    }
+
+    private func historicalActivities(from startDate: Date, to endDate: Date) async -> [CMMotionActivity]? {
         guard CMMotionActivityManager.isActivityAvailable(), endDate > startDate else {
             return nil
         }
 
         return await withCheckedContinuation { continuation in
             activityManager.queryActivityStarting(from: startDate, to: endDate, to: .main) { [weak self] activities, error in
-                guard let self else {
+                guard self != nil else {
                     continuation.resume(returning: nil)
                     return
                 }
@@ -57,24 +88,7 @@ final class MotionActivityObservationCaptureService: ObservationCapturing {
                     return
                 }
 
-                let inputs = (activities ?? []).map { activity in
-                    ObservationInput(
-                        timestamp: activity.startDate,
-                        sourceDevice: .iPhone,
-                        sourceType: .motion,
-                        payload: self.activityPayload(for: activity),
-                        qualityHint: self.confidenceHint(for: activity.confidence)
-                    )
-                }
-
-                do {
-                    if inputs.isEmpty == false {
-                        try self.recorder.record(inputs)
-                    }
-                    continuation.resume(returning: inputs.count)
-                } catch {
-                    continuation.resume(returning: nil)
-                }
+                continuation.resume(returning: activities ?? [])
             }
         }
     }

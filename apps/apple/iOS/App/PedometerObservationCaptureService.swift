@@ -41,30 +41,44 @@ final class PedometerObservationCaptureService: ObservationCapturing {
     }
 
     func backfill(from startDate: Date, to endDate: Date) async -> Bool {
-        guard CMPedometer.isStepCountingAvailable(), endDate > startDate else {
+        let data = await historicalData(from: startDate, to: endDate)
+        guard let data else {
             return false
+        }
+
+        let input = ObservationInput(
+            timestamp: data.endDate,
+            sourceDevice: .iPhone,
+            sourceType: .pedometer,
+            payload: self.payload(for: data, startDate: startDate, endDate: endDate)
+        )
+
+        do {
+            try self.recorder.record(input)
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    func historicalDataPointCount(from startDate: Date, to endDate: Date) async -> Int? {
+        let data = await historicalData(from: startDate, to: endDate)
+        return data == nil ? 0 : 1
+    }
+
+    private func historicalData(from startDate: Date, to endDate: Date) async -> CMPedometerData? {
+        guard CMPedometer.isStepCountingAvailable(), endDate > startDate else {
+            return nil
         }
 
         return await withCheckedContinuation { continuation in
             pedometer.queryPedometerData(from: startDate, to: endDate) { [weak self] data, error in
-                guard let self, let data, error == nil else {
-                    continuation.resume(returning: false)
+                guard self != nil, error == nil else {
+                    continuation.resume(returning: nil)
                     return
                 }
 
-                let input = ObservationInput(
-                    timestamp: data.endDate,
-                    sourceDevice: .iPhone,
-                    sourceType: .pedometer,
-                    payload: self.payload(for: data, startDate: startDate, endDate: endDate)
-                )
-
-                do {
-                    try self.recorder.record(input)
-                    continuation.resume(returning: true)
-                } catch {
-                    continuation.resume(returning: false)
-                }
+                continuation.resume(returning: data)
             }
         }
     }

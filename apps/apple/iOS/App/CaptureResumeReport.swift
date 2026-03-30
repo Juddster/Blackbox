@@ -4,7 +4,9 @@ struct CaptureResumeReport: Identifiable, Equatable {
     let id = UUID()
     let startTime: Date
     let endTime: Date
-    let sourceCounts: [CaptureResumeSourceCount]
+    let enabledSources: [CaptureServiceKind]
+    let recordedCounts: [CaptureResumeSourceCount]
+    let recoveredCounts: [CaptureResumeSourceCount]
     let blockingReasons: [String]
 
     var title: String {
@@ -17,13 +19,34 @@ struct CaptureResumeReport: Identifiable, Equatable {
         formatter.timeStyle = .short
 
         let window = formatter.string(from: startTime, to: endTime)
-        let counts = sourceCounts.map(\.message).joined(separator: "\n")
+        let enabled = enabledSources.isEmpty
+            ? "none"
+            : enabledSources.map(\.displayName).joined(separator: ", ")
+        let recorded = sectionBody(for: recordedCounts)
+        let recovered = sectionBody(for: recoveredCounts)
 
-        if blockingReasons.isEmpty {
-            return "Since \(window):\n\(counts)"
+        var sections = [
+            "Since \(window):",
+            "Blackbox capture intent during this window: \(enabled)",
+            "",
+            "Recorded by Blackbox during the window:",
+            recorded,
+            "",
+            "Recovered from iOS system history on resume:",
+            recovered,
+        ]
+
+        if blockingReasons.isEmpty == false {
+            sections.append("")
+            sections.append("Notes:")
+            sections.append(blockingReasons.joined(separator: "\n"))
         }
 
-        return "Since \(window):\n\(counts)\n\nNotes:\n\(blockingReasons.joined(separator: "\n"))"
+        return sections.joined(separator: "\n")
+    }
+
+    private func sectionBody(for counts: [CaptureResumeSourceCount]) -> String {
+        counts.map(\.message).joined(separator: "\n")
     }
 }
 
