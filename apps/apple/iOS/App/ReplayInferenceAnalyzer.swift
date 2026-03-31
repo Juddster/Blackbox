@@ -347,6 +347,10 @@ private struct ReplayInferenceBucket {
             && locationDistanceMeters < 40
             && sawAutomotiveMotion == false
             && (averageSpeedMetersPerSecond ?? 0) < 2.0
+        let hasMeaningfulOnFootEvidence = sawWalkingMotion
+            || sawRunningMotion
+            || (averageCadenceStepsPerSecond ?? 0) >= 1.2
+            || (pedometerDistanceMeters ?? 0) >= 15
         let walkingMotionDominatesExit = sawWalkingMotion
             && sawRunningMotion == false
             && (averageCadenceStepsPerSecond ?? 0) < 2.6
@@ -411,13 +415,24 @@ private struct ReplayInferenceBucket {
                 matchedReasons.append("pedometer>=20m/min")
             }
             proposedConfidence = min(0.95, 0.35 + (0.12 * Double(matchedReasons.count)))
-        } else if sawStationaryMotion
-            || ((locationDistanceMeters < 20) && ((pedometerDistanceMeters ?? 0) < 10) && ((averageSpeedMetersPerSecond ?? 0) < 0.4)) {
+        } else if hasMeaningfulOnFootEvidence == false
+            && (
+                sawStationaryMotion
+                    || (
+                        locationDistanceMeters < 20
+                            && ((pedometerDistanceMeters ?? 0) < 8)
+                            && ((averageSpeedMetersPerSecond ?? 0) < 0.35)
+                            && ((averageCadenceStepsPerSecond ?? 0) < 0.8)
+                    )
+            ) {
             proposedClass = .stationary
             if sawStationaryMotion { matchedReasons.append("motion=stationary") }
             if locationDistanceMeters < 20 { matchedReasons.append("location<20m") }
-            if let pedometerDistanceMeters, pedometerDistanceMeters < 10 {
-                matchedReasons.append("pedometer<10m")
+            if let pedometerDistanceMeters, pedometerDistanceMeters < 8 {
+                matchedReasons.append("pedometer<8m")
+            }
+            if let averageCadenceStepsPerSecond, averageCadenceStepsPerSecond < 0.8 {
+                matchedReasons.append("cadence<0.8")
             }
             proposedConfidence = min(0.9, 0.3 + (0.12 * Double(matchedReasons.count)))
         }
