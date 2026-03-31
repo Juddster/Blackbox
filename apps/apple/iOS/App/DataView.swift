@@ -193,12 +193,18 @@ struct DataView: View {
         let observations = fetchObservationsForExport()
         let segments = fetchSegmentsForExport()
         refreshMetricsForExport(segments: segments)
+        let analysis = ReplayInferenceAnalyzer.preview(
+            from: observations,
+            windowStart: exportStartTime,
+            windowEnd: exportEndTime
+        )
         let bundle = ReplayExportBundle(
             exportedAt: .now,
             windowStart: exportStartTime,
             windowEnd: exportEndTime,
             observations: observations.map(ReplayExportObservation.init),
-            segments: segments.compactMap(makeReplayExportSegment)
+            segments: segments.compactMap(makeReplayExportSegment),
+            analysis: ReplayExportAnalysis(preview: analysis)
         )
 
         let encoder = JSONEncoder()
@@ -311,6 +317,7 @@ private struct ReplayExportBundle: Codable {
     let windowEnd: Date
     let observations: [ReplayExportObservation]
     let segments: [ReplayExportSegment]
+    let analysis: ReplayExportAnalysis
 }
 
 private struct ReplayExportObservation: Codable {
@@ -354,6 +361,66 @@ private struct ReplayExportSegment: Codable {
     let interpretation: SegmentInterpretationPayload?
     let summary: SegmentSummaryPayload?
     let sync: SyncMetadataPayload
+}
+
+private struct ReplayExportAnalysis: Codable {
+    let analyzerVersion: String
+    let bucketDurationSeconds: TimeInterval
+    let locationFixCount: Int
+    let motionRecordCount: Int
+    let pedometerRecordCount: Int
+    let proposedSegments: [ReplayExportAnalysisSegment]
+    let proposedTransitions: [ReplayExportAnalysisTransition]
+
+    init(preview: ReplayInferencePreview) {
+        analyzerVersion = ReplayInferenceAnalyzer.heuristicVersion
+        bucketDurationSeconds = preview.bucketDurationSeconds
+        locationFixCount = preview.locationFixCount
+        motionRecordCount = preview.motionRecordCount
+        pedometerRecordCount = preview.pedometerRecordCount
+        proposedSegments = preview.proposedSegments.map(ReplayExportAnalysisSegment.init)
+        proposedTransitions = preview.proposedTransitions.map(ReplayExportAnalysisTransition.init)
+    }
+}
+
+private struct ReplayExportAnalysisSegment: Codable {
+    let startTime: Date
+    let endTime: Date
+    let activityClass: ActivityClass
+    let confidence: Double
+    let reasonSummary: String
+    let locationDistanceMeters: Double
+    let pedometerDistanceMeters: Double?
+    let averageSpeedMetersPerSecond: Double?
+    let averageCadenceStepsPerSecond: Double?
+
+    init(segment: ReplayInferenceSegment) {
+        startTime = segment.startTime
+        endTime = segment.endTime
+        activityClass = segment.activityClass
+        confidence = segment.confidence
+        reasonSummary = segment.reasonSummary
+        locationDistanceMeters = segment.locationDistanceMeters
+        pedometerDistanceMeters = segment.pedometerDistanceMeters
+        averageSpeedMetersPerSecond = segment.averageSpeedMetersPerSecond
+        averageCadenceStepsPerSecond = segment.averageCadenceStepsPerSecond
+    }
+}
+
+private struct ReplayExportAnalysisTransition: Codable {
+    let timestamp: Date
+    let fromActivityClass: ActivityClass
+    let toActivityClass: ActivityClass
+    let confidence: Double
+    let reasonSummary: String
+
+    init(transition: ReplayInferenceTransition) {
+        timestamp = transition.timestamp
+        fromActivityClass = transition.fromActivityClass
+        toActivityClass = transition.toActivityClass
+        confidence = transition.confidence
+        reasonSummary = transition.reasonSummary
+    }
 }
 
 private extension DataView {

@@ -33,6 +33,7 @@ struct ReplayInferenceTransition: Identifiable {
 }
 
 enum ReplayInferenceAnalyzer {
+    static let heuristicVersion = "apple-replay-v1"
     private static let bucketDurationSeconds: TimeInterval = 60
     private static let minimumMeaningfulSegmentDuration: TimeInterval = 3 * 60
 
