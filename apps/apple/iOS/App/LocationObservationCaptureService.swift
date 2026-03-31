@@ -5,18 +5,18 @@ import Foundation
 final class LocationObservationCaptureService: ObservationCapturing {
     private enum RecordingThresholds {
         static let minimumTimeInterval: TimeInterval = 90
-        static let minimumDistanceMeters: CLLocationDistance = 20
-        static let movingTimeInterval: TimeInterval = 20
-        static let movingDistanceMeters: CLLocationDistance = 8
-        static let significantAccuracyImprovementMeters: CLLocationAccuracy = 20
-        static let significantSpeedDeltaMetersPerSecond: CLLocationSpeed = 0.8
+        static let minimumDistanceMeters: CLLocationDistance = 15
+        static let movingTimeInterval: TimeInterval = 8
+        static let movingDistanceMeters: CLLocationDistance = 5
+        static let significantAccuracyImprovementMeters: CLLocationAccuracy = 10
+        static let significantSpeedDeltaMetersPerSecond: CLLocationSpeed = 0.5
     }
 
     private enum RuntimePolicy {
-        static let foregroundDesiredAccuracy = kCLLocationAccuracyNearestTenMeters
-        static let foregroundDistanceFilter: CLLocationDistance = 10
-        static let backgroundDesiredAccuracy = kCLLocationAccuracyNearestTenMeters
-        static let backgroundDistanceFilter: CLLocationDistance = 25
+        static let foregroundDesiredAccuracy = kCLLocationAccuracyBest
+        static let foregroundDistanceFilter: CLLocationDistance = 5
+        static let backgroundDesiredAccuracy = kCLLocationAccuracyBest
+        static let backgroundDistanceFilter: CLLocationDistance = 10
     }
 
     private let recorder: ObservationIngesting

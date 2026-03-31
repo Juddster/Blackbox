@@ -12,6 +12,7 @@ struct SegmentMapDetailView: View {
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var visibleRegion: MKCoordinateRegion?
     @State private var scrubIndex = 0
+    @State private var isAddingManualFix = false
 
     var body: some View {
         NavigationStack {
@@ -21,22 +22,37 @@ struct SegmentMapDetailView: View {
                         Text("No recorded location path is available for this segment.")
                             .foregroundStyle(.secondary)
                     } else {
-                        Map(position: $cameraPosition) {
-                            if locationFixes.count >= 2 {
-                                MapPolyline(coordinates: locationFixes.map(\.coordinate))
-                                    .stroke(.blue, lineWidth: 5)
-                            }
+                        MapReader { proxy in
+                            Map(position: $cameraPosition) {
+                                if locationFixes.count >= 2 {
+                                    MapPolyline(coordinates: locationFixes.map(\.coordinate))
+                                        .stroke(.blue, lineWidth: 5)
+                                }
 
-                            Marker("Start", coordinate: locationFixes.first?.coordinate ?? scrubbedFix.coordinate)
-                                .tint(.green)
-                            Marker("End", coordinate: locationFixes.last?.coordinate ?? scrubbedFix.coordinate)
-                                .tint(.red)
-                            Marker("Scrub", coordinate: scrubbedFix.coordinate)
-                                .tint(.orange)
-                        }
-                        .mapStyle(.standard(elevation: .flat))
-                        .onMapCameraChange(frequency: .continuous) { context in
-                            visibleRegion = context.region
+                                Marker("Start", coordinate: locationFixes.first?.coordinate ?? scrubbedFix.coordinate)
+                                    .tint(.green)
+                                Marker("End", coordinate: locationFixes.last?.coordinate ?? scrubbedFix.coordinate)
+                                    .tint(.red)
+                                Marker("Scrub", coordinate: scrubbedFix.coordinate)
+                                    .tint(.orange)
+                            }
+                            .mapStyle(.standard(elevation: .flat))
+                            .onMapCameraChange(frequency: .continuous) { context in
+                                visibleRegion = context.region
+                            }
+                            .gesture(
+                                SpatialTapGesture()
+                                    .onEnded { event in
+                                        guard
+                                            isAddingManualFix,
+                                            let coordinate = proxy.convert(event.location, from: .local)
+                                        else {
+                                            return
+                                        }
+
+                                        addManualFix(at: coordinate)
+                                    }
+                            )
                         }
                         .frame(minHeight: 320)
                         .clipShape(RoundedRectangle(cornerRadius: 14))
@@ -67,6 +83,21 @@ struct SegmentMapDetailView: View {
                                 .font(.subheadline.weight(.semibold))
                             Text(scrubbedFixSummary)
                                 .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Button {
+                            isAddingManualFix.toggle()
+                        } label: {
+                            Label(
+                                isAddingManualFix ? "Tap The Map To Place The Fix" : "Add Manual Fix At Scrub Time",
+                                systemImage: isAddingManualFix ? "hand.tap" : "plus.circle"
+                            )
+                        }
+
+                        if isAddingManualFix {
+                            Text("Tap the map to place a corrective location fix at \(scrubbedFix.timestamp.formatted(date: .omitted, time: .shortened)).")
+                                .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
 
@@ -138,6 +169,10 @@ struct SegmentMapDetailView: View {
             parts.append(Measurement(value: speedMetersPerSecond, unit: UnitSpeed.metersPerSecond).formatted(.measurement(width: .abbreviated)))
         }
 
+        if scrubbedFix.isManual {
+            parts.append("manual")
+        }
+
         return parts.joined(separator: " • ")
     }
 
@@ -201,6 +236,37 @@ struct SegmentMapDetailView: View {
         try? modelContext.save()
         let backfiller = LocalSegmentMetricBackfiller(modelContext: modelContext)
         try? backfiller.refreshMetrics(for: segment.id)
+        loadSegmentObservations()
+    }
+
+    private func addManualFix(at coordinate: CLLocationCoordinate2D) {
+        let timestamp = scrubbedFix.timestamp
+        let payload = [
+            "lat=\(coordinate.latitude)",
+            "lon=\(coordinate.longitude)",
+            "alt=0",
+            "speed=-1",
+            "course=-1",
+            "hAcc=5",
+            "vAcc=-1",
+            "manual=true",
+        ]
+        .joined(separator: ";")
+
+        let record = ObservationRecord(
+            timestamp: timestamp,
+            sourceDevice: .iPhone,
+            sourceType: .location,
+            payload: payload,
+            qualityHint: "manual-fix"
+        )
+
+        modelContext.insert(record)
+        try? modelContext.save()
+
+        let backfiller = LocalSegmentMetricBackfiller(modelContext: modelContext)
+        try? backfiller.refreshMetrics(for: segment.id)
+        isAddingManualFix = false
         loadSegmentObservations()
     }
 

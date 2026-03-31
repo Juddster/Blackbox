@@ -7,6 +7,7 @@ struct SegmentLocationFix: Identifiable {
     let coordinate: CLLocationCoordinate2D
     let horizontalAccuracy: Double?
     let speedMetersPerSecond: Double?
+    let isManual: Bool
 
     var id: UUID { observationID }
 }
@@ -89,8 +90,9 @@ enum SegmentObservationMetrics {
             observationID: observation.id,
             timestamp: observation.timestamp,
             coordinate: coordinate,
-            horizontalAccuracy: values["accuracy"].flatMap(Double.init),
-            speedMetersPerSecond: values["speed"].flatMap(Double.init)
+            horizontalAccuracy: values["hAcc"].flatMap(Double.init),
+            speedMetersPerSecond: values["speed"].flatMap(Double.init),
+            isManual: values["manual"] == "true"
         )
     }
 }

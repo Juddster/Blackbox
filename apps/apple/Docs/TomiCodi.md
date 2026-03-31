@@ -315,3 +315,7 @@ What to watch:
   - Reduced Apple UI thrash by removing full-history observation `@Query` usage from the Activity and Data tabs, switching those surfaces to bounded/on-demand fetches, and stopping automatic segment-metric backfill from re-running on every active transition.
   - Added Apple manual-segment editing for start, end, class, narrower label, and distance using the existing mark-segment form as an edit flow for user-created segments.
   - Replaced the segment evidence dump with a map-review flow that loads segment observations on demand, supports time scrubbing across recorded fixes, and allows deleting the current fix or all fixes in the currently visible map area.
+- Mar 31, 12:42:
+  - Tightened the Apple moving-location policy so runs retain denser paths by lowering the moving persistence thresholds and using a more precise runtime accuracy/distance policy.
+  - Fixed Apple segment-map review to read the stored location horizontal accuracy field correctly, so fix inspection now reflects the actual `hAcc` payload instead of a missing value.
+  - Added manual Apple location-fix insertion from the segment review map: arm the flow, tap the map, and Blackbox inserts a corrective manual fix at the current scrubbed timestamp, then recomputes the segment metrics.
