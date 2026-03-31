@@ -4,6 +4,7 @@ import Foundation
 struct ReplayInferencePreview {
     let bucketDurationSeconds: TimeInterval
     let proposedSegments: [ReplayInferenceSegment]
+    let proposedTransitions: [ReplayInferenceTransition]
     let locationFixCount: Int
     let motionRecordCount: Int
     let pedometerRecordCount: Int
@@ -22,6 +23,15 @@ struct ReplayInferenceSegment: Identifiable {
     let averageCadenceStepsPerSecond: Double?
 }
 
+struct ReplayInferenceTransition: Identifiable {
+    let id = UUID()
+    let timestamp: Date
+    let fromActivityClass: ActivityClass
+    let toActivityClass: ActivityClass
+    let confidence: Double
+    let reasonSummary: String
+}
+
 enum ReplayInferenceAnalyzer {
     private static let bucketDurationSeconds: TimeInterval = 60
 
@@ -36,10 +46,13 @@ enum ReplayInferenceAnalyzer {
             windowStart: windowStart,
             windowEnd: windowEnd
         )
+        let smoothedBuckets = smooth(buckets: buckets)
+        let proposedSegments = merge(buckets: smoothedBuckets)
 
         return ReplayInferencePreview(
             bucketDurationSeconds: bucketDurationSeconds,
-            proposedSegments: merge(buckets: buckets),
+            proposedSegments: proposedSegments,
+            proposedTransitions: transitions(from: proposedSegments),
             locationFixCount: sortedObservations.filter { $0.sourceType == .location }.count,
             motionRecordCount: sortedObservations.filter { $0.sourceType == .motion }.count,
             pedometerRecordCount: sortedObservations.filter { $0.sourceType == .pedometer }.count
@@ -73,6 +86,36 @@ enum ReplayInferenceAnalyzer {
         }
 
         return buckets
+    }
+
+    private static func smooth(buckets: [ReplayInferenceBucket]) -> [ReplayInferenceBucket] {
+        guard buckets.count >= 3 else {
+            return buckets
+        }
+
+        var smoothedBuckets = buckets
+        for index in 1..<(buckets.count - 1) {
+            let previous = smoothedBuckets[index - 1]
+            let current = smoothedBuckets[index]
+            let next = smoothedBuckets[index + 1]
+
+            guard
+                current.activityClass == nil || current.activityClass == .stationary,
+                let bridgedClass = previous.activityClass,
+                bridgedClass == next.activityClass,
+                bridgedClass != .stationary
+            else {
+                continue
+            }
+
+            smoothedBuckets[index].applyBridge(
+                activityClass: bridgedClass,
+                confidence: min(previous.confidence, next.confidence) * 0.85,
+                reason: "bridged \(bridgedClass.rawValue) gap"
+            )
+        }
+
+        return smoothedBuckets
     }
 
     private static func merge(buckets: [ReplayInferenceBucket]) -> [ReplayInferenceSegment] {
@@ -133,6 +176,26 @@ enum ReplayInferenceAnalyzer {
         return merged
     }
 
+    private static func transitions(from segments: [ReplayInferenceSegment]) -> [ReplayInferenceTransition] {
+        guard segments.count >= 2 else {
+            return []
+        }
+
+        return zip(segments, segments.dropFirst()).compactMap { previous, next in
+            guard previous.activityClass != next.activityClass else {
+                return nil
+            }
+
+            return ReplayInferenceTransition(
+                timestamp: next.startTime,
+                fromActivityClass: previous.activityClass,
+                toActivityClass: next.activityClass,
+                confidence: min(previous.confidence, next.confidence),
+                reasonSummary: mergedReason(previous.reasonSummary, next.reasonSummary)
+            )
+        }
+    }
+
     private static func weightedAverage(
         _ lhsValue: Double?,
         _ lhsWeight: Double,
@@ -155,7 +218,7 @@ enum ReplayInferenceAnalyzer {
         }
     }
 
-    private static func mergedReason(_ lhs: String, _ rhs: String) -> String {
+    fileprivate static func mergedReason(_ lhs: String, _ rhs: String) -> String {
         let parts = Set(lhs.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) })
             .union(rhs.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) })
         return parts.sorted().joined(separator: ", ")
@@ -203,6 +266,16 @@ private struct ReplayInferenceBucket {
         }
 
         classify()
+    }
+
+    mutating func applyBridge(activityClass: ActivityClass, confidence: Double, reason: String) {
+        self.activityClass = activityClass
+        self.confidence = max(self.confidence, confidence)
+        if reasonSummary.isEmpty {
+            reasonSummary = reason
+        } else if reasonSummary.contains(reason) == false {
+            reasonSummary = ReplayInferenceAnalyzer.mergedReason(reasonSummary, reason)
+        }
     }
 
     private mutating func addLocation(values: [String: String]) {

@@ -142,6 +142,7 @@ What to watch:
 - Mar 27, 16:07: Corrected the passive location path back toward the planned model so standard location updates remain active in background too, with a looser background policy rather than turning the backbone off.
 - Mar 31, 16:01: Added replay-window inference preview in the Apple `Data` tab, explicit provenance markers on newly stored live/system-history/manual observations, and replay export metadata that distinguishes manual corrections from system-history backfill.
 - Mar 31, 16:17: Changed Apple replay export to refresh summary metrics for overlapping segments before encoding JSON so edited paths now export current preferred, location, and pedometer distance values instead of stale cached summaries.
+- Mar 31, 16:22: Extended the Apple replay analyzer to smooth one-bucket gaps and surface explicit transition proposals in the `Data` tab so inferred segment start/end boundaries are visible as candidate activity changes, not just merged class blocks.
 
 ## Tomi Progress Notes
 

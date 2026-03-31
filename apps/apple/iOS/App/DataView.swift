@@ -68,6 +68,31 @@ struct DataView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
 
+                        if inferencePreview.proposedTransitions.isEmpty == false {
+                            ForEach(inferencePreview.proposedTransitions) { transition in
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Label(
+                                        "\(transition.fromActivityClass.displayName) → \(transition.toActivityClass.displayName)",
+                                        systemImage: "flag.checkered.2.crossed"
+                                    )
+                                    .font(.subheadline.weight(.semibold))
+
+                                    Text(
+                                        "\(transition.timestamp.formatted(date: .omitted, time: .shortened)) • confidence \(Int((transition.confidence * 100).rounded()))%"
+                                    )
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+
+                                    if transition.reasonSummary.isEmpty == false {
+                                        Text(transition.reasonSummary)
+                                            .font(.caption)
+                                            .foregroundStyle(.tertiary)
+                                    }
+                                }
+                                .padding(.vertical, 2)
+                            }
+                        }
+
                         if inferencePreview.proposedSegments.isEmpty {
                             Text("No confident automatic segments were inferred for this window.")
                                 .font(.subheadline)
