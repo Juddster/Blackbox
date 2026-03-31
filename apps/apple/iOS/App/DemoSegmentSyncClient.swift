@@ -80,6 +80,8 @@ struct DemoSegmentSyncClient: SegmentSyncing {
                     segmentID: segmentID,
                     durationSeconds: 35 * 60,
                     distanceMeters: 2_850,
+                    locationDistanceMeters: 2_850,
+                    pedometerDistanceMeters: nil,
                     elevationGainMeters: 24,
                     averageSpeedMetersPerSecond: 1.35,
                     maxSpeedMetersPerSecond: 1.9,

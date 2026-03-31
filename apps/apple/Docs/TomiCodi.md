@@ -140,6 +140,7 @@ What to watch:
 - Mar 27, 15:43: Reduced passive location spam by lowering standard update aggressiveness and persisting only materially changed location fixes instead of every jittery callback.
 - Mar 27, 15:50: Switched passive location handling to use standard updates in foreground but lean on significant-change monitoring in background so the app stops behaving like a continuous GPS logger when backgrounded.
 - Mar 27, 16:07: Corrected the passive location path back toward the planned model so standard location updates remain active in background too, with a looser background policy rather than turning the backbone off.
+- Mar 31, 16:01: Added replay-window inference preview in the Apple `Data` tab, explicit provenance markers on newly stored live/system-history/manual observations, and replay export metadata that distinguishes manual corrections from system-history backfill.
 
 ## Tomi Progress Notes
 

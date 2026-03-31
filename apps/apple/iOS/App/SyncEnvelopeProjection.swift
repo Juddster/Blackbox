@@ -41,6 +41,8 @@ enum SyncEnvelopeProjection {
                     segmentID: record.id,
                     durationSeconds: $0.durationSeconds,
                     distanceMeters: $0.distanceMeters,
+                    locationDistanceMeters: $0.locationDistanceMeters,
+                    pedometerDistanceMeters: $0.pedometerDistanceMeters,
                     elevationGainMeters: $0.elevationGainMeters,
                     averageSpeedMetersPerSecond: $0.averageSpeedMetersPerSecond,
                     maxSpeedMetersPerSecond: $0.maxSpeedMetersPerSecond,

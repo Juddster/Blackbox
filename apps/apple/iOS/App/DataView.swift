@@ -7,6 +7,7 @@ struct DataView: View {
     let syncActivity: SyncActivityStore
 
     @State private var recentObservations = [ObservationSnapshot]()
+    @State private var inferencePreview: ReplayInferencePreview?
     @State private var exportStartTime = Date.now.addingTimeInterval(-60 * 60)
     @State private var exportEndTime = Date.now
     @State private var exportDocument: ReplayExportDocument?
@@ -51,6 +52,51 @@ struct DataView: View {
                         Text(exportStatusMessage)
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                    }
+                }
+
+                Section("Inference Preview") {
+                    Button {
+                        analyzeSelectedWindow()
+                    } label: {
+                        Label("Analyze Selected Window", systemImage: "waveform.path.ecg.rectangle")
+                    }
+                    .disabled(exportEndTime <= exportStartTime)
+
+                    if let inferencePreview {
+                        Text(inferenceSummary(for: inferencePreview))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        if inferencePreview.proposedSegments.isEmpty {
+                            Text("No confident automatic segments were inferred for this window.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(inferencePreview.proposedSegments) { segment in
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Label(segment.activityClass.displayName, systemImage: segment.activityClass.systemImage)
+                                        .font(.headline)
+
+                                    Text(
+                                        "\(segment.startTime.formatted(date: .omitted, time: .shortened)) - \(segment.endTime.formatted(date: .omitted, time: .shortened))"
+                                    )
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+
+                                    Text(inferenceMetricsText(for: segment))
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+
+                                    if segment.reasonSummary.isEmpty == false {
+                                        Text(segment.reasonSummary)
+                                            .font(.caption)
+                                            .foregroundStyle(.tertiary)
+                                    }
+                                }
+                                .padding(.vertical, 4)
+                            }
+                        }
                     }
                 }
 
@@ -144,6 +190,15 @@ struct DataView: View {
         isPresentingExporter = true
     }
 
+    private func analyzeSelectedWindow() {
+        let observations = fetchObservationsForExport()
+        inferencePreview = ReplayInferenceAnalyzer.preview(
+            from: observations,
+            windowStart: exportStartTime,
+            windowEnd: exportEndTime
+        )
+    }
+
     private func fetchObservationsForExport() -> [ObservationRecord] {
         let startTime = exportStartTime
         let endTime = exportEndTime
@@ -226,15 +281,26 @@ private struct ReplayExportObservation: Codable {
     let timestamp: Date
     let sourceDevice: ObservationSourceDevice
     let sourceType: ObservationSourceType
+    let captureOrigin: String
+    let isManualLocationFix: Bool
     let payload: String
     let qualityHint: String?
     let ingestedAt: Date
 
     init(record: ObservationRecord) {
+        let values = SegmentObservationMetrics.payloadValues(from: record.payload)
         id = record.id
         timestamp = record.timestamp
         sourceDevice = record.sourceDevice
         sourceType = record.sourceType
+        if values["manual"] == "true" {
+            captureOrigin = "manualCorrection"
+        } else if values["historical"] == "true" || values["origin"] == "systemHistory" {
+            captureOrigin = "systemHistory"
+        } else {
+            captureOrigin = values["origin"] ?? "live"
+        }
+        isManualLocationFix = values["manual"] == "true"
         payload = record.payload
         qualityHint = record.qualityHint
         ingestedAt = record.ingestedAt
@@ -251,4 +317,38 @@ private struct ReplayExportSegment: Codable {
     let interpretation: SegmentInterpretationPayload?
     let summary: SegmentSummaryPayload?
     let sync: SyncMetadataPayload
+}
+
+private extension DataView {
+    func inferenceSummary(for preview: ReplayInferencePreview) -> String {
+        let bucketMinutes = Int(preview.bucketDurationSeconds / 60)
+        return "\(preview.locationFixCount) location, \(preview.motionRecordCount) motion, and \(preview.pedometerRecordCount) pedometer observations scored in \(bucketMinutes)-minute buckets."
+    }
+
+    func inferenceMetricsText(for segment: ReplayInferenceSegment) -> String {
+        var parts = [
+            "confidence \(Int((segment.confidence * 100).rounded()))%"
+        ]
+
+        let preferredDistanceMeters = segment.pedometerDistanceMeters ?? segment.locationDistanceMeters
+        if preferredDistanceMeters > 0 {
+            parts.append(
+                Measurement(value: preferredDistanceMeters, unit: UnitLength.meters)
+                    .formatted(.measurement(width: .abbreviated, usage: .road))
+            )
+        }
+
+        if let averageSpeedMetersPerSecond = segment.averageSpeedMetersPerSecond {
+            parts.append(
+                Measurement(value: averageSpeedMetersPerSecond, unit: UnitSpeed.metersPerSecond)
+                    .formatted(.measurement(width: .abbreviated))
+            )
+        }
+
+        if let averageCadenceStepsPerSecond = segment.averageCadenceStepsPerSecond {
+            parts.append(String(format: "%.2f steps/s", averageCadenceStepsPerSecond))
+        }
+
+        return parts.joined(separator: " • ")
+    }
 }

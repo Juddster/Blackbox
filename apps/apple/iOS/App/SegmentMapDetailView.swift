@@ -253,6 +253,7 @@ struct SegmentMapDetailView: View {
             "hAcc=5",
             "vAcc=-1",
             "manual=true",
+            "origin=manualCorrection",
         ]
         .joined(separator: ";")
 

@@ -25,11 +25,17 @@ struct LocalSegmentMetricBackfiller {
                 from: segment.startTime,
                 to: segment.endTime
             )
-            guard let distanceMeters = SegmentObservationMetrics.derivedDistanceMeters(from: observations) else {
+            let distanceBreakdown = SegmentObservationMetrics.distanceBreakdown(
+                from: observations,
+                preferredActivityClass: segment.interpretation?.visibleClass
+            )
+            guard let distanceMeters = distanceBreakdown.preferredDistanceMeters else {
                 continue
             }
 
             summary.distanceMeters = distanceMeters
+            summary.locationDistanceMeters = distanceBreakdown.locationDistanceMeters
+            summary.pedometerDistanceMeters = distanceBreakdown.pedometerDistanceMeters
             if summary.durationSeconds > 0 {
                 summary.averageSpeedMetersPerSecond = distanceMeters / summary.durationSeconds
             }
@@ -50,7 +56,11 @@ struct LocalSegmentMetricBackfiller {
             from: segment.startTime,
             to: segment.endTime
         )
-        let distanceMeters = SegmentObservationMetrics.derivedDistanceMeters(from: observations)
+        let distanceBreakdown = SegmentObservationMetrics.distanceBreakdown(
+            from: observations,
+            preferredActivityClass: segment.interpretation?.visibleClass
+        )
+        let distanceMeters = distanceBreakdown.preferredDistanceMeters
         let durationSeconds = max(0, segment.endTime.timeIntervalSince(segment.startTime))
         let averageSpeedMetersPerSecond: Double?
         if let distanceMeters, durationSeconds > 0 {
@@ -61,6 +71,8 @@ struct LocalSegmentMetricBackfiller {
 
         if let summary = segment.summary {
             summary.distanceMeters = distanceMeters
+            summary.locationDistanceMeters = distanceBreakdown.locationDistanceMeters
+            summary.pedometerDistanceMeters = distanceBreakdown.pedometerDistanceMeters
             summary.durationSeconds = durationSeconds
             summary.averageSpeedMetersPerSecond = averageSpeedMetersPerSecond
             summary.updatedAt = .now
@@ -68,6 +80,8 @@ struct LocalSegmentMetricBackfiller {
             segment.summary = SegmentSummaryRecord(
                 durationSeconds: durationSeconds,
                 distanceMeters: distanceMeters,
+                locationDistanceMeters: distanceBreakdown.locationDistanceMeters,
+                pedometerDistanceMeters: distanceBreakdown.pedometerDistanceMeters,
                 averageSpeedMetersPerSecond: averageSpeedMetersPerSecond
             )
         }

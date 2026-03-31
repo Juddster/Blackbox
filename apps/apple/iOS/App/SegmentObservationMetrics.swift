@@ -12,15 +12,38 @@ struct SegmentLocationFix: Identifiable {
     var id: UUID { observationID }
 }
 
+struct SegmentDistanceBreakdown {
+    let preferredDistanceMeters: Double?
+    let locationDistanceMeters: Double?
+    let pedometerDistanceMeters: Double?
+}
+
 enum SegmentObservationMetrics {
     static func derivedDistanceMeters(from observations: [ObservationRecord]) -> Double? {
+        distanceBreakdown(from: observations, preferredActivityClass: nil).preferredDistanceMeters
+    }
+
+    static func distanceBreakdown(
+        from observations: [ObservationRecord],
+        preferredActivityClass: ActivityClass?
+    ) -> SegmentDistanceBreakdown {
         let sortedObservations = observations.sorted { $0.timestamp < $1.timestamp }
-        if let locationDistanceMeters = locationDistanceMeters(from: sortedObservations),
-           locationDistanceMeters > 0 {
-            return locationDistanceMeters
+        let locationDistanceMeters = locationDistanceMeters(from: sortedObservations)
+        let pedometerDistanceMeters = pedometerDistanceMeters(from: sortedObservations)
+
+        let preferredDistanceMeters: Double?
+        switch preferredActivityClass {
+        case .running, .walking, .hiking:
+            preferredDistanceMeters = pedometerDistanceMeters ?? locationDistanceMeters
+        default:
+            preferredDistanceMeters = locationDistanceMeters ?? pedometerDistanceMeters
         }
 
-        return pedometerDistanceMeters(from: sortedObservations)
+        return SegmentDistanceBreakdown(
+            preferredDistanceMeters: preferredDistanceMeters,
+            locationDistanceMeters: locationDistanceMeters,
+            pedometerDistanceMeters: pedometerDistanceMeters
+        )
     }
 
     static func locationCoordinates(from observations: [ObservationRecord]) -> [CLLocationCoordinate2D] {

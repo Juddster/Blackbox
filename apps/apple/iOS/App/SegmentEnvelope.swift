@@ -38,6 +38,8 @@ struct SegmentSummaryPayload: Codable {
     let segmentID: UUID
     let durationSeconds: TimeInterval
     let distanceMeters: Double?
+    let locationDistanceMeters: Double?
+    let pedometerDistanceMeters: Double?
     let elevationGainMeters: Double?
     let averageSpeedMetersPerSecond: Double?
     let maxSpeedMetersPerSecond: Double?

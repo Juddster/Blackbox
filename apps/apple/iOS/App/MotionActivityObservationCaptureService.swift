@@ -51,7 +51,7 @@ final class MotionActivityObservationCaptureService: ObservationCapturing {
                 timestamp: activity.startDate,
                 sourceDevice: .iPhone,
                 sourceType: .motion,
-                payload: activityPayload(for: activity),
+                payload: activityPayload(for: activity, isHistorical: true),
                 qualityHint: confidenceHint(for: activity.confidence)
             )
         }
@@ -106,7 +106,14 @@ final class MotionActivityObservationCaptureService: ObservationCapturing {
     }
 
     private func activityPayload(for activity: CMMotionActivity) -> String {
-        [
+        activityPayload(
+            for: activity,
+            isHistorical: false
+        )
+    }
+
+    private func activityPayload(for activity: CMMotionActivity, isHistorical: Bool) -> String {
+        var components = [
             "stationary=\(activity.stationary)",
             "walking=\(activity.walking)",
             "running=\(activity.running)",
@@ -114,7 +121,15 @@ final class MotionActivityObservationCaptureService: ObservationCapturing {
             "automotive=\(activity.automotive)",
             "unknown=\(activity.unknown)",
         ]
-        .joined(separator: ";")
+
+        if isHistorical {
+            components.append("historical=true")
+            components.append("origin=systemHistory")
+        } else {
+            components.append("origin=live")
+        }
+
+        return components.joined(separator: ";")
     }
 
     private func confidenceHint(for confidence: CMMotionActivityConfidence) -> String? {

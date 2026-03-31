@@ -11,6 +11,9 @@
 		069C5B7A2F7AFFC800BFCB7F /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C5B792F7AFFC800BFCB7F /* SettingsView.swift */; };
 		069C5B7C2F7AFFC900BFCB7F /* DataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C5B7B2F7AFFC900BFCB7F /* DataView.swift */; };
 		069C5B7E2F7AFFC900BFCB7F /* SegmentMapDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C5B7D2F7AFFC900BFCB7F /* SegmentMapDetailView.swift */; };
+		069C5B802F7B0B4000BFCB7F /* SegmentObservationMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C5B7F2F7B0B4000BFCB7F /* SegmentObservationMetrics.swift */; };
+		069C5B822F7B0B4000BFCB7F /* LocalSegmentMetricBackfiller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C5B812F7B0B4000BFCB7F /* LocalSegmentMetricBackfiller.swift */; };
+		069C5B842F7BFCDE00BFCB7F /* ReplayInferenceAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C5B832F7BFCDE00BFCB7F /* ReplayInferenceAnalyzer.swift */; };
 		06D4CC452F7455F40059DBA9 /* ActivityClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC442F7455F40059DBA9 /* ActivityClass.swift */; };
 		06D4CC472F7455F40059DBA9 /* AmbiguityState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC462F7455F40059DBA9 /* AmbiguityState.swift */; };
 		06D4CC492F7455F50059DBA9 /* InterpretationOrigin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC482F7455F50059DBA9 /* InterpretationOrigin.swift */; };
@@ -92,6 +95,9 @@
 		069C5B792F7AFFC800BFCB7F /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		069C5B7B2F7AFFC900BFCB7F /* DataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataView.swift; sourceTree = "<group>"; };
 		069C5B7D2F7AFFC900BFCB7F /* SegmentMapDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentMapDetailView.swift; sourceTree = "<group>"; };
+		069C5B7F2F7B0B4000BFCB7F /* SegmentObservationMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentObservationMetrics.swift; sourceTree = "<group>"; };
+		069C5B812F7B0B4000BFCB7F /* LocalSegmentMetricBackfiller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalSegmentMetricBackfiller.swift; sourceTree = "<group>"; };
+		069C5B832F7BFCDE00BFCB7F /* ReplayInferenceAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReplayInferenceAnalyzer.swift; sourceTree = "<group>"; };
 		06D4CC442F7455F40059DBA9 /* ActivityClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityClass.swift; sourceTree = "<group>"; };
 		06D4CC462F7455F40059DBA9 /* AmbiguityState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbiguityState.swift; sourceTree = "<group>"; };
 		06D4CC482F7455F50059DBA9 /* InterpretationOrigin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterpretationOrigin.swift; sourceTree = "<group>"; };
@@ -333,6 +339,9 @@
 				069C5B792F7AFFC800BFCB7F /* SettingsView.swift */,
 				069C5B7B2F7AFFC900BFCB7F /* DataView.swift */,
 				069C5B7D2F7AFFC900BFCB7F /* SegmentMapDetailView.swift */,
+				069C5B7F2F7B0B4000BFCB7F /* SegmentObservationMetrics.swift */,
+				069C5B812F7B0B4000BFCB7F /* LocalSegmentMetricBackfiller.swift */,
+				069C5B832F7BFCDE00BFCB7F /* ReplayInferenceAnalyzer.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -435,6 +444,7 @@
 				06D4CCD02F76A0DB0059DBA9 /* CaptureGapNotice.swift in Sources */,
 				06D4CC932F746DF30059DBA9 /* NoopSegmentSyncClient.swift in Sources */,
 				06D4CC552F7455F50059DBA9 /* SegmentInterpretationRecord.swift in Sources */,
+				069C5B802F7B0B4000BFCB7F /* SegmentObservationMetrics.swift in Sources */,
 				06D4CC592F7455F50059DBA9 /* BlackboxModelContainer.swift in Sources */,
 				06D4CC812F746D440059DBA9 /* CaptureStatusProviding.swift in Sources */,
 				069C5B7E2F7AFFC900BFCB7F /* SegmentMapDetailView.swift in Sources */,
@@ -442,6 +452,7 @@
 				06D4CC9A2F75294C0059DBA9 /* LocationAuthorizationController.swift in Sources */,
 				06D4CC452F7455F40059DBA9 /* ActivityClass.swift in Sources */,
 				06D4CC532F7455F50059DBA9 /* ObservationRecord.swift in Sources */,
+				069C5B822F7B0B4000BFCB7F /* LocalSegmentMetricBackfiller.swift in Sources */,
 				06D4CC6F2F7467620059DBA9 /* TimelineProjection.swift in Sources */,
 				069C5B782F7AFFC800BFCB7F /* CaptureResumeReport.swift in Sources */,
 				06D4CC7B2F746D430059DBA9 /* CaptureServiceKind.swift in Sources */,
@@ -495,6 +506,7 @@
 				06D4CC872F746D440059DBA9 /* PedometerCaptureStatusProvider.swift in Sources */,
 				06D4CCB82F754A3A0059DBA9 /* LiveDraftSegmentSnapshot.swift in Sources */,
 				06D4CCBA2F754A3A0059DBA9 /* LiveDraftSegmentProjection.swift in Sources */,
+				069C5B842F7BFCDE00BFCB7F /* ReplayInferenceAnalyzer.swift in Sources */,
 				06D4CC852F746D440059DBA9 /* MotionActivityCaptureStatusProvider.swift in Sources */,
 				06D4CCAC2F752B2C0059DBA9 /* CaptureControlSection.swift in Sources */,
 				06D4CCAE2F752B2C0059DBA9 /* CaptureControlStore.swift in Sources */,

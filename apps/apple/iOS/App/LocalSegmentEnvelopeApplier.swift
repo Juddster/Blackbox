@@ -91,6 +91,8 @@ struct LocalSegmentEnvelopeApplier {
             if let recordSummary = record.summary {
                 recordSummary.durationSeconds = summary.durationSeconds
                 recordSummary.distanceMeters = summary.distanceMeters
+                recordSummary.locationDistanceMeters = summary.locationDistanceMeters
+                recordSummary.pedometerDistanceMeters = summary.pedometerDistanceMeters
                 recordSummary.elevationGainMeters = summary.elevationGainMeters
                 recordSummary.averageSpeedMetersPerSecond = summary.averageSpeedMetersPerSecond
                 recordSummary.maxSpeedMetersPerSecond = summary.maxSpeedMetersPerSecond
@@ -101,6 +103,8 @@ struct LocalSegmentEnvelopeApplier {
                     id: summary.id,
                     durationSeconds: summary.durationSeconds,
                     distanceMeters: summary.distanceMeters,
+                    locationDistanceMeters: summary.locationDistanceMeters,
+                    pedometerDistanceMeters: summary.pedometerDistanceMeters,
                     elevationGainMeters: summary.elevationGainMeters,
                     averageSpeedMetersPerSecond: summary.averageSpeedMetersPerSecond,
                     maxSpeedMetersPerSecond: summary.maxSpeedMetersPerSecond,

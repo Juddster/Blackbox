@@ -50,7 +50,7 @@ final class PedometerObservationCaptureService: ObservationCapturing {
             timestamp: data.endDate,
             sourceDevice: .iPhone,
             sourceType: .pedometer,
-            payload: self.payload(for: data, startDate: startDate, endDate: endDate)
+            payload: self.payload(for: data, startDate: startDate, endDate: endDate, isHistorical: true)
         )
 
         do {
@@ -88,13 +88,18 @@ final class PedometerObservationCaptureService: ObservationCapturing {
             timestamp: data.endDate,
             sourceDevice: .iPhone,
             sourceType: .pedometer,
-            payload: payload(for: data, startDate: data.startDate, endDate: data.endDate)
+            payload: payload(for: data, startDate: data.startDate, endDate: data.endDate, isHistorical: false)
         )
 
         try recorder.record(input)
     }
 
-    private func payload(for data: CMPedometerData, startDate: Date, endDate: Date) -> String {
+    private func payload(
+        for data: CMPedometerData,
+        startDate: Date,
+        endDate: Date,
+        isHistorical: Bool
+    ) -> String {
         var components = [
             "start=\(startDate.timeIntervalSince1970)",
             "end=\(endDate.timeIntervalSince1970)",
@@ -119,6 +124,13 @@ final class PedometerObservationCaptureService: ObservationCapturing {
 
         if let currentCadence = data.currentCadence {
             components.append("currentCadence=\(currentCadence)")
+        }
+
+        if isHistorical {
+            components.append("historical=true")
+            components.append("origin=systemHistory")
+        } else {
+            components.append("origin=live")
         }
 
         return components.joined(separator: ";")

@@ -169,6 +169,7 @@ final class LocationObservationCaptureService: ObservationCapturing {
             "course=\(location.course)",
             "hAcc=\(location.horizontalAccuracy)",
             "vAcc=\(location.verticalAccuracy)",
+            "origin=live",
         ]
         .joined(separator: ";")
     }

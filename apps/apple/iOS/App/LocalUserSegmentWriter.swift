@@ -18,8 +18,9 @@ struct LocalUserSegmentWriter {
     ) throws {
         let trimmedLabel = narrowerLabel.trimmingCharacters(in: .whitespacesAndNewlines)
         let durationSeconds = max(0, endTime.timeIntervalSince(startTime))
-        let derivedDistanceMeters = try derivedDistanceMeters(
+        let distanceBreakdown = try distanceBreakdown(
             fallbackDistanceMeters: distanceMeters,
+            activityClass: activityClass,
             startTime: startTime,
             endTime: endTime
         )
@@ -42,9 +43,11 @@ struct LocalUserSegmentWriter {
         )
         segment.summary = SegmentSummaryRecord(
             durationSeconds: durationSeconds,
-            distanceMeters: derivedDistanceMeters,
+            distanceMeters: distanceBreakdown.preferredDistanceMeters,
+            locationDistanceMeters: distanceBreakdown.locationDistanceMeters,
+            pedometerDistanceMeters: distanceBreakdown.pedometerDistanceMeters,
             averageSpeedMetersPerSecond: averageSpeed(
-                distanceMeters: derivedDistanceMeters,
+                distanceMeters: distanceBreakdown.preferredDistanceMeters,
                 durationSeconds: durationSeconds
             )
         )
@@ -74,8 +77,9 @@ struct LocalUserSegmentWriter {
 
         let trimmedLabel = narrowerLabel.trimmingCharacters(in: .whitespacesAndNewlines)
         let durationSeconds = max(0, endTime.timeIntervalSince(startTime))
-        let derivedDistanceMeters = try derivedDistanceMeters(
+        let distanceBreakdown = try distanceBreakdown(
             fallbackDistanceMeters: distanceMeters,
+            activityClass: activityClass,
             startTime: startTime,
             endTime: endTime
         )
@@ -106,18 +110,22 @@ struct LocalUserSegmentWriter {
 
         if let summary = segment.summary {
             summary.durationSeconds = durationSeconds
-            summary.distanceMeters = derivedDistanceMeters
+            summary.distanceMeters = distanceBreakdown.preferredDistanceMeters
+            summary.locationDistanceMeters = distanceBreakdown.locationDistanceMeters
+            summary.pedometerDistanceMeters = distanceBreakdown.pedometerDistanceMeters
             summary.averageSpeedMetersPerSecond = averageSpeed(
-                distanceMeters: derivedDistanceMeters,
+                distanceMeters: distanceBreakdown.preferredDistanceMeters,
                 durationSeconds: durationSeconds
             )
             summary.updatedAt = .now
         } else {
             segment.summary = SegmentSummaryRecord(
                 durationSeconds: durationSeconds,
-                distanceMeters: derivedDistanceMeters,
+                distanceMeters: distanceBreakdown.preferredDistanceMeters,
+                locationDistanceMeters: distanceBreakdown.locationDistanceMeters,
+                pedometerDistanceMeters: distanceBreakdown.pedometerDistanceMeters,
                 averageSpeedMetersPerSecond: averageSpeed(
-                    distanceMeters: derivedDistanceMeters,
+                    distanceMeters: distanceBreakdown.preferredDistanceMeters,
                     durationSeconds: durationSeconds
                 )
             )
@@ -159,13 +167,18 @@ struct LocalUserSegmentWriter {
         return distanceMeters / durationSeconds
     }
 
-    private func derivedDistanceMeters(
+    private func distanceBreakdown(
         fallbackDistanceMeters: Double?,
+        activityClass: ActivityClass,
         startTime: Date,
         endTime: Date
-    ) throws -> Double? {
+    ) throws -> SegmentDistanceBreakdown {
         if let fallbackDistanceMeters {
-            return fallbackDistanceMeters
+            return SegmentDistanceBreakdown(
+                preferredDistanceMeters: fallbackDistanceMeters,
+                locationDistanceMeters: nil,
+                pedometerDistanceMeters: nil
+            )
         }
 
         let descriptor = FetchDescriptor<ObservationRecord>(
@@ -176,6 +189,9 @@ struct LocalUserSegmentWriter {
         )
         let observations = try modelContext.fetch(descriptor)
 
-        return SegmentObservationMetrics.derivedDistanceMeters(from: observations)
+        return SegmentObservationMetrics.distanceBreakdown(
+            from: observations,
+            preferredActivityClass: activityClass
+        )
     }
 }
