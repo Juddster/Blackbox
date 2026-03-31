@@ -5,13 +5,7 @@ struct DataView: View {
     @Environment(\.modelContext) private var modelContext
     let syncActivity: SyncActivityStore
 
-    @Query(
-        sort: [
-            SortDescriptor(\ObservationRecord.timestamp, order: .reverse),
-        ],
-        animation: .snappy
-    )
-    private var observations: [ObservationRecord]
+    @State private var recentObservations = [ObservationSnapshot]()
 
     var body: some View {
         NavigationStack {
@@ -26,13 +20,26 @@ struct DataView: View {
                     onPushPending: pushPendingSync
                 )
 
-                RecentObservationsSection(observations: ObservationProjection.recent(from: observations))
+                RecentObservationsSection(observations: recentObservations)
             }
             .navigationTitle("Data")
+        }
+        .task {
+            refreshRecentObservations()
         }
     }
 
     private func pushPendingSync() async {
         await syncActivity.pushPending(using: modelContext)
+        refreshRecentObservations()
+    }
+
+    private func refreshRecentObservations() {
+        var descriptor = FetchDescriptor<ObservationRecord>(
+            sortBy: [SortDescriptor(\ObservationRecord.timestamp, order: .reverse)]
+        )
+        descriptor.fetchLimit = 40
+        let observations = (try? modelContext.fetch(descriptor)) ?? []
+        recentObservations = ObservationProjection.recent(from: observations)
     }
 }

@@ -311,3 +311,7 @@ What to watch:
   - Hardened Apple segment deletion by persisting a local deleted-ID registry, purging accepted tombstones from the local store after sync, and blocking later non-deleted pull envelopes for those IDs unless there is an explicit restore path.
 - Mar 30, 23:37:
   - Followed up on Apple segment deletion by making the timeline projection hide locally deleted IDs immediately and forcing a local timeline refresh after delete/restore actions, so a tombstoned row does not linger or visually reappear while sync catches up.
+- Mar 31, 10:48:
+  - Reduced Apple UI thrash by removing full-history observation `@Query` usage from the Activity and Data tabs, switching those surfaces to bounded/on-demand fetches, and stopping automatic segment-metric backfill from re-running on every active transition.
+  - Added Apple manual-segment editing for start, end, class, narrower label, and distance using the existing mark-segment form as an edit flow for user-created segments.
+  - Replaced the segment evidence dump with a map-review flow that loads segment observations on demand, supports time scrubbing across recorded fixes, and allows deleting the current fix or all fixes in the currently visible map area.

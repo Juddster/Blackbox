@@ -6,9 +6,8 @@ struct TimelineView: View {
     let syncActivity: SyncActivityStore
 
     @State private var liveDraftStatusMessage: String?
-    @State private var editingSegment: SegmentSnapshot?
     @State private var inspectingSegment: SegmentSnapshot?
-    @State private var editedActivityLabel = ""
+    @State private var editingManualSegment: SegmentSnapshot?
     @State private var isPresentingManualSegmentSheet = false
     @State private var manualSegmentStartTime = Date.now.addingTimeInterval(-30 * 60)
     @State private var manualSegmentEndTime = Date.now
@@ -16,6 +15,7 @@ struct TimelineView: View {
     @State private var manualSegmentLabel = ""
     @State private var manualSegmentDistanceMeters = ""
     @State private var timelineRefreshNonce = 0
+    @State private var recentObservations = [ObservationRecord]()
 
     @Query(
         sort: [
@@ -24,14 +24,6 @@ struct TimelineView: View {
         animation: .snappy
     )
     private var segments: [SegmentRecord]
-
-    @Query(
-        sort: [
-            SortDescriptor(\ObservationRecord.timestamp, order: .reverse),
-        ],
-        animation: .snappy
-    )
-    private var observations: [ObservationRecord]
 
     var body: some View {
         NavigationStack {
@@ -52,42 +44,7 @@ struct TimelineView: View {
                 ForEach(groupedSegments) { group in
                     Section(group.title) {
                         ForEach(group.segments) { segment in
-                            TimelineRowView(
-                                segment: segment,
-                                onApplyServerVersion: segment.canApplyServerVersion
-                                    ? { await applyServerVersion(for: segment.id) }
-                                    : nil,
-                                onKeepLocalVersion: segment.canKeepLocalVersion
-                                    ? { await keepLocalVersion(for: segment.id) }
-                                    : nil,
-                                onRestoreDeletedSegment: segment.canRestoreDeletedSegment
-                                    ? { await restoreDeletedSegment(for: segment.id) }
-                                    : nil
-                            )
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                inspectingSegment = segment
-                            }
-                            .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                                Button {
-                                    editingSegment = segment
-                                    editedActivityLabel = currentEditableLabel(for: segment)
-                                } label: {
-                                    Label("Label", systemImage: "pencil")
-                                }
-                                .tint(.blue)
-                            }
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                if segment.syncDisposition != .conflicted {
-                                    Button(role: .destructive) {
-                                        Task {
-                                            await deleteSegment(for: segment.id)
-                                        }
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
-                                    }
-                                }
-                            }
+                            timelineRow(for: segment)
                         }
                     }
                 }
@@ -118,38 +75,6 @@ struct TimelineView: View {
                         }
                     } label: {
                         Label("Mark Segment", systemImage: "plus")
-                    }
-                }
-            }
-        }
-        .sheet(item: $editingSegment) { segment in
-            NavigationStack {
-                Form {
-                    Section("Activity Label") {
-                        TextField("train, bus, stair climbing...", text: $editedActivityLabel)
-                            .textInputAutocapitalization(.words)
-                            .autocorrectionDisabled()
-
-                        Text("Leave blank to clear the narrower user-selected label and fall back to the broad visible class.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .navigationTitle(segment.title)
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") {
-                            editingSegment = nil
-                        }
-                    }
-
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Save") {
-                            Task {
-                                await saveEditedActivityLabel()
-                            }
-                        }
                     }
                 }
             }
@@ -203,6 +128,7 @@ struct TimelineView: View {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel") {
                             isPresentingManualSegmentSheet = false
+                            editingManualSegment = nil
                         }
                     }
 
@@ -218,10 +144,10 @@ struct TimelineView: View {
             }
         }
         .sheet(item: $inspectingSegment) { segment in
-            SegmentMapDetailView(
-                segment: segment,
-                observations: segmentObservations(for: segment)
-            )
+            SegmentMapDetailView(segment: segment)
+        }
+        .task {
+            await refreshRecentObservationsLoop()
         }
     }
 
@@ -231,13 +157,13 @@ struct TimelineView: View {
     }
 
     private var liveDraftSegment: LiveDraftSegmentSnapshot? {
-        LiveDraftSegmentProjection.make(from: observations)
+        LiveDraftSegmentProjection.make(from: recentObservations)
     }
 
     private var observationCoverageDescription: String? {
         guard
-            let newestObservation = observations.first?.timestamp,
-            let oldestObservation = observations.last?.timestamp
+            let newestObservation = recentObservations.first?.timestamp,
+            let oldestObservation = recentObservations.last?.timestamp
         else {
             return "No recorded observations yet."
         }
@@ -327,32 +253,61 @@ struct TimelineView: View {
         }
     }
 
-    private func saveEditedActivityLabel() async {
-        guard let segment = editingSegment else {
-            return
-        }
-
-        do {
-            let editor = LocalSegmentInterpretationEditor(modelContext: modelContext)
-            try editor.updateUserSelectedClass(
-                for: segment.id,
-                label: editedActivityLabel
-            )
-            editingSegment = nil
-            refreshSyncActivity()
-            await pushPendingSync()
-        } catch {
-            syncActivity.lastPushMessage = "Could not update that activity label."
-        }
-    }
-
     private func currentEditableLabel(for segment: SegmentSnapshot) -> String {
         segment.visibleClassLabel == nil ? "" : segment.activityLabel
     }
 
+    @ViewBuilder
+    private func timelineRow(for segment: SegmentSnapshot) -> some View {
+        let applyServerVersionAction = segment.canApplyServerVersion
+            ? { await applyServerVersion(for: segment.id) }
+            : nil
+        let keepLocalVersionAction = segment.canKeepLocalVersion
+            ? { await keepLocalVersion(for: segment.id) }
+            : nil
+        let restoreDeletedAction = segment.canRestoreDeletedSegment
+            ? { await restoreDeletedSegment(for: segment.id) }
+            : nil
+
+        TimelineRowView(
+            segment: segment,
+            onApplyServerVersion: applyServerVersionAction,
+            onKeepLocalVersion: keepLocalVersionAction,
+            onRestoreDeletedSegment: restoreDeletedAction
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            inspectingSegment = segment
+        }
+        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+            if segment.isUserCreated {
+                Button {
+                    prepareManualSegmentForm(for: segment)
+                    editingManualSegment = segment
+                    isPresentingManualSegmentSheet = true
+                } label: {
+                    Label("Edit", systemImage: "pencil")
+                }
+                .tint(.blue)
+            }
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            if segment.syncDisposition != .conflicted {
+                Button(role: .destructive) {
+                    Task {
+                        await deleteSegment(for: segment.id)
+                    }
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+            }
+        }
+    }
+
     private func prepareManualSegmentForm() {
-        let latestObservationTime = observations.first?.timestamp ?? .now
-        let earliestRecentObservationTime = observations.prefix(20).last?.timestamp
+        editingManualSegment = nil
+        let latestObservationTime = recentObservations.first?.timestamp ?? .now
+        let earliestRecentObservationTime = recentObservations.prefix(20).last?.timestamp
             ?? latestObservationTime.addingTimeInterval(-30 * 60)
 
         manualSegmentEndTime = latestObservationTime
@@ -365,7 +320,16 @@ struct TimelineView: View {
         manualSegmentDistanceMeters = ""
     }
 
+    private func prepareManualSegmentForm(for segment: SegmentSnapshot) {
+        manualSegmentStartTime = segment.startTime
+        manualSegmentEndTime = segment.endTime
+        manualSegmentActivityClass = segment.activityClass
+        manualSegmentLabel = currentEditableLabel(for: segment)
+        manualSegmentDistanceMeters = segment.distanceMeters.map { String(format: "%.0f", $0) } ?? ""
+    }
+
     private func prepareRecentWorkoutSegmentForm(activityClass: ActivityClass) {
+        editingManualSegment = nil
         let inferredWindow = inferredRecentWorkoutWindow(for: activityClass)
         manualSegmentStartTime = inferredWindow.startTime
         manualSegmentEndTime = inferredWindow.endTime
@@ -377,15 +341,29 @@ struct TimelineView: View {
     private func saveManualSegment() async {
         do {
             let writer = LocalUserSegmentWriter(modelContext: modelContext)
-            try writer.createSegment(
-                startTime: manualSegmentStartTime,
-                endTime: manualSegmentEndTime,
-                activityClass: manualSegmentActivityClass,
-                narrowerLabel: manualSegmentLabel,
-                distanceMeters: parseManualDistanceMeters()
-            )
+            if let editingManualSegment {
+                try writer.updateSegment(
+                    segmentID: editingManualSegment.id,
+                    startTime: manualSegmentStartTime,
+                    endTime: manualSegmentEndTime,
+                    activityClass: manualSegmentActivityClass,
+                    narrowerLabel: manualSegmentLabel,
+                    distanceMeters: parseManualDistanceMeters()
+                )
+            } else {
+                try writer.createSegment(
+                    startTime: manualSegmentStartTime,
+                    endTime: manualSegmentEndTime,
+                    activityClass: manualSegmentActivityClass,
+                    narrowerLabel: manualSegmentLabel,
+                    distanceMeters: parseManualDistanceMeters()
+                )
+            }
             isPresentingManualSegmentSheet = false
-            liveDraftStatusMessage = "Saved a user-marked \(manualSegmentActivityClass.displayName.lowercased()) segment."
+            liveDraftStatusMessage = editingManualSegment == nil
+                ? "Saved a user-marked \(manualSegmentActivityClass.displayName.lowercased()) segment."
+                : "Updated that \(manualSegmentActivityClass.displayName.lowercased()) segment."
+            editingManualSegment = nil
             refreshSyncActivity()
             await pushPendingSync()
         } catch {
@@ -402,17 +380,10 @@ struct TimelineView: View {
         return Double(trimmed.replacingOccurrences(of: ",", with: ""))
     }
 
-    private func segmentObservations(for segment: SegmentSnapshot) -> [ObservationRecord] {
-        observations.filter { observation in
-            observation.timestamp >= segment.startTime && observation.timestamp <= segment.endTime
-        }
-        .sorted { $0.timestamp < $1.timestamp }
-    }
-
     private func inferredRecentWorkoutWindow(for activityClass: ActivityClass) -> (startTime: Date, endTime: Date) {
-        let latestObservationTime = observations.first?.timestamp ?? .now
+        let latestObservationTime = recentObservations.first?.timestamp ?? .now
         let fallbackStartTime = latestObservationTime.addingTimeInterval(-45 * 60)
-        let relevantObservations = observations
+        let relevantObservations = recentObservations
             .filter { isRelevantRecentWorkoutObservation($0, activityClass: activityClass) }
             .sorted { $0.timestamp > $1.timestamp }
 
@@ -497,5 +468,20 @@ struct TimelineView: View {
 
     private func pushPendingSync() async {
         await syncActivity.pushPending(using: modelContext)
+    }
+
+    private func loadRecentObservations() {
+        var descriptor = FetchDescriptor<ObservationRecord>(
+            sortBy: [SortDescriptor(\ObservationRecord.timestamp, order: .reverse)]
+        )
+        descriptor.fetchLimit = 240
+        recentObservations = (try? modelContext.fetch(descriptor)) ?? []
+    }
+
+    private func refreshRecentObservationsLoop() async {
+        while Task.isCancelled == false {
+            loadRecentObservations()
+            try? await Task.sleep(for: .seconds(5))
+        }
     }
 }

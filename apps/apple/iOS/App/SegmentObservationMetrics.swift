@@ -1,6 +1,16 @@
 import CoreLocation
 import Foundation
 
+struct SegmentLocationFix: Identifiable {
+    let observationID: UUID
+    let timestamp: Date
+    let coordinate: CLLocationCoordinate2D
+    let horizontalAccuracy: Double?
+    let speedMetersPerSecond: Double?
+
+    var id: UUID { observationID }
+}
+
 enum SegmentObservationMetrics {
     static func derivedDistanceMeters(from observations: [ObservationRecord]) -> Double? {
         let sortedObservations = observations.sorted { $0.timestamp < $1.timestamp }
@@ -13,9 +23,13 @@ enum SegmentObservationMetrics {
     }
 
     static func locationCoordinates(from observations: [ObservationRecord]) -> [CLLocationCoordinate2D] {
+        locationFixes(from: observations).map(\.coordinate)
+    }
+
+    static func locationFixes(from observations: [ObservationRecord]) -> [SegmentLocationFix] {
         observations
             .sorted { $0.timestamp < $1.timestamp }
-            .compactMap(locationCoordinate(from:))
+            .compactMap(locationFix(from:))
     }
 
     private static func locationDistanceMeters(from observations: [ObservationRecord]) -> Double? {
@@ -38,6 +52,17 @@ enum SegmentObservationMetrics {
             .max()
     }
 
+    static func payloadValues(from payload: String) -> [String: String] {
+        payload.split(separator: ";").reduce(into: [String: String]()) { partialResult, pair in
+            let components = pair.split(separator: "=", maxSplits: 1)
+            guard components.count == 2 else {
+                return
+            }
+
+            partialResult[String(components[0])] = String(components[1])
+        }
+    }
+
     private static func locationCoordinate(from observation: ObservationRecord) -> CLLocationCoordinate2D? {
         guard observation.sourceType == .location else {
             return nil
@@ -54,14 +79,18 @@ enum SegmentObservationMetrics {
         return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
 
-    private static func payloadValues(from payload: String) -> [String: String] {
-        payload.split(separator: ";").reduce(into: [String: String]()) { partialResult, pair in
-            let components = pair.split(separator: "=", maxSplits: 1)
-            guard components.count == 2 else {
-                return
-            }
-
-            partialResult[String(components[0])] = String(components[1])
+    private static func locationFix(from observation: ObservationRecord) -> SegmentLocationFix? {
+        guard let coordinate = locationCoordinate(from: observation) else {
+            return nil
         }
+
+        let values = payloadValues(from: observation.payload)
+        return SegmentLocationFix(
+            observationID: observation.id,
+            timestamp: observation.timestamp,
+            coordinate: coordinate,
+            horizontalAccuracy: values["accuracy"].flatMap(Double.init),
+            speedMetersPerSecond: values["speed"].flatMap(Double.init)
+        )
     }
 }

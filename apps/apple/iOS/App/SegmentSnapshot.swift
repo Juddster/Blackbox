@@ -6,6 +6,7 @@ struct SegmentSnapshot: Identifiable {
     let activityClass: ActivityClass
     let activityLabel: String
     let visibleClassLabel: String?
+    let originType: SegmentOriginType
     let startTime: Date
     let endTime: Date
     let durationSeconds: TimeInterval
@@ -38,6 +39,7 @@ struct SegmentSnapshot: Identifiable {
         } else {
             nil
         }
+        originType = record.originType
         startTime = record.startTime
         endTime = record.endTime
         durationSeconds = record.summary?.durationSeconds
@@ -51,5 +53,9 @@ struct SegmentSnapshot: Identifiable {
             && syncErrorMessage != "deletedOnServer"
         canRestoreDeletedSegment = record.syncState?.pendingServerEnvelopeData != nil
             && syncErrorMessage == "deletedOnServer"
+    }
+
+    var isUserCreated: Bool {
+        originType == .userCreated
     }
 }

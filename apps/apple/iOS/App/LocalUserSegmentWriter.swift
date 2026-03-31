@@ -59,6 +59,87 @@ struct LocalUserSegmentWriter {
         try modelContext.save()
     }
 
+    func updateSegment(
+        segmentID: UUID,
+        startTime: Date,
+        endTime: Date,
+        activityClass: ActivityClass,
+        narrowerLabel: String,
+        distanceMeters: Double?
+    ) throws {
+        let records = try modelContext.fetch(FetchDescriptor<SegmentRecord>())
+        guard let segment = records.first(where: { $0.id == segmentID }) else {
+            return
+        }
+
+        let trimmedLabel = narrowerLabel.trimmingCharacters(in: .whitespacesAndNewlines)
+        let durationSeconds = max(0, endTime.timeIntervalSince(startTime))
+        let derivedDistanceMeters = try derivedDistanceMeters(
+            fallbackDistanceMeters: distanceMeters,
+            startTime: startTime,
+            endTime: endTime
+        )
+
+        segment.startTime = startTime
+        segment.endTime = endTime
+        segment.title = title(for: activityClass, narrowerLabel: trimmedLabel)
+        segment.updatedAt = .now
+
+        if let interpretation = segment.interpretation {
+            interpretation.visibleClass = activityClass
+            interpretation.userSelectedClass = trimmedLabel.isEmpty ? nil : trimmedLabel
+            interpretation.confidence = 1
+            interpretation.ambiguityState = .clear
+            interpretation.needsReview = false
+            interpretation.interpretationOrigin = .user
+            interpretation.updatedAt = .now
+        } else {
+            segment.interpretation = SegmentInterpretationRecord(
+                visibleClass: activityClass,
+                userSelectedClass: trimmedLabel.isEmpty ? nil : trimmedLabel,
+                confidence: 1,
+                ambiguityState: .clear,
+                needsReview: false,
+                interpretationOrigin: .user
+            )
+        }
+
+        if let summary = segment.summary {
+            summary.durationSeconds = durationSeconds
+            summary.distanceMeters = derivedDistanceMeters
+            summary.averageSpeedMetersPerSecond = averageSpeed(
+                distanceMeters: derivedDistanceMeters,
+                durationSeconds: durationSeconds
+            )
+            summary.updatedAt = .now
+        } else {
+            segment.summary = SegmentSummaryRecord(
+                durationSeconds: durationSeconds,
+                distanceMeters: derivedDistanceMeters,
+                averageSpeedMetersPerSecond: averageSpeed(
+                    distanceMeters: derivedDistanceMeters,
+                    durationSeconds: durationSeconds
+                )
+            )
+        }
+
+        if let syncState = segment.syncState {
+            syncState.lastModifiedByDeviceID = "apple-local"
+            syncState.lastModifiedAt = .now
+            syncState.disposition = .pendingUpload
+            syncState.lastSyncError = nil
+        } else {
+            segment.syncState = SegmentSyncStateRecord(
+                lastModifiedByDeviceID: "apple-local",
+                lastModifiedAt: .now,
+                syncVersion: 0,
+                disposition: .pendingUpload
+            )
+        }
+
+        try modelContext.save()
+    }
+
     private func title(for activityClass: ActivityClass, narrowerLabel: String) -> String {
         if narrowerLabel.isEmpty == false {
             return narrowerLabel.replacingOccurrences(of: "-", with: " ").localizedCapitalized

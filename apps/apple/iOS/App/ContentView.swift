@@ -8,6 +8,7 @@ struct ContentView: View {
     @State private var captureControl = CaptureControlStore()
     @State private var syncActivity = SyncActivityStore()
     @State private var presentedResumeReport: CaptureResumeReport?
+    @State private var hasBackfilledSegmentMetrics = false
 
     var body: some View {
         TabView {
@@ -50,7 +51,6 @@ struct ContentView: View {
                 Task {
                     presentedResumeReport = await captureControl.handleDidBecomeActive()
                     await resumeCaptureIfNeeded()
-                    backfillSegmentMetrics()
                     refreshSyncActivity()
                 }
             } else if scenePhase == .background {
@@ -127,6 +127,11 @@ struct ContentView: View {
     }
 
     private func backfillSegmentMetrics() {
+        guard hasBackfilledSegmentMetrics == false else {
+            return
+        }
+
+        hasBackfilledSegmentMetrics = true
         let backfiller = LocalSegmentMetricBackfiller(modelContext: modelContext)
         try? backfiller.backfillMissingDistanceMetrics()
     }
