@@ -62,6 +62,67 @@ struct LocalUserSegmentWriter {
         try modelContext.save()
     }
 
+    func createInferredSegments(
+        from proposals: [ReplayInferenceSegment]
+    ) throws -> (createdCount: Int, skippedCount: Int) {
+        let candidates = proposals.filter { $0.activityClass != .stationary }
+        guard candidates.isEmpty == false else {
+            return (0, 0)
+        }
+
+        let existingSegments = try modelContext.fetch(FetchDescriptor<SegmentRecord>())
+        var createdCount = 0
+        var skippedCount = 0
+
+        for proposal in candidates {
+            if hasSubstantialOverlap(for: proposal, existingSegments: existingSegments) {
+                skippedCount += 1
+                continue
+            }
+
+            let durationSeconds = max(0, proposal.endTime.timeIntervalSince(proposal.startTime))
+            let preferredDistanceMeters = proposal.pedometerDistanceMeters ?? proposal.locationDistanceMeters
+            let segment = SegmentRecord(
+                startTime: proposal.startTime,
+                endTime: proposal.endTime,
+                lifecycleState: .unsettled,
+                originType: .system,
+                primaryDeviceHint: .iPhone,
+                title: proposal.activityClass.displayName
+            )
+
+            segment.interpretation = SegmentInterpretationRecord(
+                visibleClass: proposal.activityClass,
+                confidence: proposal.confidence,
+                ambiguityState: .uncertain,
+                needsReview: true,
+                interpretationOrigin: .system
+            )
+            segment.summary = SegmentSummaryRecord(
+                durationSeconds: durationSeconds,
+                distanceMeters: preferredDistanceMeters,
+                locationDistanceMeters: proposal.locationDistanceMeters,
+                pedometerDistanceMeters: proposal.pedometerDistanceMeters,
+                averageSpeedMetersPerSecond: proposal.averageSpeedMetersPerSecond
+            )
+            segment.syncState = SegmentSyncStateRecord(
+                lastModifiedByDeviceID: "apple-local",
+                lastModifiedAt: .now,
+                syncVersion: 0,
+                disposition: .pendingUpload
+            )
+
+            modelContext.insert(segment)
+            createdCount += 1
+        }
+
+        if createdCount > 0 {
+            try modelContext.save()
+        }
+
+        return (createdCount, skippedCount)
+    }
+
     func updateSegment(
         segmentID: UUID,
         startTime: Date,
@@ -193,5 +254,34 @@ struct LocalUserSegmentWriter {
             from: observations,
             preferredActivityClass: activityClass
         )
+    }
+
+    private func hasSubstantialOverlap(
+        for proposal: ReplayInferenceSegment,
+        existingSegments: [SegmentRecord]
+    ) -> Bool {
+        let proposalDuration = max(0, proposal.endTime.timeIntervalSince(proposal.startTime))
+        guard proposalDuration > 0 else {
+            return true
+        }
+
+        return existingSegments.contains { existingSegment in
+            guard existingSegment.lifecycleState != .deleted else {
+                return false
+            }
+
+            let overlapStart = max(existingSegment.startTime, proposal.startTime)
+            let overlapEnd = min(existingSegment.endTime, proposal.endTime)
+            let overlapDuration = overlapEnd.timeIntervalSince(overlapStart)
+            guard overlapDuration > 0 else {
+                return false
+            }
+
+            let existingDuration = max(0, existingSegment.endTime.timeIntervalSince(existingSegment.startTime))
+            let overlapRatio = overlapDuration / proposalDuration
+            let existingOverlapRatio = existingDuration > 0 ? overlapDuration / existingDuration : 0
+
+            return overlapRatio >= 0.5 || existingOverlapRatio >= 0.5
+        }
     }
 }

@@ -334,3 +334,6 @@ What to watch:
   - Updated Apple segment review to reload cached segment metrics from SwiftData after location-fix edits, so the open sheet now reflects recomputed distance and duration without requiring the user to close and reopen it.
 - Mar 31, 14:26:
   - Added Apple replay-bundle export from the Data tab: choose a time window, export a JSON bundle, and include all observations in that window plus overlapping segments and their cached interpretation/summary/sync metadata so Tomi can analyze real capture traces outside the app.
+- Mar 31, 19:07:
+  - Extended Apple replay analysis toward draft auto-segmentation by allowing confident inferred on-foot segments to be saved into local segment state for review from the Data tab.
+  - The first pass deliberately skips inferred proposals that substantially overlap existing non-deleted segments so repeated replay analysis does not create timeline duplicates.

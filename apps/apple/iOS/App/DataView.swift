@@ -14,6 +14,7 @@ struct DataView: View {
     @State private var exportFileName = "blackbox-replay.json"
     @State private var isPresentingExporter = false
     @State private var exportStatusMessage: String?
+    @State private var inferenceStatusMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -62,6 +63,20 @@ struct DataView: View {
                         Label("Analyze Selected Window", systemImage: "waveform.path.ecg.rectangle")
                     }
                     .disabled(exportEndTime <= exportStartTime)
+
+                    if let inferencePreview, inferencePreview.proposedSegments.isEmpty == false {
+                        Button {
+                            saveInferredSegments()
+                        } label: {
+                            Label("Save Proposed Segments", systemImage: "square.and.arrow.down")
+                        }
+                    }
+
+                    if let inferenceStatusMessage {
+                        Text(inferenceStatusMessage)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
 
                     if let inferencePreview {
                         Text(inferenceSummary(for: inferencePreview))
@@ -240,6 +255,30 @@ struct DataView: View {
             windowStart: exportStartTime,
             windowEnd: exportEndTime
         )
+        inferenceStatusMessage = nil
+    }
+
+    private func saveInferredSegments() {
+        guard let inferencePreview else {
+            inferenceStatusMessage = "Analyze a window before saving proposed segments."
+            return
+        }
+
+        do {
+            let writer = LocalUserSegmentWriter(modelContext: modelContext)
+            let outcome = try writer.createInferredSegments(from: inferencePreview.proposedSegments)
+            if outcome.createdCount == 0 {
+                inferenceStatusMessage = outcome.skippedCount > 0
+                    ? "Skipped \(outcome.skippedCount) overlapping proposals."
+                    : "No saveable inferred segments were found."
+            } else if outcome.skippedCount == 0 {
+                inferenceStatusMessage = "Saved \(outcome.createdCount) proposed segment\(outcome.createdCount == 1 ? "" : "s") for review."
+            } else {
+                inferenceStatusMessage = "Saved \(outcome.createdCount) proposed segment\(outcome.createdCount == 1 ? "" : "s"); skipped \(outcome.skippedCount) overlaps."
+            }
+        } catch {
+            inferenceStatusMessage = "Could not save the proposed segments."
+        }
     }
 
     private func fetchObservationsForExport() -> [ObservationRecord] {
