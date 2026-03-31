@@ -245,6 +245,8 @@ private struct ReplayInferenceBucket {
     private var locationSpeedSamples = [Double]()
     private var pedometerDistanceSamples = [Double]()
     private var cadenceSamples = [Double]()
+    private var floorsAscendedSamples = [Double]()
+    private var floorsDescendedSamples = [Double]()
     private var sawRunningMotion = false
     private var sawWalkingMotion = false
     private var sawAutomotiveMotion = false
@@ -316,6 +318,14 @@ private struct ReplayInferenceBucket {
         if let cadence = values["currentCadence"].flatMap(Double.init), cadence > 0 {
             cadenceSamples.append(cadence)
         }
+
+        if let floorsAscended = values["floorsAscended"].flatMap(Double.init) {
+            floorsAscendedSamples.append(floorsAscended)
+        }
+
+        if let floorsDescended = values["floorsDescended"].flatMap(Double.init) {
+            floorsDescendedSamples.append(floorsDescended)
+        }
     }
 
     private mutating func classify() {
@@ -330,12 +340,24 @@ private struct ReplayInferenceBucket {
         var matchedReasons = [String]()
         var proposedClass: ActivityClass?
         var proposedConfidence = 0.2
+        let floorsAscendedDelta = deltaValue(from: floorsAscendedSamples) ?? 0
+        let floorsDescendedDelta = deltaValue(from: floorsDescendedSamples) ?? 0
+        let verticalFloorsDelta = floorsAscendedDelta + floorsDescendedDelta
+        let isVerticalTransportCandidate = verticalFloorsDelta >= 2
+            && locationDistanceMeters < 40
+            && sawAutomotiveMotion == false
+            && (averageSpeedMetersPerSecond ?? 0) < 2.0
         let walkingMotionDominatesExit = sawWalkingMotion
             && sawRunningMotion == false
             && (averageCadenceStepsPerSecond ?? 0) < 2.6
             && (averageSpeedMetersPerSecond ?? 0) < 2.35
 
-        if sawAutomotiveMotion || (averageSpeedMetersPerSecond ?? 0) >= 5.5 {
+        if isVerticalTransportCandidate {
+            activityClass = nil
+            confidence = 0
+            reasonSummary = "suppressed vertical-transport candidate"
+            return
+        } else if sawAutomotiveMotion || (averageSpeedMetersPerSecond ?? 0) >= 5.5 {
             proposedClass = .vehicle
             proposedConfidence = sawAutomotiveMotion ? 0.95 : 0.75
             if sawAutomotiveMotion { matchedReasons.append("motion=automotive") }
@@ -406,6 +428,14 @@ private struct ReplayInferenceBucket {
     }
 
     private func deltaDistance(from samples: [Double]) -> Double? {
+        guard let first = samples.first, let last = samples.last else {
+            return nil
+        }
+
+        return max(0, last - first)
+    }
+
+    private func deltaValue(from samples: [Double]) -> Double? {
         guard let first = samples.first, let last = samples.last else {
             return nil
         }
