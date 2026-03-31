@@ -144,6 +144,7 @@ What to watch:
 - Mar 31, 16:17: Changed Apple replay export to refresh summary metrics for overlapping segments before encoding JSON so edited paths now export current preferred, location, and pedometer distance values instead of stale cached summaries.
 - Mar 31, 16:22: Extended the Apple replay analyzer to smooth one-bucket gaps and surface explicit transition proposals in the `Data` tab so inferred segment start/end boundaries are visible as candidate activity changes, not just merged class blocks.
 - Mar 31, 16:22: Tuned Apple replay run/walk heuristics against the `b2` run sample by tightening running cadence/speed thresholds, lowering walking thresholds, and filtering short non-running proposals so start/end boundary suggestions better match real run transitions.
+- Mar 31, 16:22: Added an Apple replay exit-minute override so strong walking motion can end a run even if pedometer cadence stays elevated for one transition bucket, which should pull inferred run ends off `:34` and back toward the labeled `:33` boundary in the `b3` sample.
 
 ## Tomi Progress Notes
 

@@ -330,6 +330,10 @@ private struct ReplayInferenceBucket {
         var matchedReasons = [String]()
         var proposedClass: ActivityClass?
         var proposedConfidence = 0.2
+        let walkingMotionDominatesExit = sawWalkingMotion
+            && sawRunningMotion == false
+            && (averageCadenceStepsPerSecond ?? 0) < 2.6
+            && (averageSpeedMetersPerSecond ?? 0) < 2.35
 
         if sawAutomotiveMotion || (averageSpeedMetersPerSecond ?? 0) >= 5.5 {
             proposedClass = .vehicle
@@ -338,6 +342,14 @@ private struct ReplayInferenceBucket {
             if let averageSpeedMetersPerSecond, averageSpeedMetersPerSecond >= 5.5 {
                 matchedReasons.append("speed>=5.5m/s")
             }
+        } else if walkingMotionDominatesExit {
+            proposedClass = .walking
+            matchedReasons.append("motion=walking")
+            matchedReasons.append("run-exit override")
+            if let averageCadenceStepsPerSecond {
+                matchedReasons.append(String(format: "cadence=%.2f", averageCadenceStepsPerSecond))
+            }
+            proposedConfidence = 0.9
         } else if sawRunningMotion
             || (averageCadenceStepsPerSecond ?? 0) >= 2.35
             || (
