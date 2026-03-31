@@ -34,6 +34,7 @@ struct ReplayInferenceTransition: Identifiable {
 
 enum ReplayInferenceAnalyzer {
     private static let bucketDurationSeconds: TimeInterval = 60
+    private static let minimumMeaningfulSegmentDuration: TimeInterval = 3 * 60
 
     static func preview(
         from observations: [ObservationRecord],
@@ -173,7 +174,10 @@ enum ReplayInferenceAnalyzer {
         }
 
         merged.append(current.segment)
-        return merged
+        return merged.filter { segment in
+            segment.endTime.timeIntervalSince(segment.startTime) >= minimumMeaningfulSegmentDuration
+                || segment.activityClass == .running
+        }
     }
 
     private static func transitions(from segments: [ReplayInferenceSegment]) -> [ReplayInferenceTransition] {
@@ -335,35 +339,42 @@ private struct ReplayInferenceBucket {
                 matchedReasons.append("speed>=5.5m/s")
             }
         } else if sawRunningMotion
-            || (averageCadenceStepsPerSecond ?? 0) >= 2.2
-            || (averageSpeedMetersPerSecond ?? 0) >= 2.3
-            || ((pedometerDistanceMeters ?? 0) >= 140 && (averageCadenceStepsPerSecond ?? 0) >= 1.8) {
+            || (averageCadenceStepsPerSecond ?? 0) >= 2.35
+            || (
+                (averageCadenceStepsPerSecond ?? 0) >= 2.15
+                    && (averageSpeedMetersPerSecond ?? 0) >= 2.0
+                    && (pedometerDistanceMeters ?? 0) >= 110
+            )
+            || (
+                (averageSpeedMetersPerSecond ?? 0) >= 2.45
+                    && (pedometerDistanceMeters ?? 0) >= 120
+            ) {
             proposedClass = .running
             if sawRunningMotion { matchedReasons.append("motion=running") }
-            if let averageCadenceStepsPerSecond, averageCadenceStepsPerSecond >= 2.2 {
-                matchedReasons.append("cadence>=2.2")
+            if let averageCadenceStepsPerSecond, averageCadenceStepsPerSecond >= 2.35 {
+                matchedReasons.append("cadence>=2.35")
             }
-            if let averageSpeedMetersPerSecond, averageSpeedMetersPerSecond >= 2.3 {
-                matchedReasons.append("speed>=2.3m/s")
+            if let averageSpeedMetersPerSecond, averageSpeedMetersPerSecond >= 2.45 {
+                matchedReasons.append("speed>=2.45m/s")
             }
-            if let pedometerDistanceMeters, pedometerDistanceMeters >= 140 {
-                matchedReasons.append("pedometer>=140m/min")
+            if let pedometerDistanceMeters, pedometerDistanceMeters >= 110 {
+                matchedReasons.append("pedometer>=110m/min")
             }
             proposedConfidence = min(0.98, 0.45 + (0.15 * Double(matchedReasons.count)))
         } else if sawWalkingMotion
-            || (averageCadenceStepsPerSecond ?? 0) >= 1.0
+            || (averageCadenceStepsPerSecond ?? 0) >= 1.35
             || (averageSpeedMetersPerSecond ?? 0) >= 0.7
-            || ((pedometerDistanceMeters ?? 0) >= 35) {
+            || ((pedometerDistanceMeters ?? 0) >= 20) {
             proposedClass = .walking
             if sawWalkingMotion { matchedReasons.append("motion=walking") }
-            if let averageCadenceStepsPerSecond, averageCadenceStepsPerSecond >= 1.0 {
-                matchedReasons.append("cadence>=1.0")
+            if let averageCadenceStepsPerSecond, averageCadenceStepsPerSecond >= 1.35 {
+                matchedReasons.append("cadence>=1.35")
             }
             if let averageSpeedMetersPerSecond, averageSpeedMetersPerSecond >= 0.7 {
                 matchedReasons.append("speed>=0.7m/s")
             }
-            if let pedometerDistanceMeters, pedometerDistanceMeters >= 35 {
-                matchedReasons.append("pedometer>=35m/min")
+            if let pedometerDistanceMeters, pedometerDistanceMeters >= 20 {
+                matchedReasons.append("pedometer>=20m/min")
             }
             proposedConfidence = min(0.95, 0.35 + (0.12 * Double(matchedReasons.count)))
         } else if sawStationaryMotion

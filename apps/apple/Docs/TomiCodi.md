@@ -143,6 +143,7 @@ What to watch:
 - Mar 31, 16:01: Added replay-window inference preview in the Apple `Data` tab, explicit provenance markers on newly stored live/system-history/manual observations, and replay export metadata that distinguishes manual corrections from system-history backfill.
 - Mar 31, 16:17: Changed Apple replay export to refresh summary metrics for overlapping segments before encoding JSON so edited paths now export current preferred, location, and pedometer distance values instead of stale cached summaries.
 - Mar 31, 16:22: Extended the Apple replay analyzer to smooth one-bucket gaps and surface explicit transition proposals in the `Data` tab so inferred segment start/end boundaries are visible as candidate activity changes, not just merged class blocks.
+- Mar 31, 16:22: Tuned Apple replay run/walk heuristics against the `b2` run sample by tightening running cadence/speed thresholds, lowering walking thresholds, and filtering short non-running proposals so start/end boundary suggestions better match real run transitions.
 
 ## Tomi Progress Notes
 
