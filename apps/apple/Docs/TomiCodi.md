@@ -149,6 +149,7 @@ What to watch:
 - Mar 31, 17:37: Tightened Apple replay stationary detection so meaningful pedometer cadence, distance growth, or walking/running motion now disqualify `stationary`, which should stop short pre-run walking lead-ins like `:37–:41` from collapsing into false stationary buckets.
 - Mar 31, 17:37: Tightened Apple replay stationary detection again so sparse or empty buckets no longer default to `stationary`; the analyzer now requires affirmative stationary evidence (explicit stationary motion, location samples, or multiple pedometer samples) before showing a stationary proposal.
 - Mar 31, 18:02: Added Apple replay transition cleanup so a short stationary block immediately before a strong walking/running proposal is dropped instead of surfacing as a long false stationary lead-in before the real on-foot segment.
+- Mar 31, 18:33: Updated Apple replay segment filtering to preserve short, high-signal walking segments when they sit directly next to a strong run, so lead-in/lead-out walks like the `:41–:42` pre-run bucket are not discarded as generic short-noise segments.
 
 ## Tomi Progress Notes
 

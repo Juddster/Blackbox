@@ -176,9 +176,13 @@ enum ReplayInferenceAnalyzer {
         merged.append(current.segment)
 
         let cleaned = cleanupTransitions(in: merged)
-        return cleaned.filter { segment in
-            segment.endTime.timeIntervalSince(segment.startTime) >= minimumMeaningfulSegmentDuration
+        return cleaned.enumerated().compactMap { index, segment in
+            let duration = segment.endTime.timeIntervalSince(segment.startTime)
+            let keep =
+                duration >= minimumMeaningfulSegmentDuration
                 || segment.activityClass == .running
+                || shouldKeepShortAdjacentWalk(segment, at: index, in: cleaned)
+            return keep ? segment : nil
         }
     }
 
@@ -202,7 +206,11 @@ enum ReplayInferenceAnalyzer {
                     currentDuration <= 5 * 60
                     && (next.activityClass == .walking || next.activityClass == .running)
                     && next.confidence >= 0.75
-                    && nextDuration >= 2 * 60
+                    && (
+                        nextDuration >= 2 * 60
+                        || next.activityClass == .running
+                        || (next.activityClass == .walking && nextDuration >= 60)
+                    )
 
                 if shouldDropStationaryLeadIn {
                     index += 1
@@ -215,6 +223,37 @@ enum ReplayInferenceAnalyzer {
         }
 
         return cleaned
+    }
+
+    private static func shouldKeepShortAdjacentWalk(
+        _ segment: ReplayInferenceSegment,
+        at index: Int,
+        in segments: [ReplayInferenceSegment]
+    ) -> Bool {
+        guard segment.activityClass == .walking else {
+            return false
+        }
+
+        let duration = segment.endTime.timeIntervalSince(segment.startTime)
+        guard duration >= 60, duration <= 10 * 60 else {
+            return false
+        }
+
+        let hasStrongOnFootEvidence =
+            segment.confidence >= 0.75
+            && (
+                (segment.averageCadenceStepsPerSecond ?? 0) >= 1.5
+                || (segment.pedometerDistanceMeters ?? 0) >= 30
+                || segment.locationDistanceMeters >= 20
+            )
+
+        guard hasStrongOnFootEvidence else {
+            return false
+        }
+
+        let previousIsRun = index > 0 && segments[index - 1].activityClass == .running
+        let nextIsRun = index + 1 < segments.count && segments[index + 1].activityClass == .running
+        return previousIsRun || nextIsRun
     }
 
     private static func transitions(from segments: [ReplayInferenceSegment]) -> [ReplayInferenceTransition] {
