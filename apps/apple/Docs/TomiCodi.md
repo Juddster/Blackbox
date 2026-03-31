@@ -319,3 +319,5 @@ What to watch:
   - Tightened the Apple moving-location policy so runs retain denser paths by lowering the moving persistence thresholds and using a more precise runtime accuracy/distance policy.
   - Fixed Apple segment-map review to read the stored location horizontal accuracy field correctly, so fix inspection now reflects the actual `hAcc` payload instead of a missing value.
   - Added manual Apple location-fix insertion from the segment review map: arm the flow, tap the map, and Blackbox inserts a corrective manual fix at the current scrubbed timestamp, then recomputes the segment metrics.
+- Mar 31, 12:55:
+  - Updated Apple segment review to reload cached segment metrics from SwiftData after location-fix edits, so the open sheet now reflects recomputed distance and duration without requiring the user to close and reopen it.

@@ -13,6 +13,8 @@ struct SegmentMapDetailView: View {
     @State private var visibleRegion: MKCoordinateRegion?
     @State private var scrubIndex = 0
     @State private var isAddingManualFix = false
+    @State private var liveDistanceMeters: Double?
+    @State private var liveDurationSeconds: TimeInterval?
 
     var body: some View {
         NavigationStack {
@@ -128,9 +130,9 @@ struct SegmentMapDetailView: View {
                     )
                     LabeledContent(
                         "Duration",
-                        value: Duration.seconds(segment.durationSeconds).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated))
+                        value: Duration.seconds(liveDurationSeconds ?? segment.durationSeconds).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated))
                     )
-                    if let distanceMeters = segment.distanceMeters {
+                    if let distanceMeters = liveDistanceMeters ?? segment.distanceMeters {
                         LabeledContent(
                             "Distance",
                             value: Measurement(value: distanceMeters, unit: UnitLength.meters)
@@ -199,6 +201,7 @@ struct SegmentMapDetailView: View {
 
         observations = (try? modelContext.fetch(descriptor)) ?? []
         locationFixes = SegmentObservationMetrics.locationFixes(from: observations)
+        loadLiveSegmentMetrics()
 
         if locationFixes.isEmpty == false {
             scrubIndex = min(scrubIndex, locationFixes.count - 1)
@@ -268,6 +271,19 @@ struct SegmentMapDetailView: View {
         try? backfiller.refreshMetrics(for: segment.id)
         isAddingManualFix = false
         loadSegmentObservations()
+    }
+
+    private func loadLiveSegmentMetrics() {
+        let records = (try? modelContext.fetch(FetchDescriptor<SegmentRecord>())) ?? []
+        guard let record = records.first(where: { $0.id == segment.id }) else {
+            liveDistanceMeters = nil
+            liveDurationSeconds = nil
+            return
+        }
+
+        liveDistanceMeters = record.summary?.distanceMeters
+        liveDurationSeconds = record.summary?.durationSeconds
+            ?? record.endTime.timeIntervalSince(record.startTime)
     }
 
     private func initialMapPosition(for locationFixes: [SegmentLocationFix]) -> MapCameraPosition {
