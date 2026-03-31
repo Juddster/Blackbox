@@ -174,10 +174,47 @@ enum ReplayInferenceAnalyzer {
         }
 
         merged.append(current.segment)
-        return merged.filter { segment in
+
+        let cleaned = cleanupTransitions(in: merged)
+        return cleaned.filter { segment in
             segment.endTime.timeIntervalSince(segment.startTime) >= minimumMeaningfulSegmentDuration
                 || segment.activityClass == .running
         }
+    }
+
+    private static func cleanupTransitions(in segments: [ReplayInferenceSegment]) -> [ReplayInferenceSegment] {
+        guard segments.count >= 2 else {
+            return segments
+        }
+
+        var cleaned = [ReplayInferenceSegment]()
+        var index = 0
+        while index < segments.count {
+            let current = segments[index]
+
+            if current.activityClass == .stationary,
+               index + 1 < segments.count {
+                let next = segments[index + 1]
+                let currentDuration = current.endTime.timeIntervalSince(current.startTime)
+                let nextDuration = next.endTime.timeIntervalSince(next.startTime)
+
+                let shouldDropStationaryLeadIn =
+                    currentDuration <= 5 * 60
+                    && (next.activityClass == .walking || next.activityClass == .running)
+                    && next.confidence >= 0.75
+                    && nextDuration >= 2 * 60
+
+                if shouldDropStationaryLeadIn {
+                    index += 1
+                    continue
+                }
+            }
+
+            cleaned.append(current)
+            index += 1
+        }
+
+        return cleaned
     }
 
     private static func transitions(from segments: [ReplayInferenceSegment]) -> [ReplayInferenceTransition] {
