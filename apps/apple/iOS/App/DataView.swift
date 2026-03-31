@@ -167,6 +167,7 @@ struct DataView: View {
     private func exportReplayBundle() {
         let observations = fetchObservationsForExport()
         let segments = fetchSegmentsForExport()
+        refreshMetricsForExport(segments: segments)
         let bundle = ReplayExportBundle(
             exportedAt: .now,
             windowStart: exportStartTime,
@@ -188,6 +189,17 @@ struct DataView: View {
         exportFileName = exportFileName(for: bundle)
         exportStatusMessage = "Prepared \(bundle.observations.count) observations and \(bundle.segments.count) segments."
         isPresentingExporter = true
+    }
+
+    private func refreshMetricsForExport(segments: [SegmentRecord]) {
+        guard segments.isEmpty == false else {
+            return
+        }
+
+        let backfiller = LocalSegmentMetricBackfiller(modelContext: modelContext)
+        for segment in segments where segment.lifecycleState != .deleted {
+            try? backfiller.refreshMetrics(for: segment.id)
+        }
     }
 
     private func analyzeSelectedWindow() {
