@@ -321,3 +321,5 @@ What to watch:
   - Added manual Apple location-fix insertion from the segment review map: arm the flow, tap the map, and Blackbox inserts a corrective manual fix at the current scrubbed timestamp, then recomputes the segment metrics.
 - Mar 31, 12:55:
   - Updated Apple segment review to reload cached segment metrics from SwiftData after location-fix edits, so the open sheet now reflects recomputed distance and duration without requiring the user to close and reopen it.
+- Mar 31, 14:26:
+  - Added Apple replay-bundle export from the Data tab: choose a time window, export a JSON bundle, and include all observations in that window plus overlapping segments and their cached interpretation/summary/sync metadata so Tomi can analyze real capture traces outside the app.
