@@ -147,6 +147,7 @@ What to watch:
 - Mar 31, 16:22: Added an Apple replay exit-minute override so strong walking motion can end a run even if pedometer cadence stays elevated for one transition bucket, which should pull inferred run ends off `:34` and back toward the labeled `:33` boundary in the `b3` sample.
 - Mar 31, 17:03: Added Apple vertical-transport suppression in the replay analyzer by deriving real pedometer floor deltas per bucket and dropping classification when floors change with very low horizontal movement and no automotive signal, so elevator context does not surface as walking, running, or vehicle activity.
 - Mar 31, 17:37: Tightened Apple replay stationary detection so meaningful pedometer cadence, distance growth, or walking/running motion now disqualify `stationary`, which should stop short pre-run walking lead-ins like `:37–:41` from collapsing into false stationary buckets.
+- Mar 31, 17:37: Tightened Apple replay stationary detection again so sparse or empty buckets no longer default to `stationary`; the analyzer now requires affirmative stationary evidence (explicit stationary motion, location samples, or multiple pedometer samples) before showing a stationary proposal.
 
 ## Tomi Progress Notes
 

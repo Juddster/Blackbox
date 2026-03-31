@@ -247,6 +247,8 @@ private struct ReplayInferenceBucket {
     private var cadenceSamples = [Double]()
     private var floorsAscendedSamples = [Double]()
     private var floorsDescendedSamples = [Double]()
+    private var locationSampleCount = 0
+    private var pedometerSampleCount = 0
     private var sawRunningMotion = false
     private var sawWalkingMotion = false
     private var sawAutomotiveMotion = false
@@ -292,6 +294,7 @@ private struct ReplayInferenceBucket {
             return
         }
 
+        locationSampleCount += 1
         let location = CLLocation(latitude: latitude, longitude: longitude)
         if let lastLocation {
             locationDistanceMeters += lastLocation.distance(from: location)
@@ -311,6 +314,8 @@ private struct ReplayInferenceBucket {
     }
 
     private mutating func addPedometer(values: [String: String]) {
+        pedometerSampleCount += 1
+
         if let distanceMeters = values["distance"].flatMap(Double.init) {
             pedometerDistanceSamples.append(distanceMeters)
         }
@@ -347,6 +352,9 @@ private struct ReplayInferenceBucket {
             && locationDistanceMeters < 40
             && sawAutomotiveMotion == false
             && (averageSpeedMetersPerSecond ?? 0) < 2.0
+        let hasAffirmativeStationaryEvidence = sawStationaryMotion
+            || locationSampleCount > 0
+            || pedometerSampleCount > 1
         let hasMeaningfulOnFootEvidence = sawWalkingMotion
             || sawRunningMotion
             || (averageCadenceStepsPerSecond ?? 0) >= 1.2
@@ -416,6 +424,7 @@ private struct ReplayInferenceBucket {
             }
             proposedConfidence = min(0.95, 0.35 + (0.12 * Double(matchedReasons.count)))
         } else if hasMeaningfulOnFootEvidence == false
+            && hasAffirmativeStationaryEvidence
             && (
                 sawStationaryMotion
                     || (
