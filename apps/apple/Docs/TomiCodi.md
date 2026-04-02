@@ -339,3 +339,5 @@ What to watch:
   - The first pass deliberately skips inferred proposals that substantially overlap existing non-deleted segments so repeated replay analysis does not create timeline duplicates.
 - Mar 31, 19:36:
   - Split Apple replay analysis output into surfaced proposed segments versus debug-only suppressed and rejected segments, so non-interesting transition context and clearly noisy inference candidates can be inspected without polluting the real inferred segment list.
+- Mar 31, 19:53:
+  - Added Apple replay debug map drill-in from the Data tab so suppressed and rejected inference intervals can be inspected spatially with raw path, cleaned path, and rejected jump markers over the same time window.

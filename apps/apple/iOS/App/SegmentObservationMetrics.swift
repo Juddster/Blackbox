@@ -18,6 +18,13 @@ struct SegmentDistanceBreakdown {
     let pedometerDistanceMeters: Double?
 }
 
+struct SegmentPathReview {
+    let rawFixes: [SegmentLocationFix]
+    let acceptedFixes: [SegmentLocationFix]
+    let rejectedFixes: [SegmentLocationFix]
+    let rejectedDistanceMeters: Double
+}
+
 enum SegmentObservationMetrics {
     static func derivedDistanceMeters(from observations: [ObservationRecord]) -> Double? {
         distanceBreakdown(from: observations, preferredActivityClass: nil).preferredDistanceMeters
@@ -54,6 +61,55 @@ enum SegmentObservationMetrics {
         observations
             .sorted { $0.timestamp < $1.timestamp }
             .compactMap(locationFix(from:))
+    }
+
+    static func pathReview(from observations: [ObservationRecord]) -> SegmentPathReview {
+        let rawFixes = locationFixes(from: observations)
+        guard let firstFix = rawFixes.first else {
+            return SegmentPathReview(
+                rawFixes: [],
+                acceptedFixes: [],
+                rejectedFixes: [],
+                rejectedDistanceMeters: 0
+            )
+        }
+
+        var acceptedFixes = [firstFix]
+        var rejectedFixes = [SegmentLocationFix]()
+        var rejectedDistanceMeters = 0.0
+        var previousAcceptedFix = firstFix
+
+        for fix in rawFixes.dropFirst() {
+            let previousLocation = CLLocation(
+                latitude: previousAcceptedFix.coordinate.latitude,
+                longitude: previousAcceptedFix.coordinate.longitude
+            )
+            let currentLocation = CLLocation(
+                latitude: fix.coordinate.latitude,
+                longitude: fix.coordinate.longitude
+            )
+            let distanceMeters = previousLocation.distance(from: currentLocation)
+            let timeDelta = max(fix.timestamp.timeIntervalSince(previousAcceptedFix.timestamp), 1)
+            let impliedSpeed = distanceMeters / timeDelta
+            let shouldRejectJump =
+                distanceMeters >= 2_000
+                || (distanceMeters >= 250 && impliedSpeed >= 8.5)
+
+            if shouldRejectJump {
+                rejectedFixes.append(fix)
+                rejectedDistanceMeters += distanceMeters
+            } else {
+                acceptedFixes.append(fix)
+                previousAcceptedFix = fix
+            }
+        }
+
+        return SegmentPathReview(
+            rawFixes: rawFixes,
+            acceptedFixes: acceptedFixes,
+            rejectedFixes: rejectedFixes,
+            rejectedDistanceMeters: rejectedDistanceMeters
+        )
     }
 
     private static func locationDistanceMeters(from observations: [ObservationRecord]) -> Double? {

@@ -1,3 +1,4 @@
+import MapKit
 import UniformTypeIdentifiers
 import SwiftData
 import SwiftUI
@@ -15,6 +16,7 @@ struct DataView: View {
     @State private var isPresentingExporter = false
     @State private var exportStatusMessage: String?
     @State private var inferenceStatusMessage: String?
+    @State private var debugSelection: ReplayInferenceDebugSelection?
 
     var body: some View {
         NavigationStack {
@@ -141,25 +143,15 @@ struct DataView: View {
                         if inferencePreview.suppressedSegments.isEmpty == false {
                             Section("Suppressed Debug Segments") {
                                 ForEach(inferencePreview.suppressedSegments) { segment in
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        Label(segment.activityClass.displayName, systemImage: "eye.slash")
-                                            .font(.subheadline.weight(.semibold))
-
-                                        Text(
-                                            "\(segment.startTime.formatted(date: .omitted, time: .shortened)) - \(segment.endTime.formatted(date: .omitted, time: .shortened))"
+                                    Button {
+                                        debugSelection = ReplayInferenceDebugSelection(
+                                            segment: segment,
+                                            laneTitle: "Suppressed Debug Segment"
                                         )
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-
-                                        Text(inferenceMetricsText(for: segment))
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-
-                                        Text(segment.reasonSummary)
-                                            .font(.caption)
-                                            .foregroundStyle(.tertiary)
+                                    } label: {
+                                        debugSegmentRow(segment: segment, systemImage: "eye.slash")
                                     }
-                                    .padding(.vertical, 2)
+                                    .buttonStyle(.plain)
                                 }
                             }
                         }
@@ -167,25 +159,15 @@ struct DataView: View {
                         if inferencePreview.rejectedSegments.isEmpty == false {
                             Section("Rejected Debug Segments") {
                                 ForEach(inferencePreview.rejectedSegments) { segment in
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        Label(segment.activityClass.displayName, systemImage: "exclamationmark.triangle")
-                                            .font(.subheadline.weight(.semibold))
-
-                                        Text(
-                                            "\(segment.startTime.formatted(date: .omitted, time: .shortened)) - \(segment.endTime.formatted(date: .omitted, time: .shortened))"
+                                    Button {
+                                        debugSelection = ReplayInferenceDebugSelection(
+                                            segment: segment,
+                                            laneTitle: "Rejected Debug Segment"
                                         )
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-
-                                        Text(inferenceMetricsText(for: segment))
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-
-                                        Text(segment.reasonSummary)
-                                            .font(.caption)
-                                            .foregroundStyle(.tertiary)
+                                    } label: {
+                                        debugSegmentRow(segment: segment, systemImage: "exclamationmark.triangle")
                                     }
-                                    .padding(.vertical, 2)
+                                    .buttonStyle(.plain)
                                 }
                             }
                         }
@@ -212,6 +194,9 @@ struct DataView: View {
             case .failure:
                 exportStatusMessage = "Could not export the replay bundle."
             }
+        }
+        .sheet(item: $debugSelection) { selection in
+            ReplayInferenceDebugMapView(selection: selection)
         }
     }
 
@@ -559,5 +544,193 @@ private extension DataView {
         }
 
         return parts.joined(separator: " • ")
+    }
+
+    @ViewBuilder
+    func debugSegmentRow(segment: ReplayInferenceSegment, systemImage: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label(segment.activityClass.displayName, systemImage: systemImage)
+                .font(.subheadline.weight(.semibold))
+
+            Text(
+                "\(segment.startTime.formatted(date: .omitted, time: .shortened)) - \(segment.endTime.formatted(date: .omitted, time: .shortened))"
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+            Text(inferenceMetricsText(for: segment))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Text(segment.reasonSummary)
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+private struct ReplayInferenceDebugSelection: Identifiable {
+    let segment: ReplayInferenceSegment
+    let laneTitle: String
+
+    var id: String {
+        "\(laneTitle)-\(segment.id)"
+    }
+}
+
+private struct ReplayInferenceDebugMapView: View {
+    @Environment(\.modelContext) private var modelContext
+
+    let selection: ReplayInferenceDebugSelection
+
+    @State private var observations = [ObservationRecord]()
+    @State private var pathReview = SegmentPathReview(
+        rawFixes: [],
+        acceptedFixes: [],
+        rejectedFixes: [],
+        rejectedDistanceMeters: 0
+    )
+    @State private var cameraPosition: MapCameraPosition = .automatic
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Path Review") {
+                    if pathReview.rawFixes.isEmpty {
+                        Text("No location fixes were recorded in this interval.")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Map(position: $cameraPosition) {
+                            if pathReview.rawFixes.count >= 2 {
+                                MapPolyline(coordinates: pathReview.rawFixes.map(\.coordinate))
+                                    .stroke(.gray.opacity(0.55), lineWidth: 4)
+                            }
+
+                            if pathReview.acceptedFixes.count >= 2 {
+                                MapPolyline(coordinates: pathReview.acceptedFixes.map(\.coordinate))
+                                    .stroke(.blue, lineWidth: 5)
+                            }
+
+                            ForEach(pathReview.rejectedFixes) { fix in
+                                Marker("Rejected", coordinate: fix.coordinate)
+                                    .tint(.red)
+                            }
+                        }
+                        .mapStyle(.standard(elevation: .flat))
+                        .frame(minHeight: 320)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Blue is the cleaned path. Gray is the raw path. Red markers are rejected jump fixes.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+
+                            Text(summaryText)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
+                Section("Interval") {
+                    LabeledContent("Lane", value: selection.laneTitle)
+                    LabeledContent("Activity", value: selection.segment.activityClass.displayName)
+                    LabeledContent(
+                        "Window",
+                        value: "\(selection.segment.startTime.formatted(date: .abbreviated, time: .shortened)) - \(selection.segment.endTime.formatted(date: .omitted, time: .shortened))"
+                    )
+                    LabeledContent("Confidence", value: "\(Int((selection.segment.confidence * 100).rounded()))%")
+                    if selection.segment.reasonSummary.isEmpty == false {
+                        Text(selection.segment.reasonSummary)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Section("Captured Evidence") {
+                    ForEach(observationSummaryRows, id: \.label) { row in
+                        LabeledContent(row.label, value: "\(row.count)")
+                    }
+                }
+            }
+            .navigationTitle("Inference Debug")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .task(id: selection.id) {
+            loadObservations()
+        }
+    }
+
+    private var summaryText: String {
+        let rejectedDistanceText = Measurement(
+            value: pathReview.rejectedDistanceMeters,
+            unit: UnitLength.meters
+        )
+        .formatted(.measurement(width: .abbreviated, usage: .road))
+
+        return "\(pathReview.acceptedFixes.count) accepted fixes, \(pathReview.rejectedFixes.count) rejected fixes, \(rejectedDistanceText) rejected distance."
+    }
+
+    private var observationSummaryRows: [(label: String, count: Int)] {
+        let groupedCounts = Dictionary(grouping: observations, by: \.sourceType)
+            .map { sourceType, groupedObservations in
+                (label: sourceTypeLabel(sourceType), count: groupedObservations.count)
+            }
+            .sorted { $0.label < $1.label }
+
+        return groupedCounts.isEmpty ? [("Total", 0)] : [("Total", observations.count)] + groupedCounts
+    }
+
+    private func loadObservations() {
+        let startTime = selection.segment.startTime
+        let endTime = selection.segment.endTime
+        var descriptor = FetchDescriptor<ObservationRecord>(
+            predicate: #Predicate<ObservationRecord> { observation in
+                observation.timestamp >= startTime && observation.timestamp <= endTime
+            },
+            sortBy: [SortDescriptor(\ObservationRecord.timestamp, order: .forward)]
+        )
+        descriptor.fetchLimit = 4_000
+
+        observations = (try? modelContext.fetch(descriptor)) ?? []
+        pathReview = SegmentObservationMetrics.pathReview(from: observations)
+        if pathReview.rawFixes.isEmpty == false {
+            cameraPosition = initialMapPosition(for: pathReview.rawFixes)
+        }
+    }
+
+    private func initialMapPosition(for locationFixes: [SegmentLocationFix]) -> MapCameraPosition {
+        let points = locationFixes.map(\.coordinate).map(MKMapPoint.init)
+        guard let firstPoint = points.first else {
+            return .automatic
+        }
+
+        let rect = points.dropFirst().reduce(
+            MKMapRect(origin: firstPoint, size: MKMapSize(width: 0, height: 0))
+        ) { partialResult, point in
+            partialResult.union(MKMapRect(origin: point, size: MKMapSize(width: 0, height: 0)))
+        }
+
+        return .rect(rect)
+    }
+
+    private func sourceTypeLabel(_ sourceType: ObservationSourceType) -> String {
+        switch sourceType {
+        case .location:
+            "Location"
+        case .motion:
+            "Motion"
+        case .pedometer:
+            "Pedometer"
+        case .heartRate:
+            "Heart Rate"
+        case .deviceState:
+            "Device State"
+        case .connectivity:
+            "Connectivity"
+        case .other:
+            "Other"
+        }
     }
 }
