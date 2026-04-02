@@ -337,3 +337,5 @@ What to watch:
 - Mar 31, 19:07:
   - Extended Apple replay analysis toward draft auto-segmentation by allowing confident inferred on-foot segments to be saved into local segment state for review from the Data tab.
   - The first pass deliberately skips inferred proposals that substantially overlap existing non-deleted segments so repeated replay analysis does not create timeline duplicates.
+- Mar 31, 19:36:
+  - Split Apple replay analysis output into surfaced proposed segments versus debug-only suppressed and rejected segments, so non-interesting transition context and clearly noisy inference candidates can be inspected without polluting the real inferred segment list.

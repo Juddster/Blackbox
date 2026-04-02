@@ -137,6 +137,58 @@ struct DataView: View {
                                 .padding(.vertical, 4)
                             }
                         }
+
+                        if inferencePreview.suppressedSegments.isEmpty == false {
+                            Section("Suppressed Debug Segments") {
+                                ForEach(inferencePreview.suppressedSegments) { segment in
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Label(segment.activityClass.displayName, systemImage: "eye.slash")
+                                            .font(.subheadline.weight(.semibold))
+
+                                        Text(
+                                            "\(segment.startTime.formatted(date: .omitted, time: .shortened)) - \(segment.endTime.formatted(date: .omitted, time: .shortened))"
+                                        )
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+
+                                        Text(inferenceMetricsText(for: segment))
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+
+                                        Text(segment.reasonSummary)
+                                            .font(.caption)
+                                            .foregroundStyle(.tertiary)
+                                    }
+                                    .padding(.vertical, 2)
+                                }
+                            }
+                        }
+
+                        if inferencePreview.rejectedSegments.isEmpty == false {
+                            Section("Rejected Debug Segments") {
+                                ForEach(inferencePreview.rejectedSegments) { segment in
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Label(segment.activityClass.displayName, systemImage: "exclamationmark.triangle")
+                                            .font(.subheadline.weight(.semibold))
+
+                                        Text(
+                                            "\(segment.startTime.formatted(date: .omitted, time: .shortened)) - \(segment.endTime.formatted(date: .omitted, time: .shortened))"
+                                        )
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+
+                                        Text(inferenceMetricsText(for: segment))
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+
+                                        Text(segment.reasonSummary)
+                                            .font(.caption)
+                                            .foregroundStyle(.tertiary)
+                                    }
+                                    .padding(.vertical, 2)
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -419,7 +471,12 @@ private struct ReplayExportAnalysis: Codable {
         pedometerRecordCount = preview.pedometerRecordCount
         proposedSegments = preview.proposedSegments.map(ReplayExportAnalysisSegment.init)
         proposedTransitions = preview.proposedTransitions.map(ReplayExportAnalysisTransition.init)
+        suppressedSegments = preview.suppressedSegments.map(ReplayExportAnalysisSegment.init)
+        rejectedSegments = preview.rejectedSegments.map(ReplayExportAnalysisSegment.init)
     }
+
+    let suppressedSegments: [ReplayExportAnalysisSegment]
+    let rejectedSegments: [ReplayExportAnalysisSegment]
 }
 
 private struct ReplayExportAnalysisSegment: Codable {
@@ -443,7 +500,12 @@ private struct ReplayExportAnalysisSegment: Codable {
         pedometerDistanceMeters = segment.pedometerDistanceMeters
         averageSpeedMetersPerSecond = segment.averageSpeedMetersPerSecond
         averageCadenceStepsPerSecond = segment.averageCadenceStepsPerSecond
+        rejectedLocationDistanceMeters = segment.rejectedLocationDistanceMeters
+        rejectedLocationJumpCount = segment.rejectedLocationJumpCount
     }
+
+    let rejectedLocationDistanceMeters: Double
+    let rejectedLocationJumpCount: Int
 }
 
 private struct ReplayExportAnalysisTransition: Codable {
@@ -490,6 +552,10 @@ private extension DataView {
 
         if let averageCadenceStepsPerSecond = segment.averageCadenceStepsPerSecond {
             parts.append(String(format: "%.2f steps/s", averageCadenceStepsPerSecond))
+        }
+
+        if segment.rejectedLocationJumpCount > 0 {
+            parts.append("rejected jumps \(segment.rejectedLocationJumpCount)")
         }
 
         return parts.joined(separator: " • ")

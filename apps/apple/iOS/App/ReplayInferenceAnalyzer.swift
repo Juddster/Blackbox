@@ -4,6 +4,8 @@ import Foundation
 struct ReplayInferencePreview {
     let bucketDurationSeconds: TimeInterval
     let proposedSegments: [ReplayInferenceSegment]
+    let suppressedSegments: [ReplayInferenceSegment]
+    let rejectedSegments: [ReplayInferenceSegment]
     let proposedTransitions: [ReplayInferenceTransition]
     let locationFixCount: Int
     let motionRecordCount: Int
@@ -21,6 +23,8 @@ struct ReplayInferenceSegment: Identifiable {
     let pedometerDistanceMeters: Double?
     let averageSpeedMetersPerSecond: Double?
     let averageCadenceStepsPerSecond: Double?
+    let rejectedLocationDistanceMeters: Double
+    let rejectedLocationJumpCount: Int
 }
 
 struct ReplayInferenceTransition: Identifiable {
@@ -33,7 +37,7 @@ struct ReplayInferenceTransition: Identifiable {
 }
 
 enum ReplayInferenceAnalyzer {
-    static let heuristicVersion = "apple-replay-v1"
+    static let heuristicVersion = "apple-replay-v2"
     private static let bucketDurationSeconds: TimeInterval = 60
     private static let minimumMeaningfulSegmentDuration: TimeInterval = 3 * 60
 
@@ -49,12 +53,14 @@ enum ReplayInferenceAnalyzer {
             windowEnd: windowEnd
         )
         let smoothedBuckets = smooth(buckets: buckets)
-        let proposedSegments = merge(buckets: smoothedBuckets)
+        let mergeResult = merge(buckets: smoothedBuckets)
 
         return ReplayInferencePreview(
             bucketDurationSeconds: bucketDurationSeconds,
-            proposedSegments: proposedSegments,
-            proposedTransitions: transitions(from: proposedSegments),
+            proposedSegments: mergeResult.proposedSegments,
+            suppressedSegments: mergeResult.suppressedSegments,
+            rejectedSegments: mergeResult.rejectedSegments,
+            proposedTransitions: transitions(from: mergeResult.proposedSegments),
             locationFixCount: sortedObservations.filter { $0.sourceType == .location }.count,
             motionRecordCount: sortedObservations.filter { $0.sourceType == .motion }.count,
             pedometerRecordCount: sortedObservations.filter { $0.sourceType == .pedometer }.count
@@ -120,7 +126,7 @@ enum ReplayInferenceAnalyzer {
         return smoothedBuckets
     }
 
-    private static func merge(buckets: [ReplayInferenceBucket]) -> [ReplayInferenceSegment] {
+    private static func merge(buckets: [ReplayInferenceBucket]) -> ReplayInferenceMergeResult {
         let classified = buckets.compactMap { bucket -> ReplayInferenceClassifiedBucket? in
             guard let activityClass = bucket.activityClass else {
                 return nil
@@ -135,12 +141,18 @@ enum ReplayInferenceAnalyzer {
                 locationDistanceMeters: bucket.locationDistanceMeters,
                 pedometerDistanceMeters: bucket.pedometerDistanceMeters,
                 averageSpeedMetersPerSecond: bucket.averageSpeedMetersPerSecond,
-                averageCadenceStepsPerSecond: bucket.averageCadenceStepsPerSecond
+                averageCadenceStepsPerSecond: bucket.averageCadenceStepsPerSecond,
+                rejectedLocationDistanceMeters: bucket.rejectedLocationDistanceMeters,
+                rejectedLocationJumpCount: bucket.rejectedLocationJumpCount
             )
         }
 
         guard classified.isEmpty == false else {
-            return []
+            return ReplayInferenceMergeResult(
+                proposedSegments: [],
+                suppressedSegments: [],
+                rejectedSegments: []
+            )
         }
 
         var merged = [ReplayInferenceSegment]()
@@ -177,14 +189,31 @@ enum ReplayInferenceAnalyzer {
         merged.append(current.segment)
 
         let cleaned = cleanupTransitions(in: merged)
-        return cleaned.enumerated().compactMap { index, segment in
+        var proposedSegments = [ReplayInferenceSegment]()
+        var suppressedSegments = [ReplayInferenceSegment]()
+        var rejectedSegments = [ReplayInferenceSegment]()
+
+        for (index, segment) in cleaned.enumerated() {
             let duration = segment.endTime.timeIntervalSince(segment.startTime)
             let keep =
                 duration >= minimumMeaningfulSegmentDuration
                 || segment.activityClass == .running
                 || shouldKeepShortAdjacentWalk(segment, at: index, in: cleaned)
-            return keep ? segment : nil
+
+            if shouldReject(segment) {
+                rejectedSegments.append(segment)
+            } else if keep && isSurfacedActivity(segment.activityClass) {
+                proposedSegments.append(segment)
+            } else {
+                suppressedSegments.append(segment)
+            }
         }
+
+        return ReplayInferenceMergeResult(
+            proposedSegments: proposedSegments,
+            suppressedSegments: suppressedSegments,
+            rejectedSegments: rejectedSegments
+        )
     }
 
     private static func cleanupTransitions(in segments: [ReplayInferenceSegment]) -> [ReplayInferenceSegment] {
@@ -304,6 +333,29 @@ enum ReplayInferenceAnalyzer {
             .union(rhs.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) })
         return parts.sorted().joined(separator: ", ")
     }
+
+    private static func isSurfacedActivity(_ activityClass: ActivityClass) -> Bool {
+        activityClass != .stationary
+    }
+
+    private static func shouldReject(_ segment: ReplayInferenceSegment) -> Bool {
+        let pedometerDistance = segment.pedometerDistanceMeters ?? 0
+        let hasHugeLocationMismatch =
+            segment.locationDistanceMeters >= 2_000
+            && (
+                pedometerDistance == 0
+                || segment.locationDistanceMeters >= max(2_000, pedometerDistance * 8)
+            )
+        let hasRejectedLocationEvidence = segment.rejectedLocationJumpCount > 0
+
+        return hasHugeLocationMismatch || hasRejectedLocationEvidence
+    }
+}
+
+private struct ReplayInferenceMergeResult {
+    let proposedSegments: [ReplayInferenceSegment]
+    let suppressedSegments: [ReplayInferenceSegment]
+    let rejectedSegments: [ReplayInferenceSegment]
 }
 
 private struct ReplayInferenceBucket {
@@ -317,8 +369,11 @@ private struct ReplayInferenceBucket {
     private(set) var activityClass: ActivityClass?
     private(set) var confidence: Double = 0
     private(set) var reasonSummary = ""
+    private(set) var rejectedLocationDistanceMeters: Double = 0
+    private(set) var rejectedLocationJumpCount = 0
 
     private var lastLocation: CLLocation?
+    private var lastLocationTimestamp: Date?
     private var locationSpeedSamples = [Double]()
     private var pedometerDistanceSamples = [Double]()
     private var cadenceSamples = [Double]()
@@ -341,7 +396,7 @@ private struct ReplayInferenceBucket {
 
         switch observation.sourceType {
         case .location:
-            addLocation(values: values)
+            addLocation(values: values, timestamp: observation.timestamp)
         case .motion:
             addMotion(values: values)
         case .pedometer:
@@ -363,7 +418,7 @@ private struct ReplayInferenceBucket {
         }
     }
 
-    private mutating func addLocation(values: [String: String]) {
+    private mutating func addLocation(values: [String: String], timestamp: Date) {
         guard
             let latitude = values["lat"].flatMap(Double.init),
             let longitude = values["lon"].flatMap(Double.init)
@@ -373,10 +428,23 @@ private struct ReplayInferenceBucket {
 
         locationSampleCount += 1
         let location = CLLocation(latitude: latitude, longitude: longitude)
-        if let lastLocation {
-            locationDistanceMeters += lastLocation.distance(from: location)
+        if let lastLocation, let lastLocationTimestamp {
+            let distance = lastLocation.distance(from: location)
+            let timeDelta = max(timestamp.timeIntervalSince(lastLocationTimestamp), 1)
+            let impliedSpeed = distance / timeDelta
+            let shouldRejectJump =
+                distance >= 2_000
+                || (distance >= 250 && impliedSpeed >= 8.5 && sawAutomotiveMotion == false)
+
+            if shouldRejectJump {
+                rejectedLocationDistanceMeters += distance
+                rejectedLocationJumpCount += 1
+            } else {
+                locationDistanceMeters += distance
+            }
         }
         self.lastLocation = location
+        self.lastLocationTimestamp = timestamp
 
         if let speedMetersPerSecond = values["speed"].flatMap(Double.init), speedMetersPerSecond >= 0 {
             locationSpeedSamples.append(speedMetersPerSecond)
@@ -525,7 +593,11 @@ private struct ReplayInferenceBucket {
 
         activityClass = proposedClass
         confidence = proposedConfidence
-        reasonSummary = matchedReasons.joined(separator: ", ")
+        var finalReasons = matchedReasons.joined(separator: ", ")
+        if rejectedLocationJumpCount > 0 {
+            finalReasons = ReplayInferenceAnalyzer.mergedReason(finalReasons, "rejectedLocationJump=\(rejectedLocationJumpCount)")
+        }
+        reasonSummary = finalReasons
     }
 
     private func deltaDistance(from samples: [Double]) -> Double? {
@@ -564,6 +636,8 @@ private struct ReplayInferenceClassifiedBucket {
     var pedometerDistanceMeters: Double?
     var averageSpeedMetersPerSecond: Double?
     var averageCadenceStepsPerSecond: Double?
+    var rejectedLocationDistanceMeters: Double
+    var rejectedLocationJumpCount: Int
 
     var segment: ReplayInferenceSegment {
         ReplayInferenceSegment(
@@ -575,7 +649,9 @@ private struct ReplayInferenceClassifiedBucket {
             locationDistanceMeters: locationDistanceMeters,
             pedometerDistanceMeters: pedometerDistanceMeters,
             averageSpeedMetersPerSecond: averageSpeedMetersPerSecond,
-            averageCadenceStepsPerSecond: averageCadenceStepsPerSecond
+            averageCadenceStepsPerSecond: averageCadenceStepsPerSecond,
+            rejectedLocationDistanceMeters: rejectedLocationDistanceMeters,
+            rejectedLocationJumpCount: rejectedLocationJumpCount
         )
     }
 }
