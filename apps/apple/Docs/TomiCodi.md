@@ -360,3 +360,6 @@ What to watch:
   - The first watch slice captures watch location, pedometer, and motion activity into the same raw observation payload shapes the phone already uses, so replay export and inference can consume watch data without a parallel parser path.
 - Apr 4, 17:44:
   - Fixed the Apple embedded watch app bundle metadata so device install no longer fails on a missing watch `CFBundleIdentifier`; the watch plist now includes the standard bundle keys plus `WKApplication`.
+- Apr 4, 18:07:
+  - Reworked the first Apple watch implementation into the correct companion WatchKit shape: the project now has a WatchKit app target plus a WatchKit extension target, with the SwiftUI watch capture code compiled in the extension and embedded into the watch app bundle.
+  - Aligned the Apple watch/iPhone version metadata and WatchKit plist keys so Xcode can validate the embedded watch app against the iPhone companion during build/install.
