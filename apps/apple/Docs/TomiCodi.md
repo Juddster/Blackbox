@@ -358,3 +358,5 @@ What to watch:
 - Apr 4, 17:28:
   - Added the first real Apple watchOS target and companion app shell, with start/stop capture controls on the watch and queued `WatchConnectivity` batch transfer back to the iPhone app.
   - The first watch slice captures watch location, pedometer, and motion activity into the same raw observation payload shapes the phone already uses, so replay export and inference can consume watch data without a parallel parser path.
+- Apr 4, 17:44:
+  - Fixed the Apple embedded watch app bundle metadata so device install no longer fails on a missing watch `CFBundleIdentifier`; the watch plist now includes the standard bundle keys plus `WKApplication`.
