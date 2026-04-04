@@ -365,3 +365,5 @@ What to watch:
   - Aligned the Apple watch/iPhone version metadata and WatchKit plist keys so Xcode can validate the embedded watch app against the iPhone companion during build/install.
 - Apr 4, 18:22:
   - Added a real Apple app-icon set covering iPhone, iPad, and watch roles after finding the project’s only `AppIcon.appiconset` was empty; the watch companion now has actual launcher and quick-look icon assets instead of an empty asset catalog.
+- Apr 4, 18:34:
+  - Fixed the Apple watch target’s asset membership so the embedded watch app now actually contains a compiled `Assets.car`; previously the watch bundle had metadata pointing at `AppIcon`, but the asset catalog was only being compiled into the iPhone app.

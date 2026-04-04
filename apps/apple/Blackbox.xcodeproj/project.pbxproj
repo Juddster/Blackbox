@@ -88,6 +88,7 @@
 		0792C6396293AF4AE0506BAA /* ObservationSourceType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC4C2F7455F50059DBA9 /* ObservationSourceType.swift */; };
 		19A697EEE4D0AD58741AE352 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7D45B32E742E2F674B8DA9FB /* Assets.xcassets */; };
 		1E429E23EA911D371AABE273 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB0B412574C5D83CA0E4B9DB /* Foundation.framework */; };
+		20BE67D5634AEB84D1CD532C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7D45B32E742E2F674B8DA9FB /* Assets.xcassets */; };
 		242E37F5737891AC640E7FB5 /* BlackboxWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57D905DC3EE2831D041C0EAF /* BlackboxWatchApp.swift */; };
 		3574AEE9D8EF930797C848A5 /* WatchContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEFDCE077D4B299E13CD35BF /* WatchContentView.swift */; };
 		4ED77E5CE3273FF3758CC576 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BB7B834AE865D38AF11D2B3 /* ContentView.swift */; };
@@ -624,6 +625,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				20BE67D5634AEB84D1CD532C /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
