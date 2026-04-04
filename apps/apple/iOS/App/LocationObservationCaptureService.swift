@@ -46,11 +46,19 @@ final class LocationObservationCaptureService: ObservationCapturing {
         delegateProxy.onFailure = { _ in
         }
 
+        delegateProxy.onPause = { [weak self] in
+            self?.handleLocationUpdatesPaused()
+        }
+
+        delegateProxy.onResume = { [weak self] in
+            self?.handleLocationUpdatesResumed()
+        }
+
         locationManager.delegate = delegateProxy
         locationManager.desiredAccuracy = RuntimePolicy.foregroundDesiredAccuracy
         locationManager.distanceFilter = RuntimePolicy.foregroundDistanceFilter
-        locationManager.activityType = .fitness
-        locationManager.pausesLocationUpdatesAutomatically = true
+        locationManager.activityType = .otherNavigation
+        locationManager.pausesLocationUpdatesAutomatically = false
         if supportsBackgroundLocation {
             locationManager.allowsBackgroundLocationUpdates = true
             locationManager.showsBackgroundLocationIndicator = true
@@ -236,6 +244,25 @@ final class LocationObservationCaptureService: ObservationCapturing {
     private func reconfigureLocationFeeds() {
         stopLocationFeeds()
         startLocationFeeds()
+    }
+
+    private func handleLocationUpdatesPaused() {
+        guard isCapturing else {
+            return
+        }
+
+        // Dense updates are critical for mixed-mode capture. If Core Location pauses
+        // anyway, immediately restart the standard feed rather than relying on
+        // significant-change monitoring to wake the session back up later.
+        locationManager.startUpdatingLocation()
+    }
+
+    private func handleLocationUpdatesResumed() {
+        guard isCapturing else {
+            return
+        }
+
+        applyRuntimePolicy()
     }
 
     private func startLocationFeeds() {

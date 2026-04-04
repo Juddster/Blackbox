@@ -14,6 +14,7 @@
 		069C5B802F7B0B4000BFCB7F /* SegmentObservationMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C5B7F2F7B0B4000BFCB7F /* SegmentObservationMetrics.swift */; };
 		069C5B822F7B0B4000BFCB7F /* LocalSegmentMetricBackfiller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C5B812F7B0B4000BFCB7F /* LocalSegmentMetricBackfiller.swift */; };
 		069C5B842F7BFCDE00BFCB7F /* ReplayInferenceAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C5B832F7BFCDE00BFCB7F /* ReplayInferenceAnalyzer.swift */; };
+		069C5B862F814AA400BFCB7F /* WatchConnectivityStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C5B852F814AA400BFCB7F /* WatchConnectivityStore.swift */; };
 		06D4CC452F7455F40059DBA9 /* ActivityClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC442F7455F40059DBA9 /* ActivityClass.swift */; };
 		06D4CC472F7455F40059DBA9 /* AmbiguityState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC462F7455F40059DBA9 /* AmbiguityState.swift */; };
 		06D4CC492F7455F50059DBA9 /* InterpretationOrigin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC482F7455F50059DBA9 /* InterpretationOrigin.swift */; };
@@ -98,6 +99,7 @@
 		069C5B7F2F7B0B4000BFCB7F /* SegmentObservationMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentObservationMetrics.swift; sourceTree = "<group>"; };
 		069C5B812F7B0B4000BFCB7F /* LocalSegmentMetricBackfiller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalSegmentMetricBackfiller.swift; sourceTree = "<group>"; };
 		069C5B832F7BFCDE00BFCB7F /* ReplayInferenceAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReplayInferenceAnalyzer.swift; sourceTree = "<group>"; };
+		069C5B852F814AA400BFCB7F /* WatchConnectivityStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConnectivityStore.swift; sourceTree = "<group>"; };
 		06D4CC442F7455F40059DBA9 /* ActivityClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityClass.swift; sourceTree = "<group>"; };
 		06D4CC462F7455F40059DBA9 /* AmbiguityState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbiguityState.swift; sourceTree = "<group>"; };
 		06D4CC482F7455F50059DBA9 /* InterpretationOrigin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterpretationOrigin.swift; sourceTree = "<group>"; };
@@ -342,6 +344,7 @@
 				069C5B7F2F7B0B4000BFCB7F /* SegmentObservationMetrics.swift */,
 				069C5B812F7B0B4000BFCB7F /* LocalSegmentMetricBackfiller.swift */,
 				069C5B832F7BFCDE00BFCB7F /* ReplayInferenceAnalyzer.swift */,
+				069C5B852F814AA400BFCB7F /* WatchConnectivityStore.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -476,6 +479,7 @@
 				06D4CC712F7467620059DBA9 /* TimelineSummarySection.swift in Sources */,
 				06D4CCB42F7547830059DBA9 /* RecentObservationsSection.swift in Sources */,
 				06D4CC8B2F746D440059DBA9 /* CaptureStatusSection.swift in Sources */,
+				069C5B862F814AA400BFCB7F /* WatchConnectivityStore.swift in Sources */,
 				06D4CC9E2F7529860059DBA9 /* LocationAuthorizationDelegateProxy.swift in Sources */,
 				06D4CC892F746D440059DBA9 /* CaptureProjection.swift in Sources */,
 				06D4CC652F7467610059DBA9 /* ObservationInput.swift in Sources */,

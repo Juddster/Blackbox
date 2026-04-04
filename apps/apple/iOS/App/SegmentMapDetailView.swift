@@ -15,6 +15,14 @@ struct SegmentMapDetailView: View {
     @State private var isAddingManualFix = false
     @State private var liveDistanceMeters: Double?
     @State private var liveDurationSeconds: TimeInterval?
+    @State private var segmentStartTime: Date
+    @State private var segmentEndTime: Date
+
+    init(segment: SegmentSnapshot) {
+        self.segment = segment
+        _segmentStartTime = State(initialValue: segment.startTime)
+        _segmentEndTime = State(initialValue: segment.endTime)
+    }
 
     var body: some View {
         NavigationStack {
@@ -64,16 +72,20 @@ struct SegmentMapDetailView: View {
                                 Slider(
                                     value: Binding(
                                         get: { Double(scrubIndex) },
-                                        set: { scrubIndex = min(max(Int($0.rounded()), 0), locationFixes.count - 1) }
+                                        set: { scrubIndex = min(max(Int($0.rounded()), visibleFixLowerBound), visibleFixUpperBound) }
                                     ),
-                                    in: 0...Double(locationFixes.count - 1),
+                                    in: Double(visibleFixLowerBound)...Double(visibleFixUpperBound),
                                     step: 1
                                 )
 
                                 HStack {
                                     Text(scrubbedFix.timestamp, format: .dateTime.hour().minute().second())
                                     Spacer()
-                                    Text("Fix \(scrubIndex + 1) of \(locationFixes.count)")
+                                    if visibleFixLowerBound != 0 || visibleFixUpperBound != locationFixes.count - 1 {
+                                        Text("Visible fixes \(visibleFixLowerBound + 1)-\(visibleFixUpperBound + 1)")
+                                    } else {
+                                        Text("Fix \(scrubIndex + 1) of \(locationFixes.count)")
+                                    }
                                 }
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -115,6 +127,35 @@ struct SegmentMapDetailView: View {
                             Label("Delete Fixes In Visible Map Area", systemImage: "map")
                         }
                         .disabled(visibleRegion == nil)
+
+                        Text("Segment Boundary Hints")
+                            .font(.subheadline.weight(.semibold))
+
+                        Button(role: .destructive) {
+                            trimSegmentBeforeCurrentFix()
+                        } label: {
+                            Label("Trim Everything Before This Fix", systemImage: "arrow.left.to.line")
+                        }
+                        .disabled(scrubbedFix.timestamp <= segmentStartTime)
+
+                        Button(role: .destructive) {
+                            trimSegmentAfterCurrentFix()
+                        } label: {
+                            Label("Trim Everything After This Fix", systemImage: "arrow.right.to.line")
+                        }
+                        .disabled(scrubbedFix.timestamp >= segmentEndTime)
+
+                        Button {
+                            extendSegmentStart(by: -60)
+                        } label: {
+                            Label("Extend Start By 1 Minute", systemImage: "minus.circle")
+                        }
+
+                        Button {
+                            extendSegmentEnd(by: 60)
+                        } label: {
+                            Label("Extend End By 1 Minute", systemImage: "plus.circle")
+                        }
                     }
                 }
 
@@ -126,7 +167,7 @@ struct SegmentMapDetailView: View {
                     }
                     LabeledContent(
                         "Window",
-                        value: "\(segment.startTime.formatted(date: .abbreviated, time: .shortened)) - \(segment.endTime.formatted(date: .omitted, time: .shortened))"
+                        value: "\(segmentStartTime.formatted(date: .abbreviated, time: .shortened)) - \(segmentEndTime.formatted(date: .omitted, time: .shortened))"
                     )
                     LabeledContent(
                         "Duration",
@@ -159,6 +200,26 @@ struct SegmentMapDetailView: View {
         locationFixes[min(max(scrubIndex, 0), max(locationFixes.count - 1, 0))]
     }
 
+    private var visibleFixIndices: [Int] {
+        guard let visibleRegion else {
+            return Array(locationFixes.indices)
+        }
+
+        let indices = locationFixes.indices.filter { index in
+            contains(locationFixes[index].coordinate, in: visibleRegion)
+        }
+
+        return indices.isEmpty ? Array(locationFixes.indices) : indices
+    }
+
+    private var visibleFixLowerBound: Int {
+        visibleFixIndices.first ?? 0
+    }
+
+    private var visibleFixUpperBound: Int {
+        visibleFixIndices.last ?? max(locationFixes.count - 1, 0)
+    }
+
     private var scrubbedFixSummary: String {
         let coordinate = "\(String(format: "%.5f", scrubbedFix.coordinate.latitude)), \(String(format: "%.5f", scrubbedFix.coordinate.longitude))"
         var parts = [coordinate]
@@ -189,8 +250,8 @@ struct SegmentMapDetailView: View {
     }
 
     private func loadSegmentObservations() {
-        let startTime = segment.startTime
-        let endTime = segment.endTime
+        let startTime = segmentStartTime
+        let endTime = segmentEndTime
         var descriptor = FetchDescriptor<ObservationRecord>(
             predicate: #Predicate<ObservationRecord> { observation in
                 observation.timestamp >= startTime && observation.timestamp <= endTime
@@ -204,7 +265,7 @@ struct SegmentMapDetailView: View {
         loadLiveSegmentMetrics()
 
         if locationFixes.isEmpty == false {
-            scrubIndex = min(scrubIndex, locationFixes.count - 1)
+            scrubIndex = min(max(scrubIndex, visibleFixLowerBound), min(visibleFixUpperBound, locationFixes.count - 1))
             cameraPosition = initialMapPosition(for: locationFixes)
         }
     }
@@ -282,9 +343,62 @@ struct SegmentMapDetailView: View {
             return
         }
 
+        segmentStartTime = record.startTime
+        segmentEndTime = record.endTime
         liveDistanceMeters = record.summary?.distanceMeters
         liveDurationSeconds = record.summary?.durationSeconds
             ?? record.endTime.timeIntervalSince(record.startTime)
+    }
+
+    private func trimSegmentBeforeCurrentFix() {
+        updateSegmentWindow(startTime: scrubbedFix.timestamp, endTime: segmentEndTime)
+    }
+
+    private func trimSegmentAfterCurrentFix() {
+        updateSegmentWindow(startTime: segmentStartTime, endTime: scrubbedFix.timestamp)
+    }
+
+    private func extendSegmentStart(by seconds: TimeInterval) {
+        updateSegmentWindow(startTime: segmentStartTime.addingTimeInterval(seconds), endTime: segmentEndTime)
+    }
+
+    private func extendSegmentEnd(by seconds: TimeInterval) {
+        updateSegmentWindow(startTime: segmentStartTime, endTime: segmentEndTime.addingTimeInterval(seconds))
+    }
+
+    private func updateSegmentWindow(startTime: Date, endTime: Date) {
+        guard endTime > startTime else {
+            return
+        }
+
+        let records = (try? modelContext.fetch(FetchDescriptor<SegmentRecord>())) ?? []
+        guard let record = records.first(where: { $0.id == segment.id }) else {
+            return
+        }
+
+        record.startTime = startTime
+        record.endTime = endTime
+        record.updatedAt = .now
+        record.lifecycleState = .unsettled
+
+        if let interpretation = record.interpretation {
+            interpretation.needsReview = true
+            interpretation.ambiguityState = .uncertain
+            interpretation.interpretationOrigin = .mixed
+            interpretation.updatedAt = .now
+        }
+
+        if let syncState = record.syncState {
+            syncState.lastModifiedByDeviceID = "apple-local"
+            syncState.lastModifiedAt = .now
+            syncState.disposition = .pendingUpload
+            syncState.lastSyncError = nil
+        }
+
+        try? modelContext.save()
+        let backfiller = LocalSegmentMetricBackfiller(modelContext: modelContext)
+        try? backfiller.refreshMetrics(for: segment.id)
+        loadSegmentObservations()
     }
 
     private func initialMapPosition(for locationFixes: [SegmentLocationFix]) -> MapCameraPosition {

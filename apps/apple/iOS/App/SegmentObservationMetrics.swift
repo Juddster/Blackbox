@@ -16,6 +16,8 @@ struct SegmentDistanceBreakdown {
     let preferredDistanceMeters: Double?
     let locationDistanceMeters: Double?
     let pedometerDistanceMeters: Double?
+    let iPhonePedometerDistanceMeters: Double?
+    let watchPedometerDistanceMeters: Double?
 }
 
 struct SegmentPathReview {
@@ -36,7 +38,13 @@ enum SegmentObservationMetrics {
     ) -> SegmentDistanceBreakdown {
         let sortedObservations = observations.sorted { $0.timestamp < $1.timestamp }
         let locationDistanceMeters = locationDistanceMeters(from: sortedObservations)
-        let pedometerDistanceMeters = pedometerDistanceMeters(from: sortedObservations)
+        let pedometerDistancesByDevice = pedometerDistanceMetersByDevice(from: sortedObservations)
+        let iPhonePedometerDistanceMeters = pedometerDistancesByDevice[.iPhone]
+        let watchPedometerDistanceMeters = pedometerDistancesByDevice[.watch]
+        let pedometerDistanceMeters = preferredPedometerDistance(
+            iPhoneDistanceMeters: iPhonePedometerDistanceMeters,
+            watchDistanceMeters: watchPedometerDistanceMeters
+        )
 
         let preferredDistanceMeters: Double?
         switch preferredActivityClass {
@@ -49,7 +57,9 @@ enum SegmentObservationMetrics {
         return SegmentDistanceBreakdown(
             preferredDistanceMeters: preferredDistanceMeters,
             locationDistanceMeters: locationDistanceMeters,
-            pedometerDistanceMeters: pedometerDistanceMeters
+            pedometerDistanceMeters: pedometerDistanceMeters,
+            iPhonePedometerDistanceMeters: iPhonePedometerDistanceMeters,
+            watchPedometerDistanceMeters: watchPedometerDistanceMeters
         )
     }
 
@@ -125,11 +135,22 @@ enum SegmentObservationMetrics {
         }
     }
 
-    private static func pedometerDistanceMeters(from observations: [ObservationRecord]) -> Double? {
-        observations
-            .filter { $0.sourceType == .pedometer }
-            .compactMap { payloadValues(from: $0.payload)["distance"].flatMap(Double.init) }
-            .max()
+    private static func pedometerDistanceMetersByDevice(
+        from observations: [ObservationRecord]
+    ) -> [ObservationSourceDevice: Double] {
+        Dictionary(grouping: observations.filter { $0.sourceType == .pedometer }, by: \.sourceDevice)
+            .compactMapValues { groupedObservations in
+                groupedObservations
+                    .compactMap { payloadValues(from: $0.payload)["distance"].flatMap(Double.init) }
+                    .max()
+            }
+    }
+
+    private static func preferredPedometerDistance(
+        iPhoneDistanceMeters: Double?,
+        watchDistanceMeters: Double?
+    ) -> Double? {
+        watchDistanceMeters ?? iPhoneDistanceMeters
     }
 
     static func payloadValues(from payload: String) -> [String: String] {

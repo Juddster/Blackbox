@@ -34,7 +34,7 @@ final class ObservationRecord {
         input: ObservationInput
     ) {
         self.init(
-            id: id,
+            id: input.id ?? id,
             timestamp: input.timestamp,
             sourceDevice: input.sourceDevice,
             sourceType: input.sourceType,

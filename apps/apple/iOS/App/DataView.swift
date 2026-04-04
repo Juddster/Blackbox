@@ -7,6 +7,8 @@ struct DataView: View {
     @Environment(\.modelContext) private var modelContext
     let syncActivity: SyncActivityStore
 
+    @AppStorage("replay_export_start_time_interval") private var storedExportStartTimeInterval: Double = 0
+    @AppStorage("replay_export_end_time_interval") private var storedExportEndTimeInterval: Double = 0
     @State private var recentObservations = [ObservationSnapshot]()
     @State private var inferencePreview: ReplayInferencePreview?
     @State private var exportStartTime = Date.now.addingTimeInterval(-60 * 60)
@@ -182,6 +184,12 @@ struct DataView: View {
             refreshRecentObservations()
             configureExportWindowIfNeeded()
         }
+        .onChange(of: exportStartTime) { _, newValue in
+            storedExportStartTimeInterval = newValue.timeIntervalSinceReferenceDate
+        }
+        .onChange(of: exportEndTime) { _, newValue in
+            storedExportEndTimeInterval = newValue.timeIntervalSinceReferenceDate
+        }
         .fileExporter(
             isPresented: $isPresentingExporter,
             document: exportDocument,
@@ -215,6 +223,16 @@ struct DataView: View {
     }
 
     private func configureExportWindowIfNeeded() {
+        if storedExportStartTimeInterval > 0, storedExportEndTimeInterval > 0 {
+            let storedStartTime = Date(timeIntervalSinceReferenceDate: storedExportStartTimeInterval)
+            let storedEndTime = Date(timeIntervalSinceReferenceDate: storedExportEndTimeInterval)
+            if storedEndTime > storedStartTime {
+                exportStartTime = storedStartTime
+                exportEndTime = storedEndTime
+                return
+            }
+        }
+
         guard exportStatusMessage == nil else {
             return
         }
@@ -252,6 +270,8 @@ struct DataView: View {
         )
         let bundle = ReplayExportBundle(
             exportedAt: .now,
+            exportedTimeZoneIdentifier: TimeZone.current.identifier,
+            exportedTimeZoneSecondsFromGMT: TimeZone.current.secondsFromGMT(),
             windowStart: exportStartTime,
             windowEnd: exportEndTime,
             observations: observations.map(ReplayExportObservation.init),
@@ -351,7 +371,9 @@ struct DataView: View {
             id: record.id,
             title: record.title,
             startTime: record.startTime,
+            startTimeLocal: ReplayExportLocalTime.string(from: record.startTime),
             endTime: record.endTime,
+            endTimeLocal: ReplayExportLocalTime.string(from: record.endTime),
             lifecycleState: record.lifecycleState,
             originType: record.originType,
             interpretation: envelope.interpretation,
@@ -389,6 +411,8 @@ private struct ReplayExportDocument: FileDocument {
 
 private struct ReplayExportBundle: Codable {
     let exportedAt: Date
+    let exportedTimeZoneIdentifier: String
+    let exportedTimeZoneSecondsFromGMT: Int
     let windowStart: Date
     let windowEnd: Date
     let observations: [ReplayExportObservation]
@@ -431,7 +455,9 @@ private struct ReplayExportSegment: Codable {
     let id: UUID
     let title: String
     let startTime: Date
+    let startTimeLocal: String
     let endTime: Date
+    let endTimeLocal: String
     let lifecycleState: SegmentLifecycleState
     let originType: SegmentOriginType
     let interpretation: SegmentInterpretationPayload?
@@ -466,23 +492,31 @@ private struct ReplayExportAnalysis: Codable {
 
 private struct ReplayExportAnalysisSegment: Codable {
     let startTime: Date
+    let startTimeLocal: String
     let endTime: Date
+    let endTimeLocal: String
     let activityClass: ActivityClass
     let confidence: Double
     let reasonSummary: String
     let locationDistanceMeters: Double
     let pedometerDistanceMeters: Double?
+    let iPhonePedometerDistanceMeters: Double?
+    let watchPedometerDistanceMeters: Double?
     let averageSpeedMetersPerSecond: Double?
     let averageCadenceStepsPerSecond: Double?
 
     init(segment: ReplayInferenceSegment) {
         startTime = segment.startTime
+        startTimeLocal = ReplayExportLocalTime.string(from: segment.startTime)
         endTime = segment.endTime
+        endTimeLocal = ReplayExportLocalTime.string(from: segment.endTime)
         activityClass = segment.activityClass
         confidence = segment.confidence
         reasonSummary = segment.reasonSummary
         locationDistanceMeters = segment.locationDistanceMeters
         pedometerDistanceMeters = segment.pedometerDistanceMeters
+        iPhonePedometerDistanceMeters = segment.iPhonePedometerDistanceMeters
+        watchPedometerDistanceMeters = segment.watchPedometerDistanceMeters
         averageSpeedMetersPerSecond = segment.averageSpeedMetersPerSecond
         averageCadenceStepsPerSecond = segment.averageCadenceStepsPerSecond
         rejectedLocationDistanceMeters = segment.rejectedLocationDistanceMeters
@@ -495,6 +529,7 @@ private struct ReplayExportAnalysisSegment: Codable {
 
 private struct ReplayExportAnalysisTransition: Codable {
     let timestamp: Date
+    let timestampLocal: String
     let fromActivityClass: ActivityClass
     let toActivityClass: ActivityClass
     let confidence: Double
@@ -502,6 +537,7 @@ private struct ReplayExportAnalysisTransition: Codable {
 
     init(transition: ReplayInferenceTransition) {
         timestamp = transition.timestamp
+        timestampLocal = ReplayExportLocalTime.string(from: transition.timestamp)
         fromActivityClass = transition.fromActivityClass
         toActivityClass = transition.toActivityClass
         confidence = transition.confidence
@@ -539,6 +575,14 @@ private extension DataView {
             parts.append(String(format: "%.2f steps/s", averageCadenceStepsPerSecond))
         }
 
+        if let watchPedometerDistanceMeters = segment.watchPedometerDistanceMeters {
+            parts.append("watch pedometer \(formattedDistance(watchPedometerDistanceMeters))")
+        }
+
+        if let iPhonePedometerDistanceMeters = segment.iPhonePedometerDistanceMeters {
+            parts.append("iPhone pedometer \(formattedDistance(iPhonePedometerDistanceMeters))")
+        }
+
         if segment.rejectedLocationJumpCount > 0 {
             parts.append("rejected jumps \(segment.rejectedLocationJumpCount)")
         }
@@ -568,6 +612,11 @@ private extension DataView {
         }
         .padding(.vertical, 2)
     }
+
+    func formattedDistance(_ distanceMeters: Double) -> String {
+        Measurement(value: distanceMeters, unit: UnitLength.meters)
+            .formatted(.measurement(width: .abbreviated, usage: .road))
+    }
 }
 
 private struct ReplayInferenceDebugSelection: Identifiable {
@@ -576,6 +625,16 @@ private struct ReplayInferenceDebugSelection: Identifiable {
 
     var id: String {
         "\(laneTitle)-\(segment.id)"
+    }
+}
+
+private enum ReplayExportLocalTime {
+    static func string(from date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss zzz"
+        return formatter.string(from: date)
     }
 }
 

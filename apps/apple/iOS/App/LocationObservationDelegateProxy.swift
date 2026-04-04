@@ -5,6 +5,8 @@ final class LocationObservationDelegateProxy: NSObject, CLLocationManagerDelegat
     var onAuthorizationChange: (@MainActor (CLAuthorizationStatus) -> Void)?
     var onLocations: (@MainActor ([CLLocation]) -> Void)?
     var onFailure: (@MainActor (Error) -> Void)?
+    var onPause: (@MainActor () -> Void)?
+    var onResume: (@MainActor () -> Void)?
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         let status = manager.authorizationStatus
@@ -23,6 +25,18 @@ final class LocationObservationDelegateProxy: NSObject, CLLocationManagerDelegat
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         Task { @MainActor in
             onFailure?(error)
+        }
+    }
+
+    func locationManagerDidPauseLocationUpdates(_ manager: CLLocationManager) {
+        Task { @MainActor in
+            onPause?()
+        }
+    }
+
+    func locationManagerDidResumeLocationUpdates(_ manager: CLLocationManager) {
+        Task { @MainActor in
+            onResume?()
         }
     }
 }

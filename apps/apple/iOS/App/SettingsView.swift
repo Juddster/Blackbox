@@ -11,6 +11,7 @@ struct SettingsView: View {
     let onStopMotion: () -> Void
     let onStartPedometer: () async -> Void
     let onStopPedometer: () -> Void
+    let watchConnectivity: WatchConnectivityStore
 
     var body: some View {
         NavigationStack {
@@ -20,6 +21,21 @@ struct SettingsView: View {
                     onRefresh: onRefreshCaptureReadiness,
                     onRequestLocation: onRequestLocationAuthorization
                 )
+
+                Section("Watch") {
+                    LabeledContent("Connection", value: watchConnectivity.connectionSummary)
+                    LabeledContent("Watch App", value: watchConnectivity.installationSummary)
+
+                    if let lastReceivedSummary = watchConnectivity.lastReceivedSummary {
+                        LabeledContent("Last Intake", value: lastReceivedSummary)
+                    }
+
+                    if let statusNote = watchConnectivity.statusNote {
+                        Text(statusNote)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+                }
 
                 CaptureControlSection(
                     isLocationCapturing: captureControl.isLocationCapturing,

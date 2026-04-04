@@ -21,6 +21,8 @@ struct ReplayInferenceSegment: Identifiable {
     let reasonSummary: String
     let locationDistanceMeters: Double
     let pedometerDistanceMeters: Double?
+    let iPhonePedometerDistanceMeters: Double?
+    let watchPedometerDistanceMeters: Double?
     let averageSpeedMetersPerSecond: Double?
     let averageCadenceStepsPerSecond: Double?
     let rejectedLocationDistanceMeters: Double
@@ -140,6 +142,8 @@ enum ReplayInferenceAnalyzer {
                 reasonSummary: bucket.reasonSummary,
                 locationDistanceMeters: bucket.locationDistanceMeters,
                 pedometerDistanceMeters: bucket.pedometerDistanceMeters,
+                iPhonePedometerDistanceMeters: bucket.iPhonePedometerDistanceMeters,
+                watchPedometerDistanceMeters: bucket.watchPedometerDistanceMeters,
                 averageSpeedMetersPerSecond: bucket.averageSpeedMetersPerSecond,
                 averageCadenceStepsPerSecond: bucket.averageCadenceStepsPerSecond,
                 rejectedLocationDistanceMeters: bucket.rejectedLocationDistanceMeters,
@@ -179,6 +183,14 @@ enum ReplayInferenceAnalyzer {
                 )
                 current.locationDistanceMeters += bucket.locationDistanceMeters
                 current.pedometerDistanceMeters = currentPedometerDistance + bucketPedometerDistance
+                current.iPhonePedometerDistanceMeters = sumOptionalDistance(
+                    current.iPhonePedometerDistanceMeters,
+                    bucket.iPhonePedometerDistanceMeters
+                )
+                current.watchPedometerDistanceMeters = sumOptionalDistance(
+                    current.watchPedometerDistanceMeters,
+                    bucket.watchPedometerDistanceMeters
+                )
                 current.reasonSummary = mergedReason(current.reasonSummary, bucket.reasonSummary)
             } else {
                 merged.append(current.segment)
@@ -328,6 +340,19 @@ enum ReplayInferenceAnalyzer {
         }
     }
 
+    private static func sumOptionalDistance(_ lhs: Double?, _ rhs: Double?) -> Double? {
+        switch (lhs, rhs) {
+        case let (.some(lhsValue), .some(rhsValue)):
+            lhsValue + rhsValue
+        case let (.some(lhsValue), .none):
+            lhsValue
+        case let (.none, .some(rhsValue)):
+            rhsValue
+        case (.none, .none):
+            nil
+        }
+    }
+
     fileprivate static func mergedReason(_ lhs: String, _ rhs: String) -> String {
         let parts = Set(lhs.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) })
             .union(rhs.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) })
@@ -339,6 +364,21 @@ enum ReplayInferenceAnalyzer {
     }
 
     private static func shouldReject(_ segment: ReplayInferenceSegment) -> Bool {
+        if segment.activityClass == .vehicle {
+            let hasAcceptedDriveDistance = segment.locationDistanceMeters >= 1_000
+            let hasRejectedDriveDistance = segment.rejectedLocationDistanceMeters >= 1_000
+            let hasAutomotiveEvidence = segment.reasonSummary.contains("motion=automotive")
+                || segment.reasonSummary.contains("speed>=5.5m/s")
+
+            if hasAutomotiveEvidence && (hasAcceptedDriveDistance || hasRejectedDriveDistance) {
+                return false
+            }
+
+            return segment.rejectedLocationJumpCount > 0
+                && segment.locationDistanceMeters < 500
+                && segment.rejectedLocationDistanceMeters < 500
+        }
+
         let pedometerDistance = segment.pedometerDistanceMeters ?? 0
         let hasHugeLocationMismatch =
             segment.locationDistanceMeters >= 2_000
@@ -364,6 +404,8 @@ private struct ReplayInferenceBucket {
 
     private(set) var locationDistanceMeters: Double = 0
     private(set) var pedometerDistanceMeters: Double?
+    private(set) var iPhonePedometerDistanceMeters: Double?
+    private(set) var watchPedometerDistanceMeters: Double?
     private(set) var averageSpeedMetersPerSecond: Double?
     private(set) var averageCadenceStepsPerSecond: Double?
     private(set) var activityClass: ActivityClass?
@@ -375,7 +417,8 @@ private struct ReplayInferenceBucket {
     private var lastLocation: CLLocation?
     private var lastLocationTimestamp: Date?
     private var locationSpeedSamples = [Double]()
-    private var pedometerDistanceSamples = [Double]()
+    private var iPhonePedometerDistanceSamples = [Double]()
+    private var watchPedometerDistanceSamples = [Double]()
     private var cadenceSamples = [Double]()
     private var floorsAscendedSamples = [Double]()
     private var floorsDescendedSamples = [Double]()
@@ -400,7 +443,7 @@ private struct ReplayInferenceBucket {
         case .motion:
             addMotion(values: values)
         case .pedometer:
-            addPedometer(values: values)
+            addPedometer(values: values, sourceDevice: observation.sourceDevice)
         case .heartRate, .deviceState, .connectivity, .other:
             break
         }
@@ -458,11 +501,19 @@ private struct ReplayInferenceBucket {
         sawStationaryMotion = sawStationaryMotion || values["stationary"] == "true"
     }
 
-    private mutating func addPedometer(values: [String: String]) {
+    private mutating func addPedometer(
+        values: [String: String],
+        sourceDevice: ObservationSourceDevice
+    ) {
         pedometerSampleCount += 1
 
         if let distanceMeters = values["distance"].flatMap(Double.init) {
-            pedometerDistanceSamples.append(distanceMeters)
+            switch sourceDevice {
+            case .iPhone:
+                iPhonePedometerDistanceSamples.append(distanceMeters)
+            case .watch:
+                watchPedometerDistanceSamples.append(distanceMeters)
+            }
         }
 
         if let cadence = values["currentCadence"].flatMap(Double.init), cadence > 0 {
@@ -479,7 +530,9 @@ private struct ReplayInferenceBucket {
     }
 
     private mutating func classify() {
-        pedometerDistanceMeters = deltaDistance(from: pedometerDistanceSamples)
+        iPhonePedometerDistanceMeters = deltaDistance(from: iPhonePedometerDistanceSamples)
+        watchPedometerDistanceMeters = deltaDistance(from: watchPedometerDistanceSamples)
+        pedometerDistanceMeters = watchPedometerDistanceMeters ?? iPhonePedometerDistanceMeters
         averageSpeedMetersPerSecond = locationSpeedSamples.isEmpty == false
             ? locationSpeedSamples.reduce(0, +) / Double(locationSpeedSamples.count)
             : fallbackSpeed()
@@ -634,6 +687,8 @@ private struct ReplayInferenceClassifiedBucket {
     var reasonSummary: String
     var locationDistanceMeters: Double
     var pedometerDistanceMeters: Double?
+    var iPhonePedometerDistanceMeters: Double?
+    var watchPedometerDistanceMeters: Double?
     var averageSpeedMetersPerSecond: Double?
     var averageCadenceStepsPerSecond: Double?
     var rejectedLocationDistanceMeters: Double
@@ -648,6 +703,8 @@ private struct ReplayInferenceClassifiedBucket {
             reasonSummary: reasonSummary,
             locationDistanceMeters: locationDistanceMeters,
             pedometerDistanceMeters: pedometerDistanceMeters,
+            iPhonePedometerDistanceMeters: iPhonePedometerDistanceMeters,
+            watchPedometerDistanceMeters: watchPedometerDistanceMeters,
             averageSpeedMetersPerSecond: averageSpeedMetersPerSecond,
             averageCadenceStepsPerSecond: averageCadenceStepsPerSecond,
             rejectedLocationDistanceMeters: rejectedLocationDistanceMeters,

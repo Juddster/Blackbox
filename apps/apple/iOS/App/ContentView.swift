@@ -6,6 +6,7 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var captureReadiness = CaptureReadinessStore()
     @State private var captureControl = CaptureControlStore()
+    @State private var watchConnectivity = WatchConnectivityStore()
     @State private var syncActivity = SyncActivityStore()
     @State private var presentedResumeReport: CaptureResumeReport?
     @State private var hasBackfilledSegmentMetrics = false
@@ -27,7 +28,8 @@ struct ContentView: View {
                 onStartMotion: startMotionCapture,
                 onStopMotion: stopMotionCapture,
                 onStartPedometer: startPedometerCapture,
-                onStopPedometer: stopPedometerCapture
+                onStopPedometer: stopPedometerCapture,
+                watchConnectivity: watchConnectivity
             )
             .tabItem {
                 Label("Settings", systemImage: "gearshape")
@@ -80,6 +82,7 @@ struct ContentView: View {
 
     private func configureCapture() {
         captureControl.configure(modelContext: modelContext)
+        watchConnectivity.configure(modelContext: modelContext)
     }
 
     private func resumeCaptureIfNeeded() async {

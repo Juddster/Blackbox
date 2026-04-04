@@ -1,6 +1,7 @@
 import Foundation
 
 struct ObservationInput: Sendable {
+    let id: UUID?
     let timestamp: Date
     let sourceDevice: ObservationSourceDevice
     let sourceType: ObservationSourceType
@@ -9,6 +10,7 @@ struct ObservationInput: Sendable {
     let ingestedAt: Date
 
     init(
+        id: UUID? = nil,
         timestamp: Date,
         sourceDevice: ObservationSourceDevice,
         sourceType: ObservationSourceType,
@@ -16,6 +18,7 @@ struct ObservationInput: Sendable {
         qualityHint: String? = nil,
         ingestedAt: Date = .now
     ) {
+        self.id = id
         self.timestamp = timestamp
         self.sourceDevice = sourceDevice
         self.sourceType = sourceType

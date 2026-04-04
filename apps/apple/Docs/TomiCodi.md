@@ -341,3 +341,17 @@ What to watch:
   - Split Apple replay analysis output into surfaced proposed segments versus debug-only suppressed and rejected segments, so non-interesting transition context and clearly noisy inference candidates can be inspected without polluting the real inferred segment list.
 - Mar 31, 19:53:
   - Added Apple replay debug map drill-in from the Data tab so suppressed and rejected inference intervals can be inspected spatially with raw path, cleaned path, and rejected jump markers over the same time window.
+- Mar 31, 20:09:
+  - Persisted the Apple replay-analysis time window in the Data tab so repeated export/analyze iterations reopen on the last selected range.
+  - Relaxed vehicle rejection so long automotive intervals are no longer discarded just because pedometer distance is low or because some jumps were rejected at the fix level.
+- Mar 31, 20:32:
+  - Upgraded Apple segment map review so the scrub slider follows the currently visible fix range when the map is zoomed.
+  - Added review-time boundary editing controls to trim a segment before/after the selected fix and extend either edge in one-minute increments, so replay exports can carry those corrected segment windows as user hints.
+- Mar 31, 20:58:
+  - Reworked Apple location capture to stop treating every session as a workout: switched the location manager activity hint from `fitness` to `otherNavigation`, disabled automatic pausing of dense updates, and added pause/resume delegate handling so automotive periods do not silently collapse to significant-change-only fixes after an indoor stop.
+- Apr 4, 12:36:
+  - Added Apple source-aware pedometer distance handling so replay analysis and derived segment metrics now keep iPhone and watch pedometer distances separate, while preferring watch-derived distance when both devices eventually contribute.
+  - Extended Apple replay exports with timezone metadata plus explicit local-time strings for inferred segments and transitions, so exported bundles can be reviewed without manually compensating for UTC or Israel DST.
+- Apr 4, 16:34:
+  - Removed the experimental Apple Focus-throttling UI/logic from the local worktree after confirming it cannot be trusted as an automatic battery lane if recovery depends on app lifecycle touches.
+  - Added the first Apple phone-side watch intake seam using `WatchConnectivity`: the iPhone app now activates a watch session, surfaces paired/install/connection state in Settings, and can persist queued watch observation batches as `.watch` observations with stable IDs for future replay/inference use.

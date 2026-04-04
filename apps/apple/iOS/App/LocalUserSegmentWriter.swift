@@ -238,7 +238,9 @@ struct LocalUserSegmentWriter {
             return SegmentDistanceBreakdown(
                 preferredDistanceMeters: fallbackDistanceMeters,
                 locationDistanceMeters: nil,
-                pedometerDistanceMeters: nil
+                pedometerDistanceMeters: nil,
+                iPhonePedometerDistanceMeters: nil,
+                watchPedometerDistanceMeters: nil
             )
         }
 
