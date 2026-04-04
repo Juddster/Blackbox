@@ -94,7 +94,6 @@
 		655C16BBD9330076F0F91BE0 /* WatchObservationTransfer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F835D8EF910BADF186CB255E /* WatchObservationTransfer.swift */; };
 		82434F74A0D1DCD547A1F336 /* WatchObservationTransfer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F835D8EF910BADF186CB255E /* WatchObservationTransfer.swift */; };
 		8DE3F5FA34FEC2D8B1AD97B8 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB0B412574C5D83CA0E4B9DB /* Foundation.framework */; };
-		8FAE95E99F1D07C8C2783D67 /* BlackboxWatch-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1524FADA9CA191F3F43D0557 /* BlackboxWatch-Info.plist */; };
 		A43A8F3A2778F65A13DA4A62 /* WatchCaptureStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8223077E1551309F9E6E0209 /* WatchCaptureStore.swift */; };
 		AB9C4D41A551E578EF5C7029 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 66487777336FFAEB6FB088F0 /* Foundation.framework */; };
 		B096BF7100FD54CE0C2C2411 /* BlackboxWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 8246172CD7CF8F61E7B229AC /* BlackboxWatch.app */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -625,7 +624,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8FAE95E99F1D07C8C2783D67 /* BlackboxWatch-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

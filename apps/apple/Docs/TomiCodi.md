@@ -363,3 +363,5 @@ What to watch:
 - Apr 4, 18:07:
   - Reworked the first Apple watch implementation into the correct companion WatchKit shape: the project now has a WatchKit app target plus a WatchKit extension target, with the SwiftUI watch capture code compiled in the extension and embedded into the watch app bundle.
   - Aligned the Apple watch/iPhone version metadata and WatchKit plist keys so Xcode can validate the embedded watch app against the iPhone companion during build/install.
+- Apr 4, 18:22:
+  - Added a real Apple app-icon set covering iPhone, iPad, and watch roles after finding the project’s only `AppIcon.appiconset` was empty; the watch companion now has actual launcher and quick-look icon assets instead of an empty asset catalog.
