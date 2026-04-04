@@ -226,20 +226,3 @@ private final class WatchConnectivityDelegateProxy: NSObject, WCSessionDelegate 
         onFile?(file.fileURL)
     }
 }
-
-private struct WatchObservationTransferEnvelope: Codable {
-    static let payloadKey = "watchObservationBatch"
-
-    let schemaVersion: Int
-    let sentAt: Date
-    let observations: [WatchObservationTransfer]
-}
-
-private struct WatchObservationTransfer: Codable {
-    let id: UUID
-    let timestamp: Date
-    let sourceType: ObservationSourceType
-    let payload: String
-    let qualityHint: String?
-    let ingestedAt: Date?
-}

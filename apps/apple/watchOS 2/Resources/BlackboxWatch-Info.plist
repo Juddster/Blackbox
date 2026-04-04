@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDisplayName</key>
+    <string>Blackbox</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Blackbox uses your Apple Watch location to improve route capture and activity inference.</string>
+    <key>NSMotionUsageDescription</key>
+    <string>Blackbox uses your Apple Watch motion and pedometer data to improve activity inference and indoor distance estimates.</string>
+    <key>WKCompanionAppBundleIdentifier</key>
+    <string>com.contity.Blackbox</string>
+</dict>
+</plist>

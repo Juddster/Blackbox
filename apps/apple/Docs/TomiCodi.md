@@ -355,3 +355,6 @@ What to watch:
 - Apr 4, 16:34:
   - Removed the experimental Apple Focus-throttling UI/logic from the local worktree after confirming it cannot be trusted as an automatic battery lane if recovery depends on app lifecycle touches.
   - Added the first Apple phone-side watch intake seam using `WatchConnectivity`: the iPhone app now activates a watch session, surfaces paired/install/connection state in Settings, and can persist queued watch observation batches as `.watch` observations with stable IDs for future replay/inference use.
+- Apr 4, 17:28:
+  - Added the first real Apple watchOS target and companion app shell, with start/stop capture controls on the watch and queued `WatchConnectivity` batch transfer back to the iPhone app.
+  - The first watch slice captures watch location, pedometer, and motion activity into the same raw observation payload shapes the phone already uses, so replay export and inference can consume watch data without a parallel parser path.

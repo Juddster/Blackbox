@@ -85,11 +85,43 @@
 		06D4CCCC2F75A2390059DBA9 /* LocalSegmentInterpretationEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCCB2F75A2390059DBA9 /* LocalSegmentInterpretationEditor.swift */; };
 		06D4CCD02F76A0DB0059DBA9 /* CaptureGapNotice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCCF2F76A0DB0059DBA9 /* CaptureGapNotice.swift */; };
 		06D4CCD22F76E3D60059DBA9 /* LocalUserSegmentWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CCD12F76E3D60059DBA9 /* LocalUserSegmentWriter.swift */; };
+		0DEF896376AFD3B313D7DB52 /* WatchCaptureStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8223077E1551309F9E6E0209 /* WatchCaptureStore.swift */; };
 		19A697EEE4D0AD58741AE352 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7D45B32E742E2F674B8DA9FB /* Assets.xcassets */; };
+		292E212DC974426C433F312C /* ObservationSourceType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47F2FC59BC8E155433F23BD5 /* ObservationSourceType.swift */; };
+		336941FB60329A38D6F4B821 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FB0B412574C5D83CA0E4B9DB /* Foundation.framework */; };
+		45BA91853685C50D89E60E4D /* BlackboxWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = FD38DB6408DD1D01EC23100A /* BlackboxWatch.app */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		4ED77E5CE3273FF3758CC576 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BB7B834AE865D38AF11D2B3 /* ContentView.swift */; };
+		82434F74A0D1DCD547A1F336 /* WatchObservationTransfer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F835D8EF910BADF186CB255E /* WatchObservationTransfer.swift */; };
+		A3CF37C4A3A64A148C91FAF2 /* BlackboxWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57D905DC3EE2831D041C0EAF /* BlackboxWatchApp.swift */; };
 		AB9C4D41A551E578EF5C7029 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 66487777336FFAEB6FB088F0 /* Foundation.framework */; };
+		BCB316D6648BB55A8C298208 /* WatchObservationTransfer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F835D8EF910BADF186CB255E /* WatchObservationTransfer.swift */; };
 		DA332FD6E9EFF38E46F0F841 /* BlackboxApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B72BF4F385F913A7565CD858 /* BlackboxApp.swift */; };
+		E0500FD7624303CDAE48DC5B /* WatchContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEFDCE077D4B299E13CD35BF /* WatchContentView.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		087AC6AA42C4C5911D2EC9FF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 68F288836F147F57E8D76272 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 188C268833FC349B0BDF0462;
+			remoteInfo = BlackboxWatch;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		255B0D5B40FB1581EB93CF31 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Watch;
+			dstSubfolderSpec = 1;
+			files = (
+				45BA91853685C50D89E60E4D /* BlackboxWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		069C5B772F7AFFC800BFCB7F /* CaptureResumeReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureResumeReport.swift; sourceTree = "<group>"; };
@@ -171,11 +203,20 @@
 		06D4CCCB2F75A2390059DBA9 /* LocalSegmentInterpretationEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalSegmentInterpretationEditor.swift; sourceTree = "<group>"; };
 		06D4CCCF2F76A0DB0059DBA9 /* CaptureGapNotice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureGapNotice.swift; sourceTree = "<group>"; };
 		06D4CCD12F76E3D60059DBA9 /* LocalUserSegmentWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalUserSegmentWriter.swift; sourceTree = "<group>"; };
+		1524FADA9CA191F3F43D0557 /* BlackboxWatch-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = "BlackboxWatch-Info.plist"; path = "BlackboxWatch-Info.plist"; sourceTree = "<group>"; };
+		47F2FC59BC8E155433F23BD5 /* ObservationSourceType.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ObservationSourceType.swift; path = ObservationSourceType.swift; sourceTree = "<group>"; };
 		55605AB54A1DDDC5BC7BD70E /* Blackbox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Blackbox.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		57D905DC3EE2831D041C0EAF /* BlackboxWatchApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BlackboxWatchApp.swift; path = BlackboxWatchApp.swift; sourceTree = "<group>"; };
 		5BB7B834AE865D38AF11D2B3 /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		66487777336FFAEB6FB088F0 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS14.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		7D45B32E742E2F674B8DA9FB /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		8223077E1551309F9E6E0209 /* WatchCaptureStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchCaptureStore.swift; path = WatchCaptureStore.swift; sourceTree = "<group>"; };
+		9CAA3A9669F9D3E0D62C0535 /* BlackboxWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BlackboxWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B72BF4F385F913A7565CD858 /* BlackboxApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlackboxApp.swift; sourceTree = "<group>"; };
+		BEFDCE077D4B299E13CD35BF /* WatchContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchContentView.swift; path = WatchContentView.swift; sourceTree = "<group>"; };
+		F835D8EF910BADF186CB255E /* WatchObservationTransfer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchObservationTransfer.swift; path = WatchObservationTransfer.swift; sourceTree = "<group>"; };
+		FB0B412574C5D83CA0E4B9DB /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/WatchOS.platform/Developer/SDKs/WatchOS7.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		FD38DB6408DD1D01EC23100A /* BlackboxWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BlackboxWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -187,9 +228,52 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A64AB422D4123621E1B84368 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				336941FB60329A38D6F4B821 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		069C5B872F81560600BFCB7F /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				F835D8EF910BADF186CB255E /* WatchObservationTransfer.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		069C5B882F81561100BFCB7F /* watchOS 2 */ = {
+			isa = PBXGroup;
+			children = (
+				069C5B892F81561E00BFCB7F /* App */,
+				069C5B8A2F81561E00BFCB7F /* Resources */,
+			);
+			path = "watchOS 2";
+			sourceTree = "<group>";
+		};
+		069C5B892F81561E00BFCB7F /* App */ = {
+			isa = PBXGroup;
+			children = (
+				57D905DC3EE2831D041C0EAF /* BlackboxWatchApp.swift */,
+				BEFDCE077D4B299E13CD35BF /* WatchContentView.swift */,
+				8223077E1551309F9E6E0209 /* WatchCaptureStore.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		069C5B8A2F81561E00BFCB7F /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				1524FADA9CA191F3F43D0557 /* BlackboxWatch-Info.plist */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		06D4CC3F2F7447750059DBA9 /* Docs */ = {
 			isa = PBXGroup;
 			children = (
@@ -233,6 +317,7 @@
 			isa = PBXGroup;
 			children = (
 				48465A968D166412CEE10584 /* iOS */,
+				B101737BD27E41F65BA93BD0 /* watchOS */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -242,6 +327,8 @@
 			children = (
 				F56A68F6A9343C8513FE2CE9 /* iOS */,
 				06D4CC3F2F7447750059DBA9 /* Docs */,
+				069C5B872F81560600BFCB7F /* Shared */,
+				069C5B882F81561100BFCB7F /* watchOS 2 */,
 			);
 			name = apple;
 			sourceTree = "<group>";
@@ -258,8 +345,18 @@
 			isa = PBXGroup;
 			children = (
 				55605AB54A1DDDC5BC7BD70E /* Blackbox.app */,
+				9CAA3A9669F9D3E0D62C0535 /* BlackboxWatch.app */,
+				FD38DB6408DD1D01EC23100A /* BlackboxWatch.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		B101737BD27E41F65BA93BD0 /* watchOS */ = {
+			isa = PBXGroup;
+			children = (
+				FB0B412574C5D83CA0E4B9DB /* Foundation.framework */,
+			);
+			name = watchOS;
 			sourceTree = "<group>";
 		};
 		EA407DA9D2A304B8D3AF7002 /* App */ = {
@@ -345,6 +442,7 @@
 				069C5B812F7B0B4000BFCB7F /* LocalSegmentMetricBackfiller.swift */,
 				069C5B832F7BFCDE00BFCB7F /* ReplayInferenceAnalyzer.swift */,
 				069C5B852F814AA400BFCB7F /* WatchConnectivityStore.swift */,
+				47F2FC59BC8E155433F23BD5 /* ObservationSourceType.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -371,6 +469,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		188C268833FC349B0BDF0462 /* BlackboxWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E0744EB12BC30A875C1CEFE9 /* Build configuration list for PBXNativeTarget "BlackboxWatch" */;
+			buildPhases = (
+				E8BF51229E55D76E2FD3A64C /* Sources */,
+				A64AB422D4123621E1B84368 /* Frameworks */,
+				16F145965A6E088AF9C5135E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = BlackboxWatch;
+			productName = BlackboxWatch;
+			productReference = FD38DB6408DD1D01EC23100A /* BlackboxWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
 		40DF1382E67EE9921E979A39 /* Blackbox */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = E23CFC11E2CEBE47580A06C9 /* Build configuration list for PBXNativeTarget "Blackbox" */;
@@ -378,10 +493,12 @@
 				1F76F297EE26290C944B399A /* Sources */,
 				07A1C97606D3BFE8BA9065D5 /* Frameworks */,
 				E3D0156CE19AC43D24534255 /* Resources */,
+				255B0D5B40FB1581EB93CF31 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				1B32F0174DEA7F666E4FFFCE /* PBXTargetDependency */,
 			);
 			name = Blackbox;
 			productName = Blackbox;
@@ -397,9 +514,20 @@
 				LastSwiftUpdateCheck = 2630;
 				LastUpgradeCheck = 2630;
 				TargetAttributes = {
+					188C268833FC349B0BDF0462 = {
+						DevelopmentTeam = 2TXPN3QJQN;
+						ProvisioningStyle = Automatic;
+					};
+					330B3DA67EB42B86D6FD665E = {
+						CreatedOnToolsVersion = 16.3;
+						DevelopmentTeam = 2TXPN3QJQN;
+						LastSwiftMigration = 2630;
+						ProvisioningStyle = Automatic;
+					};
 					40DF1382E67EE9921E979A39 = {
 						DevelopmentTeam = 2TXPN3QJQN;
 						ProvisioningStyle = Automatic;
+						WKCompanionAppBundleIdentifier = com.contity.Blackbox;
 					};
 				};
 			};
@@ -417,11 +545,19 @@
 			projectRoot = "";
 			targets = (
 				40DF1382E67EE9921E979A39 /* Blackbox */,
+				188C268833FC349B0BDF0462 /* BlackboxWatch */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		16F145965A6E088AF9C5135E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E3D0156CE19AC43D24534255 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -517,10 +653,32 @@
 				06D4CC732F7469CC0059DBA9 /* SyncDisposition.swift in Sources */,
 				06D4CC7F2F746D430059DBA9 /* CaptureServiceStatus.swift in Sources */,
 				06D4CC4F2F7455F50059DBA9 /* SegmentLifecycleState.swift in Sources */,
+				82434F74A0D1DCD547A1F336 /* WatchObservationTransfer.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E8BF51229E55D76E2FD3A64C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BCB316D6648BB55A8C298208 /* WatchObservationTransfer.swift in Sources */,
+				292E212DC974426C433F312C /* ObservationSourceType.swift in Sources */,
+				A3CF37C4A3A64A148C91FAF2 /* BlackboxWatchApp.swift in Sources */,
+				E0500FD7624303CDAE48DC5B /* WatchContentView.swift in Sources */,
+				0DEF896376AFD3B313D7DB52 /* WatchCaptureStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		1B32F0174DEA7F666E4FFFCE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = BlackboxWatch;
+			target = 188C268833FC349B0BDF0462 /* BlackboxWatch */;
+			targetProxy = 087AC6AA42C4C5911D2EC9FF /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		744F9AD14F026C27BCEABAC6 /* Release */ = {
@@ -576,6 +734,25 @@
 			};
 			name = Release;
 		};
+		75FA1A6A498707B0341F3A45 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2TXPN3QJQN;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "watchOS 2/Resources/BlackboxWatch-Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = com.contity.Blackbox.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
 		AED8D13AA8483F88D83B9A33 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -604,6 +781,26 @@
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
+		};
+		B4205FC08766B09748465963 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2TXPN3QJQN;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "watchOS 2/Resources/BlackboxWatch-Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = com.contity.Blackbox.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
 		};
 		B9EE29A9D5F0B4DAE12926C7 /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -704,6 +901,15 @@
 			buildConfigurations = (
 				C9DA04CA0A624E10CAB37EB0 /* Debug */,
 				744F9AD14F026C27BCEABAC6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E0744EB12BC30A875C1CEFE9 /* Build configuration list for PBXNativeTarget "BlackboxWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B4205FC08766B09748465963 /* Release */,
+				75FA1A6A498707B0341F3A45 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
