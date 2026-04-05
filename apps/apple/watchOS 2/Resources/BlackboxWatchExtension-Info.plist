@@ -32,13 +32,8 @@
     <string>Blackbox uses your Apple Watch location to improve route capture and activity inference.</string>
     <key>NSMotionUsageDescription</key>
     <string>Blackbox uses your Apple Watch motion and pedometer data to improve activity inference and indoor distance estimates.</string>
-    <key>NSHealthShareUsageDescription</key>
-    <string>Blackbox reads Apple Watch workout-related sensor data so passive watch capture can keep running in the background.</string>
-    <key>NSHealthUpdateUsageDescription</key>
-    <string>Blackbox creates a temporary workout session on Apple Watch to keep passive watch capture alive in the background.</string>
     <key>WKBackgroundModes</key>
     <array>
-        <string>workout-processing</string>
         <string>location</string>
     </array>
     <key>WKRunsIndependentlyOfCompanionApp</key>

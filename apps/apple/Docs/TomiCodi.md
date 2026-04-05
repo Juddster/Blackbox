@@ -369,3 +369,6 @@ What to watch:
   - Fixed the Apple watch target’s asset membership so the embedded watch app now actually contains a compiled `Assets.car`; previously the watch bundle had metadata pointing at `AppIcon`, but the asset catalog was only being compiled into the iPhone app.
 - Apr 4, 18:49:
   - Cleaned up the Apple icon-target wiring after the first dedicated watch icon set proved invalid for `actool`; the watch target now uses the shared `AppIcon` set again, with the watch-specific icon entries kept in the shared catalog and the dead `WatchAppIcon` set removed.
+- Apr 5, 01:20:
+  - Removed the Apple watch HealthKit/workout-backed passive runtime after confirming it would interfere with real workouts and could not honestly avoid Health writes.
+  - Replaced it with a best-effort passive enrichment path driven by watch location, motion, and pedometer capture plus the existing `WatchConnectivity` batch transfer into the iPhone replay/export pipeline.

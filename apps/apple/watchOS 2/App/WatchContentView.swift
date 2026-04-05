@@ -25,7 +25,7 @@ struct WatchContentView: View {
                 .font(.headline)
             Label(captureStore.sessionSummary, systemImage: captureStore.sessionImageName)
                 .font(.footnote)
-            Text(captureStore.workoutSummary)
+            Text(captureStore.captureSummary)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
             if let note = captureStore.statusNote {
@@ -48,6 +48,10 @@ struct WatchContentView: View {
                 }
             }
             .buttonStyle(.borderedProminent)
+
+            Text("Best-effort passive enrichment stays strongest while the watch is moving and location updates keep the app active.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
 
             Button("Send Pending Batch") {
                 captureStore.flushPendingObservations(forceFileTransfer: false)
