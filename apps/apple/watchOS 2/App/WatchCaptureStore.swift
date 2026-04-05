@@ -1,6 +1,7 @@
 @preconcurrency import CoreLocation
 @preconcurrency import CoreMotion
 import Foundation
+import HealthKit
 import Observation
 import SwiftUI
 import WatchConnectivity
@@ -8,6 +9,8 @@ import WatchConnectivity
 @MainActor
 @Observable
 final class WatchCaptureStore {
+    static let shared = WatchCaptureStore()
+
     var isCapturing = false
     var sessionSummary = "Not Connected"
     var sessionImageName = "applewatch.slash"
@@ -18,21 +21,29 @@ final class WatchCaptureStore {
     var pedometerObservationCount = 0
     var motionObservationCount = 0
     var lastTransferSummary: String?
+    var autoCaptureEnabled = UserDefaults.standard.bool(forKey: "watch.autoCaptureEnabled")
+    var workoutSummary = "Idle"
 
     private let locationManager = CLLocationManager()
     private let pedometer = CMPedometer()
     private let motionActivityManager = CMMotionActivityManager()
     private let session = WCSession.default
+    private let healthStore = HKHealthStore()
     private let encoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         return encoder
     }()
 
+    private static let autoCaptureEnabledKey = "watch.autoCaptureEnabled"
+
     private var delegateProxy: WatchCaptureDelegateProxy?
     private var pendingObservations: [WatchObservationTransfer] = []
     private var locationAuthorizationContinuation: CheckedContinuation<CLAuthorizationStatus, Never>?
     private var lastFlushDate: Date?
+    private var workoutSession: HKWorkoutSession?
+    private var workoutBuilder: HKLiveWorkoutBuilder?
+    private var isStartingCapture = false
 
     func configureIfNeeded() async {
         guard delegateProxy == nil else {
@@ -67,19 +78,52 @@ final class WatchCaptureStore {
                 self?.statusNote = "Watch location error: \(error.localizedDescription)"
             }
         }
+        proxy.onWorkoutStateChange = { [weak self] state in
+            Task { @MainActor in
+                self?.handleWorkoutStateChange(state)
+            }
+        }
+        proxy.onWorkoutFailure = { [weak self] error in
+            Task { @MainActor in
+                self?.statusNote = "Watch workout error: \(error.localizedDescription)"
+            }
+        }
 
         delegateProxy = proxy
         locationManager.delegate = proxy
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.distanceFilter = 5
         locationManager.activityType = .otherNavigation
+        locationManager.allowsBackgroundLocationUpdates = true
         session.delegate = proxy
         session.activate()
         refreshSessionState()
+
+        if autoCaptureEnabled {
+            await restorePassiveCaptureIfNeeded()
+        }
     }
 
     func startCapture() async {
+        guard isStartingCapture == false else {
+            return
+        }
+
+        isStartingCapture = true
+        defer { isStartingCapture = false }
+
         await configureIfNeeded()
+
+        guard HKHealthStore.isHealthDataAvailable() else {
+            statusNote = "HealthKit is unavailable on this Apple Watch."
+            return
+        }
+
+        let healthAuthorized = await requestWorkoutAuthorizationIfNeeded()
+        guard healthAuthorized else {
+            statusNote = "Allow Health access on Apple Watch so Blackbox can keep passive watch capture running."
+            return
+        }
 
         let authorizationStatus = await ensureLocationAuthorization()
         guard authorizationStatus == .authorizedAlways || authorizationStatus == .authorizedWhenInUse else {
@@ -87,42 +131,20 @@ final class WatchCaptureStore {
             return
         }
 
+        do {
+            try await ensureWorkoutSession()
+        } catch {
+            statusNote = "Blackbox could not start the watch background workout session."
+            return
+        }
+
+        autoCaptureEnabled = true
+        UserDefaults.standard.set(true, forKey: Self.autoCaptureEnabledKey)
         isCapturing = true
-        statusNote = "Capturing watch location, pedometer, and motion."
+        workoutSummary = "Background workout active"
+        statusNote = "Capturing watch location, pedometer, and motion in the background."
         locationManager.startUpdatingLocation()
-
-        if CMPedometer.isStepCountingAvailable() {
-            pedometer.startUpdates(from: .now) { [weak self] data, error in
-                guard let self else {
-                    return
-                }
-
-                Task { @MainActor in
-                    if let error {
-                        self.statusNote = "Watch pedometer error: \(error.localizedDescription)"
-                        return
-                    }
-
-                    guard let data else {
-                        return
-                    }
-
-                    self.recordPedometerData(data)
-                }
-            }
-        }
-
-        if CMMotionActivityManager.isActivityAvailable() {
-            motionActivityManager.startActivityUpdates(to: .main) { [weak self] activity in
-                guard let self, let activity else {
-                    return
-                }
-
-                Task { @MainActor in
-                    self.recordMotionActivity(activity)
-                }
-            }
-        }
+        startMotionFeedsIfNeeded()
     }
 
     func stopCapture() {
@@ -130,12 +152,39 @@ final class WatchCaptureStore {
             return
         }
 
+        autoCaptureEnabled = false
+        UserDefaults.standard.set(false, forKey: Self.autoCaptureEnabledKey)
         isCapturing = false
         locationManager.stopUpdatingLocation()
         pedometer.stopUpdates()
         motionActivityManager.stopActivityUpdates()
+        endWorkoutSession()
+        workoutSummary = "Idle"
         statusNote = "Capture stopped. Pending observations stay queued until transferred."
         flushPendingObservations(forceFileTransfer: pendingObservationCount >= 100)
+    }
+
+    func recoverActiveWorkoutSessionIfNeeded() async {
+        await configureIfNeeded()
+
+        guard HKHealthStore.isHealthDataAvailable() else {
+            return
+        }
+
+        do {
+            if let recoveredSession = try await healthStore.recoverActiveWorkoutSession() {
+                attachWorkoutSession(recoveredSession)
+                autoCaptureEnabled = true
+                UserDefaults.standard.set(true, forKey: Self.autoCaptureEnabledKey)
+                isCapturing = true
+                workoutSummary = "Recovered active workout"
+                statusNote = "Recovered passive watch capture after relaunch."
+                locationManager.startUpdatingLocation()
+                startMotionFeedsIfNeeded()
+            }
+        } catch {
+            statusNote = "Blackbox could not recover the previous watch workout session."
+        }
     }
 
     func flushPendingObservations(forceFileTransfer: Bool) {
@@ -190,6 +239,135 @@ final class WatchCaptureStore {
 
         self.locationAuthorizationContinuation = nil
         locationAuthorizationContinuation.resume(returning: status)
+    }
+
+    private func requestWorkoutAuthorizationIfNeeded() async -> Bool {
+        let workoutType = HKObjectType.workoutType()
+        if healthStore.authorizationStatus(for: workoutType) == .sharingAuthorized {
+            return true
+        }
+
+        do {
+            try await healthStore.requestAuthorization(toShare: [HKSampleType.workoutType()], read: [])
+            return healthStore.authorizationStatus(for: workoutType) == .sharingAuthorized
+        } catch {
+            return false
+        }
+    }
+
+    private func restorePassiveCaptureIfNeeded() async {
+        if isCapturing {
+            return
+        }
+
+        await recoverActiveWorkoutSessionIfNeeded()
+
+        if isCapturing == false {
+            await startCapture()
+        }
+    }
+
+    private func ensureWorkoutSession() async throws {
+        if workoutSession != nil {
+            return
+        }
+
+        let configuration = HKWorkoutConfiguration()
+        configuration.activityType = .other
+        configuration.locationType = .unknown
+
+        let session = try HKWorkoutSession(healthStore: healthStore, configuration: configuration)
+        let builder = session.associatedWorkoutBuilder()
+        builder.dataSource = HKLiveWorkoutDataSource(
+            healthStore: healthStore,
+            workoutConfiguration: configuration
+        )
+
+        attachWorkoutSession(session, builder: builder)
+
+        let startDate = Date()
+        session.startActivity(with: startDate)
+        try await builder.beginCollection(at: startDate)
+    }
+
+    private func attachWorkoutSession(
+        _ session: HKWorkoutSession,
+        builder: HKLiveWorkoutBuilder? = nil
+    ) {
+        workoutSession = session
+        workoutBuilder = builder ?? session.associatedWorkoutBuilder()
+        session.delegate = delegateProxy
+        workoutBuilder?.delegate = delegateProxy
+    }
+
+    private func endWorkoutSession() {
+        guard let workoutSession else {
+            return
+        }
+
+        let endDate = Date()
+        workoutBuilder?.endCollection(withEnd: endDate) { [weak self] _, _ in
+            self?.workoutBuilder?.discardWorkout()
+        }
+        workoutSession.end()
+        self.workoutSession = nil
+        self.workoutBuilder = nil
+    }
+
+    private func handleWorkoutStateChange(_ state: HKWorkoutSessionState) {
+        switch state {
+        case .running:
+            workoutSummary = "Background workout active"
+            isCapturing = true
+        case .paused:
+            workoutSummary = "Workout paused"
+        case .stopped, .ended:
+            workoutSummary = "Idle"
+            workoutSession = nil
+            workoutBuilder = nil
+            if autoCaptureEnabled {
+                statusNote = "The watch workout session ended and passive capture needs to be restarted."
+            }
+        case .notStarted, .prepared:
+            workoutSummary = "Preparing workout"
+        @unknown default:
+            workoutSummary = "Workout state unknown"
+        }
+    }
+
+    private func startMotionFeedsIfNeeded() {
+        if CMPedometer.isStepCountingAvailable() {
+            pedometer.startUpdates(from: .now) { [weak self] data, error in
+                guard let self else {
+                    return
+                }
+
+                Task { @MainActor in
+                    if let error {
+                        self.statusNote = "Watch pedometer error: \(error.localizedDescription)"
+                        return
+                    }
+
+                    guard let data else {
+                        return
+                    }
+
+                    self.recordPedometerData(data)
+                }
+            }
+        }
+
+        if CMMotionActivityManager.isActivityAvailable() {
+            motionActivityManager.startActivityUpdates(to: .main) { [weak self] activity in
+                guard let self, let activity else {
+                    return
+                }
+
+                Task { @MainActor in
+                    self.recordMotionActivity(activity)
+                }
+            }
+        }
     }
 
     private func recordLocations(_ locations: [CLLocation]) {
@@ -371,12 +549,14 @@ final class WatchCaptureStore {
     }
 }
 
-private final class WatchCaptureDelegateProxy: NSObject, WCSessionDelegate, CLLocationManagerDelegate {
+private final class WatchCaptureDelegateProxy: NSObject, WCSessionDelegate, CLLocationManagerDelegate, HKWorkoutSessionDelegate, HKLiveWorkoutBuilderDelegate {
     var onActivationChange: ((WCSessionActivationState, Error?) -> Void)?
     var onReachabilityChange: (() -> Void)?
     var onLocationAuthorizationChange: ((CLAuthorizationStatus) -> Void)?
     var onLocations: (([CLLocation]) -> Void)?
     var onLocationFailure: ((Error) -> Void)?
+    var onWorkoutStateChange: ((HKWorkoutSessionState) -> Void)?
+    var onWorkoutFailure: ((Error) -> Void)?
 
     func session(
         _ session: WCSession,
@@ -401,4 +581,21 @@ private final class WatchCaptureDelegateProxy: NSObject, WCSessionDelegate, CLLo
     func locationManager(_ manager: CLLocationManager, didFailWithError error: any Error) {
         onLocationFailure?(error)
     }
+
+    func workoutSession(
+        _ workoutSession: HKWorkoutSession,
+        didChangeTo toState: HKWorkoutSessionState,
+        from fromState: HKWorkoutSessionState,
+        date: Date
+    ) {
+        onWorkoutStateChange?(toState)
+    }
+
+    func workoutSession(_ workoutSession: HKWorkoutSession, didFailWithError error: any Error) {
+        onWorkoutFailure?(error)
+    }
+
+    func workoutBuilderDidCollectEvent(_ workoutBuilder: HKLiveWorkoutBuilder) {}
+
+    func workoutBuilder(_ workoutBuilder: HKLiveWorkoutBuilder, didCollectDataOf collectedTypes: Set<HKSampleType>) {}
 }

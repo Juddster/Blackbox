@@ -1,8 +1,17 @@
 import SwiftUI
 
+final class BlackboxWatchExtensionDelegate: NSObject, WKExtensionDelegate {
+    func handleActiveWorkoutRecovery() {
+        Task { @MainActor in
+            await WatchCaptureStore.shared.recoverActiveWorkoutSessionIfNeeded()
+        }
+    }
+}
+
 @main
 struct BlackboxWatchApp: App {
-    @State private var captureStore = WatchCaptureStore()
+    @WKExtensionDelegateAdaptor(BlackboxWatchExtensionDelegate.self) private var extensionDelegate
+    @State private var captureStore = WatchCaptureStore.shared
 
     var body: some Scene {
         WindowGroup {

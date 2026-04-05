@@ -25,6 +25,9 @@ struct WatchContentView: View {
                 .font(.headline)
             Label(captureStore.sessionSummary, systemImage: captureStore.sessionImageName)
                 .font(.footnote)
+            Text(captureStore.workoutSummary)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
             if let note = captureStore.statusNote {
                 Text(note)
                     .font(.footnote)
@@ -35,7 +38,7 @@ struct WatchContentView: View {
 
     private var controlsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Button(captureStore.isCapturing ? "Stop Capture" : "Start Capture") {
+            Button(captureStore.isCapturing ? "Stop Passive Capture" : "Start Passive Capture") {
                 Task {
                     if captureStore.isCapturing {
                         captureStore.stopCapture()
