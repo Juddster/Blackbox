@@ -58,9 +58,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "40DF1382E67EE9921E979A39"
-            BuildableName = "Blackbox.app"
-            BlueprintName = "Blackbox"
+            BlueprintIdentifier = "9379862515E6401208E6CAE0"
+            BuildableName = "BlackboxWatch.app"
+            BlueprintName = "BlackboxWatch"
             ReferencedContainer = "container:Blackbox.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -81,9 +81,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "40DF1382E67EE9921E979A39"
-            BuildableName = "Blackbox.app"
-            BlueprintName = "Blackbox"
+            BlueprintIdentifier = "9379862515E6401208E6CAE0"
+            BuildableName = "BlackboxWatch.app"
+            BlueprintName = "BlackboxWatch"
             ReferencedContainer = "container:Blackbox.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -98,9 +98,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "40DF1382E67EE9921E979A39"
-            BuildableName = "Blackbox.app"
-            BlueprintName = "Blackbox"
+            BlueprintIdentifier = "9379862515E6401208E6CAE0"
+            BuildableName = "BlackboxWatch.app"
+            BlueprintName = "BlackboxWatch"
             ReferencedContainer = "container:Blackbox.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
