@@ -8,6 +8,7 @@ enum ObservationProjection {
     private static func snapshot(from observation: ObservationRecord) -> ObservationSnapshot {
         ObservationSnapshot(
             id: observation.id,
+            sourceDevice: observation.sourceDevice,
             sourceType: observation.sourceType,
             title: title(for: observation.sourceType),
             detail: detail(for: observation),

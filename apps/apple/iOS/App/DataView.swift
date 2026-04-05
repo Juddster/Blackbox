@@ -58,6 +58,11 @@ struct DataView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
+
+                    let summary = selectedWindowObservationSummary()
+                    Text(summary.uiSummary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
 
                 Section("Inference Preview") {
@@ -262,6 +267,7 @@ struct DataView: View {
     private func exportReplayBundle() {
         let observations = fetchObservationsForExport()
         let segments = fetchSegmentsForExport()
+        let observationSummary = ReplayExportObservationSummary(observations: observations)
         refreshMetricsForExport(segments: segments)
         let analysis = ReplayInferenceAnalyzer.preview(
             from: observations,
@@ -274,6 +280,7 @@ struct DataView: View {
             exportedTimeZoneSecondsFromGMT: TimeZone.current.secondsFromGMT(),
             windowStart: exportStartTime,
             windowEnd: exportEndTime,
+            observationSummary: observationSummary,
             observations: observations.map(ReplayExportObservation.init),
             segments: segments.compactMap(makeReplayExportSegment),
             analysis: ReplayExportAnalysis(preview: analysis)
@@ -290,7 +297,7 @@ struct DataView: View {
 
         exportDocument = ReplayExportDocument(data: data)
         exportFileName = exportFileName(for: bundle)
-        exportStatusMessage = "Prepared \(bundle.observations.count) observations and \(bundle.segments.count) segments."
+        exportStatusMessage = "Prepared \(bundle.observations.count) observations (\(observationSummary.iPhoneObservationCount) iPhone, \(observationSummary.watchObservationCount) watch) and \(bundle.segments.count) segments."
         isPresentingExporter = true
     }
 
@@ -389,6 +396,10 @@ struct DataView: View {
         let end = formatter.string(from: bundle.windowEnd).replacingOccurrences(of: ":", with: "-")
         return "blackbox-replay-\(start)-to-\(end).json"
     }
+
+    private func selectedWindowObservationSummary() -> ReplayExportObservationSummary {
+        ReplayExportObservationSummary(observations: fetchObservationsForExport())
+    }
 }
 
 private struct ReplayExportDocument: FileDocument {
@@ -415,9 +426,38 @@ private struct ReplayExportBundle: Codable {
     let exportedTimeZoneSecondsFromGMT: Int
     let windowStart: Date
     let windowEnd: Date
+    let observationSummary: ReplayExportObservationSummary
     let observations: [ReplayExportObservation]
     let segments: [ReplayExportSegment]
     let analysis: ReplayExportAnalysis
+}
+
+private struct ReplayExportObservationSummary: Codable {
+    let totalObservationCount: Int
+    let iPhoneObservationCount: Int
+    let watchObservationCount: Int
+    let locationCount: Int
+    let motionCount: Int
+    let pedometerCount: Int
+    let watchLocationCount: Int
+    let watchMotionCount: Int
+    let watchPedometerCount: Int
+
+    init(observations: [ObservationRecord]) {
+        totalObservationCount = observations.count
+        iPhoneObservationCount = observations.filter { $0.sourceDevice == .iPhone }.count
+        watchObservationCount = observations.filter { $0.sourceDevice == .watch }.count
+        locationCount = observations.filter { $0.sourceType == .location }.count
+        motionCount = observations.filter { $0.sourceType == .motion }.count
+        pedometerCount = observations.filter { $0.sourceType == .pedometer }.count
+        watchLocationCount = observations.filter { $0.sourceDevice == .watch && $0.sourceType == .location }.count
+        watchMotionCount = observations.filter { $0.sourceDevice == .watch && $0.sourceType == .motion }.count
+        watchPedometerCount = observations.filter { $0.sourceDevice == .watch && $0.sourceType == .pedometer }.count
+    }
+
+    var uiSummary: String {
+        "\(totalObservationCount) observations • \(iPhoneObservationCount) iPhone • \(watchObservationCount) watch • \(locationCount) location • \(motionCount) motion • \(pedometerCount) pedometer"
+    }
 }
 
 private struct ReplayExportObservation: Codable {

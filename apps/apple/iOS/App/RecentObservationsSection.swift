@@ -15,6 +15,9 @@ struct RecentObservationsSection: View {
                             Label(observation.title, systemImage: systemImage(for: observation.sourceType))
                                 .font(.subheadline.weight(.medium))
                             Spacer()
+                            Text(deviceLabel(for: observation.sourceDevice))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                             Text(observation.timestamp, format: .dateTime.hour().minute())
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -57,5 +60,14 @@ struct RecentObservationsSection: View {
 
     private func qualityLabel(for qualityHint: String) -> String {
         qualityHint.replacingOccurrences(of: "-", with: " ").capitalized
+    }
+
+    private func deviceLabel(for sourceDevice: ObservationSourceDevice) -> String {
+        switch sourceDevice {
+        case .iPhone:
+            "iPhone"
+        case .watch:
+            "Watch"
+        }
     }
 }

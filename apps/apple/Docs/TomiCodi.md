@@ -372,3 +372,5 @@ What to watch:
 - Apr 5, 01:20:
   - Removed the Apple watch HealthKit/workout-backed passive runtime after confirming it would interfere with real workouts and could not honestly avoid Health writes.
   - Replaced it with a best-effort passive enrichment path driven by watch location, motion, and pedometer capture plus the existing `WatchConnectivity` batch transfer into the iPhone replay/export pipeline.
+- Apr 5, 01:46:
+  - Tightened the Apple iPhone-side watch test surfaces before field capture: Settings now shows the latest watch batch breakdown, recent observations now label iPhone versus watch origin, and replay exports now include source-device summary counts so analyzer bundles clearly show how much watch data actually arrived.

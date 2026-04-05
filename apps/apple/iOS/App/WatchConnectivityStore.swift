@@ -14,6 +14,9 @@ final class WatchConnectivityStore {
     var statusNote: String?
     var lastReceivedAt: Date?
     var lastReceivedObservationCount = 0
+    var lastReceivedLocationCount = 0
+    var lastReceivedMotionCount = 0
+    var lastReceivedPedometerCount = 0
 
     private var recorder: LocalObservationRecorder?
     private var session: WCSession?
@@ -54,6 +57,14 @@ final class WatchConnectivityStore {
         }
 
         return "\(lastReceivedAt.formatted(date: .omitted, time: .shortened)) • \(lastReceivedObservationCount) observations"
+    }
+
+    var lastReceivedBreakdownSummary: String? {
+        guard lastReceivedObservationCount > 0 else {
+            return nil
+        }
+
+        return "\(lastReceivedLocationCount) location • \(lastReceivedMotionCount) motion • \(lastReceivedPedometerCount) pedometer"
     }
 
     func configure(modelContext: ModelContext) {
@@ -124,9 +135,9 @@ final class WatchConnectivityStore {
         } else if isWatchAppInstalled == false {
             statusNote = "The Apple Watch is paired, but the Blackbox watch app is not installed yet."
         } else if lastReceivedAt == nil {
-            statusNote = "Watch intake is ready. A future watch target can send queued observation batches in the background."
+            statusNote = "Watch intake is ready for best-effort passive enrichment batches from the Apple Watch."
         } else {
-            statusNote = "Receiving watch observations over Watch Connectivity."
+            statusNote = "Receiving watch observations over Watch Connectivity for replay export and inference review."
         }
     }
 
@@ -177,6 +188,9 @@ final class WatchConnectivityStore {
 
         do {
             try recorder.record(inputs)
+            lastReceivedLocationCount = inputs.filter { $0.sourceType == .location }.count
+            lastReceivedMotionCount = inputs.filter { $0.sourceType == .motion }.count
+            lastReceivedPedometerCount = inputs.filter { $0.sourceType == .pedometer }.count
             lastReceivedAt = .now
             lastReceivedObservationCount = inputs.count
             statusNote = "Received \(inputs.count) watch observations."

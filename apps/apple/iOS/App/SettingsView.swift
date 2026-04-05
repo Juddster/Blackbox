@@ -30,6 +30,10 @@ struct SettingsView: View {
                         LabeledContent("Last Intake", value: lastReceivedSummary)
                     }
 
+                    if let lastReceivedBreakdownSummary = watchConnectivity.lastReceivedBreakdownSummary {
+                        LabeledContent("Last Batch", value: lastReceivedBreakdownSummary)
+                    }
+
                     if let statusNote = watchConnectivity.statusNote {
                         Text(statusNote)
                         .font(.caption)
