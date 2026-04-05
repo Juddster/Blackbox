@@ -54,7 +54,7 @@ struct WatchContentView: View {
                 .foregroundStyle(.secondary)
 
             Button("Send Pending Batch") {
-                captureStore.flushPendingObservations(forceFileTransfer: false)
+                captureStore.flushPendingObservations(forceFileTransfer: true)
             }
             .buttonStyle(.bordered)
             .disabled(captureStore.pendingObservationCount == 0)

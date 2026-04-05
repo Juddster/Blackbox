@@ -148,7 +148,7 @@ final class WatchConnectivityStore {
         } else if lastReceivedAt == nil {
             statusNote = "Watch intake is ready for best-effort passive enrichment batches from the Apple Watch."
         } else {
-            statusNote = "Receiving watch observations over Watch Connectivity for replay export and inference review."
+            statusNote = "Receiving watch file batches over Watch Connectivity for replay export and inference review."
         }
     }
 

@@ -131,7 +131,7 @@ final class WatchCaptureStore {
         captureSummary = "Idle"
         statusNote = "Capture stopped. Pending observations stay queued until transferred."
         flushPendingObservations(
-            forceFileTransfer: pendingObservationCount >= 100,
+            forceFileTransfer: true,
             trigger: "stop"
         )
     }
@@ -159,15 +159,11 @@ final class WatchCaptureStore {
             return
         }
 
-        let deliveryMode = forceFileTransfer ? "file" : "userInfo"
-        if forceFileTransfer {
-            let fileURL = makeTransferFile(for: payloadData)
-            session.transferFile(fileURL, metadata: [
-                WatchObservationTransferEnvelope.payloadKey: envelope.observations.count
-            ])
-        } else {
-            session.transferUserInfo([WatchObservationTransferEnvelope.payloadKey: payloadData])
-        }
+        let deliveryMode = "file"
+        let fileURL = makeTransferFile(for: payloadData)
+        session.transferFile(fileURL, metadata: [
+            WatchObservationTransferEnvelope.payloadKey: envelope.observations.count
+        ])
 
         totalTransferredObservationCount += pendingObservations.count
         lastTransferSummary = "\(Date.now.formatted(date: .omitted, time: .shortened)) • \(pendingObservations.count) observations • \(deliveryMode)"
@@ -314,7 +310,7 @@ final class WatchCaptureStore {
 
         if shouldFlushByCount || shouldFlushByAge {
             flushPendingObservations(
-                forceFileTransfer: pendingObservations.count >= 100,
+                forceFileTransfer: true,
                 trigger: trigger
             )
         }
