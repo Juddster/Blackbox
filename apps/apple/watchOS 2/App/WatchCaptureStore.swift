@@ -14,11 +14,15 @@ final class WatchCaptureStore {
     var sessionImageName = "applewatch.slash"
     var statusNote: String?
     var pendingObservationCount = 0
+    var totalQueuedObservationCount = 0
     var totalTransferredObservationCount = 0
+    var flushAttemptCount = 0
+    var deferredFlushCount = 0
     var locationObservationCount = 0
     var pedometerObservationCount = 0
     var motionObservationCount = 0
     var lastTransferSummary: String?
+    var lastFlushSummary: String?
     var autoCaptureEnabled = UserDefaults.standard.bool(forKey: "watch.autoCaptureEnabled")
     var captureSummary = "Idle"
 
@@ -126,15 +130,25 @@ final class WatchCaptureStore {
         motionActivityManager.stopActivityUpdates()
         captureSummary = "Idle"
         statusNote = "Capture stopped. Pending observations stay queued until transferred."
-        flushPendingObservations(forceFileTransfer: pendingObservationCount >= 100)
+        flushPendingObservations(
+            forceFileTransfer: pendingObservationCount >= 100,
+            trigger: "stop"
+        )
     }
 
-    func flushPendingObservations(forceFileTransfer: Bool) {
+    func flushPendingObservations(
+        forceFileTransfer: Bool,
+        trigger: String = "manual"
+    ) {
         guard pendingObservations.isEmpty == false else {
             return
         }
 
+        flushAttemptCount += 1
         guard session.activationState == .activated else {
+            deferredFlushCount += 1
+            lastFlushSummary = "\(Date.now.formatted(date: .omitted, time: .shortened)) • deferred • \(trigger)"
+            statusNote = "Queued watch observations are waiting for Watch Connectivity activation."
             refreshSessionState()
             return
         }
@@ -145,6 +159,7 @@ final class WatchCaptureStore {
             return
         }
 
+        let deliveryMode = forceFileTransfer ? "file" : "userInfo"
         if forceFileTransfer {
             let fileURL = makeTransferFile(for: payloadData)
             session.transferFile(fileURL, metadata: [
@@ -155,7 +170,8 @@ final class WatchCaptureStore {
         }
 
         totalTransferredObservationCount += pendingObservations.count
-        lastTransferSummary = "\(Date.now.formatted(date: .omitted, time: .shortened)) • \(pendingObservations.count) observations"
+        lastTransferSummary = "\(Date.now.formatted(date: .omitted, time: .shortened)) • \(pendingObservations.count) observations • \(deliveryMode)"
+        lastFlushSummary = "\(Date.now.formatted(date: .omitted, time: .shortened)) • sent • \(trigger)"
         pendingObservations.removeAll(keepingCapacity: true)
         pendingObservationCount = 0
         lastFlushDate = .now
@@ -283,17 +299,24 @@ final class WatchCaptureStore {
             )
         )
         pendingObservationCount = pendingObservations.count
+        totalQueuedObservationCount += 1
 
         let shouldFlushByCount = pendingObservations.count >= 25
         let shouldFlushByAge: Bool
+        let trigger: String
         if let lastFlushDate {
             shouldFlushByAge = Date.now.timeIntervalSince(lastFlushDate) >= 30
+            trigger = shouldFlushByCount ? "count>=25" : "age>=30s"
         } else {
             shouldFlushByAge = pendingObservations.count >= 10
+            trigger = shouldFlushByCount ? "count>=25" : "startup>=10"
         }
 
         if shouldFlushByCount || shouldFlushByAge {
-            flushPendingObservations(forceFileTransfer: pendingObservations.count >= 100)
+            flushPendingObservations(
+                forceFileTransfer: pendingObservations.count >= 100,
+                trigger: trigger
+            )
         }
     }
 

@@ -13,10 +13,17 @@ final class WatchConnectivityStore {
     var activationState: WCSessionActivationState = .notActivated
     var statusNote: String?
     var lastReceivedAt: Date?
+    var receivedBatchCount = 0
+    var decodedBatchCount = 0
+    var persistedBatchCount = 0
+    var decodeFailureCount = 0
+    var persistFailureCount = 0
+    var totalReceivedObservationCount = 0
     var lastReceivedObservationCount = 0
     var lastReceivedLocationCount = 0
     var lastReceivedMotionCount = 0
     var lastReceivedPedometerCount = 0
+    var lastReceiveTransport = "None"
 
     private var recorder: LocalObservationRecorder?
     private var session: WCSession?
@@ -67,6 +74,10 @@ final class WatchConnectivityStore {
         return "\(lastReceivedLocationCount) location • \(lastReceivedMotionCount) motion • \(lastReceivedPedometerCount) pedometer"
     }
 
+    var diagnosticsSummary: String {
+        "received \(receivedBatchCount) • decoded \(decodedBatchCount) • persisted \(persistedBatchCount) • decode failures \(decodeFailureCount) • persist failures \(persistFailureCount)"
+    }
+
     func configure(modelContext: ModelContext) {
         recorder = LocalObservationRecorder(modelContext: modelContext)
 
@@ -94,17 +105,17 @@ final class WatchConnectivityStore {
             }
             proxy.onUserInfo = { [weak self] userInfo in
                 Task { @MainActor in
-                    await self?.ingestPayload(from: userInfo)
+                    await self?.ingestPayload(from: userInfo, transport: "userInfo")
                 }
             }
             proxy.onApplicationContext = { [weak self] context in
                 Task { @MainActor in
-                    await self?.ingestPayload(from: context)
+                    await self?.ingestPayload(from: context, transport: "applicationContext")
                 }
             }
             proxy.onFile = { [weak self] fileURL in
                 Task { @MainActor in
-                    await self?.ingestPayload(fromFileAt: fileURL)
+                    await self?.ingestPayload(fromFileAt: fileURL, transport: "file")
                 }
             }
 
@@ -141,19 +152,23 @@ final class WatchConnectivityStore {
         }
     }
 
-    private func ingestPayload(from dictionary: [String: Any]) async {
+    private func ingestPayload(from dictionary: [String: Any], transport: String) async {
         guard let payloadData = dictionary[WatchObservationTransferEnvelope.payloadKey] as? Data else {
             return
         }
 
+        receivedBatchCount += 1
+        lastReceiveTransport = transport
         await ingestPayloadData(payloadData)
     }
 
-    private func ingestPayload(fromFileAt fileURL: URL) async {
+    private func ingestPayload(fromFileAt fileURL: URL, transport: String) async {
         guard let payloadData = try? Data(contentsOf: fileURL) else {
             return
         }
 
+        receivedBatchCount += 1
+        lastReceiveTransport = transport
         await ingestPayloadData(payloadData)
     }
 
@@ -166,9 +181,11 @@ final class WatchConnectivityStore {
         decoder.dateDecodingStrategy = .iso8601
 
         guard let envelope = try? decoder.decode(WatchObservationTransferEnvelope.self, from: payloadData) else {
+            decodeFailureCount += 1
             statusNote = "Received a watch payload, but Blackbox could not decode it."
             return
         }
+        decodedBatchCount += 1
 
         let inputs = envelope.observations.map { observation in
             ObservationInput(
@@ -188,13 +205,16 @@ final class WatchConnectivityStore {
 
         do {
             try recorder.record(inputs)
+            persistedBatchCount += 1
+            totalReceivedObservationCount += inputs.count
             lastReceivedLocationCount = inputs.filter { $0.sourceType == .location }.count
             lastReceivedMotionCount = inputs.filter { $0.sourceType == .motion }.count
             lastReceivedPedometerCount = inputs.filter { $0.sourceType == .pedometer }.count
             lastReceivedAt = .now
             lastReceivedObservationCount = inputs.count
-            statusNote = "Received \(inputs.count) watch observations."
+            statusNote = "Received \(inputs.count) watch observations via \(lastReceiveTransport)."
         } catch {
+            persistFailureCount += 1
             statusNote = "Failed to persist watch observations."
         }
     }

@@ -64,7 +64,10 @@ struct WatchContentView: View {
     private var countsSection: some View {
         VStack(alignment: .leading, spacing: 4) {
             metricRow(title: "Queued", value: "\(captureStore.pendingObservationCount)")
+            metricRow(title: "Seen", value: "\(captureStore.totalQueuedObservationCount)")
             metricRow(title: "Sent", value: "\(captureStore.totalTransferredObservationCount)")
+            metricRow(title: "Flushes", value: "\(captureStore.flushAttemptCount)")
+            metricRow(title: "Deferred", value: "\(captureStore.deferredFlushCount)")
             metricRow(title: "Locations", value: "\(captureStore.locationObservationCount)")
             metricRow(title: "Pedometer", value: "\(captureStore.pedometerObservationCount)")
             metricRow(title: "Motion", value: "\(captureStore.motionObservationCount)")
@@ -79,6 +82,9 @@ struct WatchContentView: View {
             Text(captureStore.lastTransferSummary ?? "Nothing transferred yet.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
+            Text(captureStore.lastFlushSummary ?? "No flush attempts yet.")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
         }
     }
 

@@ -374,3 +374,5 @@ What to watch:
   - Replaced it with a best-effort passive enrichment path driven by watch location, motion, and pedometer capture plus the existing `WatchConnectivity` batch transfer into the iPhone replay/export pipeline.
 - Apr 5, 01:46:
   - Tightened the Apple iPhone-side watch test surfaces before field capture: Settings now shows the latest watch batch breakdown, recent observations now label iPhone versus watch origin, and replay exports now include source-device summary counts so analyzer bundles clearly show how much watch data actually arrived.
+- Apr 5, 02:02:
+  - Added explicit Apple watch-to-phone intake diagnostics after the first long field run produced zero watch observations in the replay bundle: the watch UI now exposes queued/flush/deferred counters and last flush trigger/method, while the iPhone Settings screen now exposes received/decoded/persisted batch counters plus the last transport used.
