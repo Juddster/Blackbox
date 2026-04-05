@@ -367,3 +367,5 @@ What to watch:
   - Added a real Apple app-icon set covering iPhone, iPad, and watch roles after finding the project’s only `AppIcon.appiconset` was empty; the watch companion now has actual launcher and quick-look icon assets instead of an empty asset catalog.
 - Apr 4, 18:34:
   - Fixed the Apple watch target’s asset membership so the embedded watch app now actually contains a compiled `Assets.car`; previously the watch bundle had metadata pointing at `AppIcon`, but the asset catalog was only being compiled into the iPhone app.
+- Apr 4, 18:49:
+  - Cleaned up the Apple icon-target wiring after the first dedicated watch icon set proved invalid for `actool`; the watch target now uses the shared `AppIcon` set again, with the watch-specific icon entries kept in the shared catalog and the dead `WatchAppIcon` set removed.
