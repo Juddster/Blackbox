@@ -70,7 +70,7 @@ final class WatchCaptureStore {
         }
         proxy.onLocationFailure = { [weak self] error in
             Task { @MainActor in
-                self?.statusNote = "Watch location error: \(error.localizedDescription)"
+                self?.handleLocationFailure(error)
             }
         }
 
@@ -254,6 +254,17 @@ final class WatchCaptureStore {
             qualityHint: confidenceHint(for: activity.confidence)
         )
         motionObservationCount += 1
+    }
+
+    private func handleLocationFailure(_ error: Error) {
+        if let clError = error as? CLError, clError.code == .locationUnknown {
+            if isCapturing {
+                statusNote = "Waiting for a watch location fix."
+            }
+            return
+        }
+
+        statusNote = "Watch location error: \(error.localizedDescription)"
     }
 
     private func appendObservation(
