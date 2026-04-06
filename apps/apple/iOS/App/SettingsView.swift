@@ -34,6 +34,10 @@ struct SettingsView: View {
                         LabeledContent("Last Batch", value: lastReceivedBreakdownSummary)
                     }
 
+                    if let latestWatchMetadataSummary = watchConnectivity.latestWatchMetadataSummary {
+                        LabeledContent("Watch Sender", value: latestWatchMetadataSummary)
+                    }
+
                     LabeledContent("Last Transport", value: watchConnectivity.lastReceiveTransport)
                     LabeledContent("Intake Totals", value: watchConnectivity.diagnosticsSummary)
 

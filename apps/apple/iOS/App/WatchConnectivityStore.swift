@@ -78,6 +78,14 @@ final class WatchConnectivityStore {
         "received \(receivedBatchCount) • decoded \(decodedBatchCount) • persisted \(persistedBatchCount) • decode failures \(decodeFailureCount) • persist failures \(persistFailureCount)"
     }
 
+    var latestWatchMetadataSummary: String? {
+        guard let metadata = WatchIntakeMetadataSnapshot.load() else {
+            return nil
+        }
+
+        return "session \(metadata.captureSessionID.uuidString.prefix(8)) • batch \(metadata.batchSequence) • build \(metadata.senderBuildNumber)"
+    }
+
     func configure(modelContext: ModelContext) {
         recorder = LocalObservationRecorder(modelContext: modelContext)
 
@@ -212,6 +220,15 @@ final class WatchConnectivityStore {
             lastReceivedPedometerCount = inputs.filter { $0.sourceType == .pedometer }.count
             lastReceivedAt = .now
             lastReceivedObservationCount = inputs.count
+            WatchIntakeMetadataSnapshot(
+                captureSessionID: envelope.captureSessionID,
+                batchSequence: envelope.batchSequence,
+                sentAt: envelope.sentAt,
+                senderAppVersion: envelope.senderAppVersion,
+                senderBuildNumber: envelope.senderBuildNumber,
+                observationCount: inputs.count,
+                transport: lastReceiveTransport
+            ).persist()
             statusNote = "Received \(inputs.count) watch observations via \(lastReceiveTransport)."
         } catch {
             persistFailureCount += 1

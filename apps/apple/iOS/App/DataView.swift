@@ -280,6 +280,10 @@ struct DataView: View {
             exportedTimeZoneSecondsFromGMT: TimeZone.current.secondsFromGMT(),
             windowStart: exportStartTime,
             windowEnd: exportEndTime,
+            appBuilds: ReplayExportAppBuilds(
+                iPhone: .current,
+                latestWatchSender: WatchIntakeMetadataSnapshot.load()
+            ),
             observationSummary: observationSummary,
             observations: observations.map(ReplayExportObservation.init),
             segments: segments.compactMap(makeReplayExportSegment),
@@ -426,10 +430,41 @@ private struct ReplayExportBundle: Codable {
     let exportedTimeZoneSecondsFromGMT: Int
     let windowStart: Date
     let windowEnd: Date
+    let appBuilds: ReplayExportAppBuilds
     let observationSummary: ReplayExportObservationSummary
     let observations: [ReplayExportObservation]
     let segments: [ReplayExportSegment]
     let analysis: ReplayExportAnalysis
+}
+
+private struct ReplayExportAppBuilds: Codable {
+    let iPhone: AppBuildInfo
+    let latestWatchSender: ReplayExportWatchSenderBuild?
+
+    init(iPhone: AppBuildInfo, latestWatchSender: WatchIntakeMetadataSnapshot?) {
+        self.iPhone = iPhone
+        self.latestWatchSender = latestWatchSender.map(ReplayExportWatchSenderBuild.init)
+    }
+}
+
+private struct ReplayExportWatchSenderBuild: Codable {
+    let captureSessionID: UUID
+    let batchSequence: Int
+    let sentAt: Date
+    let shortVersion: String
+    let buildNumber: String
+    let observationCount: Int
+    let transport: String
+
+    init(metadata: WatchIntakeMetadataSnapshot) {
+        captureSessionID = metadata.captureSessionID
+        batchSequence = metadata.batchSequence
+        sentAt = metadata.sentAt
+        shortVersion = metadata.senderAppVersion
+        buildNumber = metadata.senderBuildNumber
+        observationCount = metadata.observationCount
+        transport = metadata.transport
+    }
 }
 
 private struct ReplayExportObservationSummary: Codable {

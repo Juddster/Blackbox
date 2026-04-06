@@ -378,3 +378,5 @@ What to watch:
   - Added explicit Apple watch-to-phone intake diagnostics after the first long field run produced zero watch observations in the replay bundle: the watch UI now exposes queued/flush/deferred counters and last flush trigger/method, while the iPhone Settings screen now exposes received/decoded/persisted batch counters plus the last transport used.
 - Apr 5, 02:12:
   - Switched Apple watch batch delivery away from `transferUserInfo` and onto `transferFile` for all watch flushes after diagnostics showed the watch was sending many observations but the iPhone only persisted a single small `userInfo` batch.
+- Apr 5, 02:24:
+  - Added Apple watch session/batch provenance and build metadata for replay auditing: watch transfer envelopes now carry a capture session ID, batch sequence, and watch build/version, the iPhone persists the latest received watch intake metadata, and replay exports now include both the current iPhone build info and the latest watch sender build/session metadata.

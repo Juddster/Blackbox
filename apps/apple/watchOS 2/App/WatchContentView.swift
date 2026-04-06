@@ -28,6 +28,9 @@ struct WatchContentView: View {
             Text(captureStore.captureSummary)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
+            Text(captureStore.currentCaptureSessionSummary)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
             if let note = captureStore.statusNote {
                 Text(note)
                     .font(.footnote)

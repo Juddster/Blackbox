@@ -23,6 +23,7 @@ final class WatchCaptureStore {
     var motionObservationCount = 0
     var lastTransferSummary: String?
     var lastFlushSummary: String?
+    var currentCaptureSessionSummary = "No active capture session"
     var autoCaptureEnabled = UserDefaults.standard.bool(forKey: "watch.autoCaptureEnabled")
     var captureSummary = "Idle"
 
@@ -35,6 +36,7 @@ final class WatchCaptureStore {
         encoder.dateEncodingStrategy = .iso8601
         return encoder
     }()
+    private let appBuildInfo = AppBuildInfo.current
 
     private static let autoCaptureEnabledKey = "watch.autoCaptureEnabled"
 
@@ -43,6 +45,8 @@ final class WatchCaptureStore {
     private var locationAuthorizationContinuation: CheckedContinuation<CLAuthorizationStatus, Never>?
     private var lastFlushDate: Date?
     private var isStartingCapture = false
+    private var captureSessionID = UUID()
+    private var nextBatchSequence = 1
 
     func configureIfNeeded() async {
         guard delegateProxy == nil else {
@@ -110,6 +114,11 @@ final class WatchCaptureStore {
 
         autoCaptureEnabled = true
         UserDefaults.standard.set(true, forKey: Self.autoCaptureEnabledKey)
+        if isCapturing == false {
+            captureSessionID = UUID()
+            nextBatchSequence = 1
+            currentCaptureSessionSummary = captureSessionLabel(for: captureSessionID)
+        }
         isCapturing = true
         captureSummary = "Best-effort passive capture"
         statusNote = "Capturing watch location, pedometer, and motion while the system keeps the app active during movement."
@@ -153,7 +162,14 @@ final class WatchCaptureStore {
             return
         }
 
-        let envelope = WatchObservationTransferEnvelope(observations: pendingObservations)
+        let batchSequence = nextBatchSequence
+        let envelope = WatchObservationTransferEnvelope(
+            captureSessionID: captureSessionID,
+            batchSequence: batchSequence,
+            senderAppVersion: appBuildInfo.shortVersion,
+            senderBuildNumber: appBuildInfo.buildNumber,
+            observations: pendingObservations
+        )
         guard let payloadData = try? encoder.encode(envelope) else {
             statusNote = "Blackbox could not encode the watch observation batch."
             return
@@ -166,11 +182,12 @@ final class WatchCaptureStore {
         ])
 
         totalTransferredObservationCount += pendingObservations.count
-        lastTransferSummary = "\(Date.now.formatted(date: .omitted, time: .shortened)) • \(pendingObservations.count) observations • \(deliveryMode)"
-        lastFlushSummary = "\(Date.now.formatted(date: .omitted, time: .shortened)) • sent • \(trigger)"
+        lastTransferSummary = "\(Date.now.formatted(date: .omitted, time: .shortened)) • batch \(batchSequence) • \(pendingObservations.count) observations • \(deliveryMode)"
+        lastFlushSummary = "\(Date.now.formatted(date: .omitted, time: .shortened)) • sent • \(trigger) • batch \(batchSequence)"
         pendingObservations.removeAll(keepingCapacity: true)
         pendingObservationCount = 0
         lastFlushDate = .now
+        nextBatchSequence += 1
         refreshSessionState()
     }
 
@@ -430,6 +447,10 @@ final class WatchCaptureStore {
             .appendingPathExtension("json")
         try? payloadData.write(to: url, options: .atomic)
         return url
+    }
+
+    private func captureSessionLabel(for sessionID: UUID) -> String {
+        "Session \(sessionID.uuidString.prefix(8)) • build \(appBuildInfo.buildNumber)"
     }
 }
 
