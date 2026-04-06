@@ -15,6 +15,9 @@
 		069C5B822F7B0B4000BFCB7F /* LocalSegmentMetricBackfiller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C5B812F7B0B4000BFCB7F /* LocalSegmentMetricBackfiller.swift */; };
 		069C5B842F7BFCDE00BFCB7F /* ReplayInferenceAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C5B832F7BFCDE00BFCB7F /* ReplayInferenceAnalyzer.swift */; };
 		069C5B862F814AA400BFCB7F /* WatchConnectivityStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 069C5B852F814AA400BFCB7F /* WatchConnectivityStore.swift */; };
+		06A1E5E02F83A6A8003F403B /* AppBuildInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06A1E5DF2F83A6A8003F403B /* AppBuildInfo.swift */; };
+		06A1E5E12F83A6A8003F403B /* AppBuildInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06A1E5DF2F83A6A8003F403B /* AppBuildInfo.swift */; };
+		06A1E5E32F83A6A9003F403B /* WatchIntakeMetadataSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06A1E5E22F83A6A9003F403B /* WatchIntakeMetadataSnapshot.swift */; };
 		06D4CC452F7455F40059DBA9 /* ActivityClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC442F7455F40059DBA9 /* ActivityClass.swift */; };
 		06D4CC472F7455F40059DBA9 /* AmbiguityState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC462F7455F40059DBA9 /* AmbiguityState.swift */; };
 		06D4CC492F7455F50059DBA9 /* InterpretationOrigin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D4CC482F7455F50059DBA9 /* InterpretationOrigin.swift */; };
@@ -153,6 +156,8 @@
 		069C5B812F7B0B4000BFCB7F /* LocalSegmentMetricBackfiller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalSegmentMetricBackfiller.swift; sourceTree = "<group>"; };
 		069C5B832F7BFCDE00BFCB7F /* ReplayInferenceAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReplayInferenceAnalyzer.swift; sourceTree = "<group>"; };
 		069C5B852F814AA400BFCB7F /* WatchConnectivityStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConnectivityStore.swift; sourceTree = "<group>"; };
+		06A1E5DF2F83A6A8003F403B /* AppBuildInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBuildInfo.swift; sourceTree = "<group>"; };
+		06A1E5E22F83A6A9003F403B /* WatchIntakeMetadataSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchIntakeMetadataSnapshot.swift; sourceTree = "<group>"; };
 		06D4CC442F7455F40059DBA9 /* ActivityClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityClass.swift; sourceTree = "<group>"; };
 		06D4CC462F7455F40059DBA9 /* AmbiguityState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbiguityState.swift; sourceTree = "<group>"; };
 		06D4CC482F7455F50059DBA9 /* InterpretationOrigin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterpretationOrigin.swift; sourceTree = "<group>"; };
@@ -224,21 +229,21 @@
 		06D4CCCB2F75A2390059DBA9 /* LocalSegmentInterpretationEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalSegmentInterpretationEditor.swift; sourceTree = "<group>"; };
 		06D4CCCF2F76A0DB0059DBA9 /* CaptureGapNotice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureGapNotice.swift; sourceTree = "<group>"; };
 		06D4CCD12F76E3D60059DBA9 /* LocalUserSegmentWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalUserSegmentWriter.swift; sourceTree = "<group>"; };
-		1524FADA9CA191F3F43D0557 /* BlackboxWatch-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = "BlackboxWatch-Info.plist"; path = "BlackboxWatch-Info.plist"; sourceTree = "<group>"; };
-		47F2FC59BC8E155433F23BD5 /* ObservationSourceType.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ObservationSourceType.swift; path = ObservationSourceType.swift; sourceTree = "<group>"; };
+		1524FADA9CA191F3F43D0557 /* BlackboxWatch-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "BlackboxWatch-Info.plist"; sourceTree = "<group>"; };
+		47F2FC59BC8E155433F23BD5 /* ObservationSourceType.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ObservationSourceType.swift; sourceTree = "<group>"; };
 		55605AB54A1DDDC5BC7BD70E /* Blackbox.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Blackbox.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		57D905DC3EE2831D041C0EAF /* BlackboxWatchApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BlackboxWatchApp.swift; path = BlackboxWatchApp.swift; sourceTree = "<group>"; };
+		57D905DC3EE2831D041C0EAF /* BlackboxWatchApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlackboxWatchApp.swift; sourceTree = "<group>"; };
 		5BB7B834AE865D38AF11D2B3 /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		61C3FA4D88B88A98570B0C0B /* BlackboxWatchExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BlackboxWatchExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		66487777336FFAEB6FB088F0 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS14.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		7D45B32E742E2F674B8DA9FB /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		8223077E1551309F9E6E0209 /* WatchCaptureStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchCaptureStore.swift; path = WatchCaptureStore.swift; sourceTree = "<group>"; };
+		8223077E1551309F9E6E0209 /* WatchCaptureStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WatchCaptureStore.swift; sourceTree = "<group>"; };
 		8246172CD7CF8F61E7B229AC /* BlackboxWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BlackboxWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9CAA3A9669F9D3E0D62C0535 /* BlackboxWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BlackboxWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B72BF4F385F913A7565CD858 /* BlackboxApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlackboxApp.swift; sourceTree = "<group>"; };
 		B8DBCE811AA9D9434021DC8E /* BlackboxWatchExtension-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "BlackboxWatchExtension-Info.plist"; sourceTree = "<group>"; };
-		BEFDCE077D4B299E13CD35BF /* WatchContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchContentView.swift; path = WatchContentView.swift; sourceTree = "<group>"; };
-		F835D8EF910BADF186CB255E /* WatchObservationTransfer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchObservationTransfer.swift; path = WatchObservationTransfer.swift; sourceTree = "<group>"; };
+		BEFDCE077D4B299E13CD35BF /* WatchContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WatchContentView.swift; sourceTree = "<group>"; };
+		F835D8EF910BADF186CB255E /* WatchObservationTransfer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WatchObservationTransfer.swift; sourceTree = "<group>"; };
 		FB0B412574C5D83CA0E4B9DB /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/WatchOS.platform/Developer/SDKs/WatchOS7.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		FD38DB6408DD1D01EC23100A /* BlackboxWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BlackboxWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -275,6 +280,7 @@
 			isa = PBXGroup;
 			children = (
 				F835D8EF910BADF186CB255E /* WatchObservationTransfer.swift */,
+				06A1E5DF2F83A6A8003F403B /* AppBuildInfo.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -478,6 +484,7 @@
 				069C5B832F7BFCDE00BFCB7F /* ReplayInferenceAnalyzer.swift */,
 				069C5B852F814AA400BFCB7F /* WatchConnectivityStore.swift */,
 				47F2FC59BC8E155433F23BD5 /* ObservationSourceType.swift */,
+				06A1E5E22F83A6A9003F403B /* WatchIntakeMetadataSnapshot.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -568,19 +575,14 @@
 				LastSwiftUpdateCheck = 2630;
 				LastUpgradeCheck = 2630;
 				TargetAttributes = {
-					188C268833FC349B0BDF0462 = {
-						DevelopmentTeam = 2TXPN3QJQN;
-						ProvisioningStyle = Automatic;
-					};
-					330B3DA67EB42B86D6FD665E = {
-						CreatedOnToolsVersion = 16.3;
-						DevelopmentTeam = 2TXPN3QJQN;
-						LastSwiftMigration = 2630;
-						ProvisioningStyle = Automatic;
-					};
 					40DF1382E67EE9921E979A39 = {
 						DevelopmentTeam = 2TXPN3QJQN;
 						ProvisioningStyle = Automatic;
+						SystemCapabilities = {
+							com.apple.HealthKit = {
+								enabled = 1;
+							};
+						};
 						WKCompanionAppBundleIdentifier = com.contity.Blackbox;
 					};
 					9379862515E6401208E6CAE0 = {
@@ -646,6 +648,7 @@
 			files = (
 				655C16BBD9330076F0F91BE0 /* WatchObservationTransfer.swift in Sources */,
 				0792C6396293AF4AE0506BAA /* ObservationSourceType.swift in Sources */,
+				06A1E5E02F83A6A8003F403B /* AppBuildInfo.swift in Sources */,
 				242E37F5737891AC640E7FB5 /* BlackboxWatchApp.swift in Sources */,
 				3574AEE9D8EF930797C848A5 /* WatchContentView.swift in Sources */,
 				A43A8F3A2778F65A13DA4A62 /* WatchCaptureStore.swift in Sources */,
@@ -673,6 +676,7 @@
 				06D4CCD02F76A0DB0059DBA9 /* CaptureGapNotice.swift in Sources */,
 				06D4CC932F746DF30059DBA9 /* NoopSegmentSyncClient.swift in Sources */,
 				06D4CC552F7455F50059DBA9 /* SegmentInterpretationRecord.swift in Sources */,
+				06A1E5E32F83A6A9003F403B /* WatchIntakeMetadataSnapshot.swift in Sources */,
 				069C5B802F7B0B4000BFCB7F /* SegmentObservationMetrics.swift in Sources */,
 				06D4CC592F7455F50059DBA9 /* BlackboxModelContainer.swift in Sources */,
 				06D4CC812F746D440059DBA9 /* CaptureStatusProviding.swift in Sources */,
@@ -733,6 +737,7 @@
 				06D4CC752F7469CC0059DBA9 /* SegmentSyncStateRecord.swift in Sources */,
 				06D4CCA02F7529D30059DBA9 /* SyncActivityStore.swift in Sources */,
 				06D4CC492F7455F50059DBA9 /* InterpretationOrigin.swift in Sources */,
+				06A1E5E12F83A6A8003F403B /* AppBuildInfo.swift in Sources */,
 				06D4CC872F746D440059DBA9 /* PedometerCaptureStatusProvider.swift in Sources */,
 				06D4CCB82F754A3A0059DBA9 /* LiveDraftSegmentSnapshot.swift in Sources */,
 				06D4CCBA2F754A3A0059DBA9 /* LiveDraftSegmentProjection.swift in Sources */,
@@ -770,6 +775,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = "iOS/Resources/Blackbox.entitlements";
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 2TXPN3QJQN;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -790,6 +796,7 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = "iOS/Resources/Blackbox.entitlements";
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 2TXPN3QJQN;
 				GENERATE_INFOPLIST_FILE = NO;

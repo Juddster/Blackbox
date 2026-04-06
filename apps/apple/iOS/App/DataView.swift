@@ -471,27 +471,36 @@ private struct ReplayExportObservationSummary: Codable {
     let totalObservationCount: Int
     let iPhoneObservationCount: Int
     let watchObservationCount: Int
+    let healthKitBackfillObservationCount: Int
+    let liveWatchObservationCount: Int
     let locationCount: Int
     let motionCount: Int
     let pedometerCount: Int
     let watchLocationCount: Int
     let watchMotionCount: Int
     let watchPedometerCount: Int
+    let healthKitBackfillPedometerCount: Int
 
     init(observations: [ObservationRecord]) {
+        let healthBackfillObservations = observations.filter { observation in
+            observation.payload.contains("origin=healthKitBackfill")
+        }
         totalObservationCount = observations.count
         iPhoneObservationCount = observations.filter { $0.sourceDevice == .iPhone }.count
         watchObservationCount = observations.filter { $0.sourceDevice == .watch }.count
+        healthKitBackfillObservationCount = healthBackfillObservations.count
+        liveWatchObservationCount = watchObservationCount - healthKitBackfillObservationCount
         locationCount = observations.filter { $0.sourceType == .location }.count
         motionCount = observations.filter { $0.sourceType == .motion }.count
         pedometerCount = observations.filter { $0.sourceType == .pedometer }.count
         watchLocationCount = observations.filter { $0.sourceDevice == .watch && $0.sourceType == .location }.count
         watchMotionCount = observations.filter { $0.sourceDevice == .watch && $0.sourceType == .motion }.count
         watchPedometerCount = observations.filter { $0.sourceDevice == .watch && $0.sourceType == .pedometer }.count
+        healthKitBackfillPedometerCount = healthBackfillObservations.filter { $0.sourceType == .pedometer }.count
     }
 
     var uiSummary: String {
-        "\(totalObservationCount) observations • \(iPhoneObservationCount) iPhone • \(watchObservationCount) watch • \(locationCount) location • \(motionCount) motion • \(pedometerCount) pedometer"
+        "\(totalObservationCount) observations • \(iPhoneObservationCount) iPhone • \(watchObservationCount) watch • \(healthKitBackfillObservationCount) Health backfill • \(locationCount) location • \(motionCount) motion • \(pedometerCount) pedometer"
     }
 }
 

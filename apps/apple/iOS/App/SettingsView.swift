@@ -12,6 +12,9 @@ struct SettingsView: View {
     let onStartPedometer: () async -> Void
     let onStopPedometer: () -> Void
     let watchConnectivity: WatchConnectivityStore
+    let healthBackfill: HealthBackfillStore
+    let onRequestHealthAuthorization: () async -> Void
+    let onBackfillRecentWatchHealth: () async -> Void
 
     var body: some View {
         NavigationStack {
@@ -45,6 +48,37 @@ struct SettingsView: View {
                         Text(statusNote)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                    }
+                }
+
+                Section("Health Backfill") {
+                    LabeledContent("Access", value: healthBackfill.authorizationSummary)
+
+                    Button("Request Health Access") {
+                        Task {
+                            await onRequestHealthAuthorization()
+                        }
+                    }
+
+                    Button("Backfill Recent Watch Activity") {
+                        Task {
+                            await onBackfillRecentWatchHealth()
+                        }
+                    }
+                    .disabled(healthBackfill.hasRequestedAuthorization == false)
+
+                    if let lastBackfillSummary = healthBackfill.lastBackfillSummary {
+                        LabeledContent("Last Import", value: lastBackfillSummary)
+                    }
+
+                    if let lastBreakdownSummary = healthBackfill.lastBreakdownSummary {
+                        LabeledContent("Last Batch", value: lastBreakdownSummary)
+                    }
+
+                    if let statusNote = healthBackfill.statusNote {
+                        Text(statusNote)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
 
