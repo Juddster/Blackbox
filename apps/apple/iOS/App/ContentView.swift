@@ -184,6 +184,14 @@ final class HealthBackfillStore {
         static let lastBackfillCursorTimeInterval = "health_backfill.last_backfill_cursor_time_interval"
     }
 
+    private struct RouteImportResult {
+        let routeSeriesCount: Int
+        let routePointCount: Int
+        let importedObservationCount: Int
+    }
+
+    private let persistenceBatchSize = 2_000
+
     var isAvailable = HKHealthStore.isHealthDataAvailable()
     var hasRequestedAuthorization = UserDefaults.standard.bool(forKey: Keys.authorizationRequested)
     var lastBackfillAt: Date?
@@ -383,58 +391,50 @@ final class HealthBackfillStore {
             endDate: endDate
         )
         let workouts = await workouts(startDate: startDate, endDate: endDate)
-        let routeSeriesCount = await workoutRouteSeriesCount(for: workouts)
-        log("Raw query counts: \(stepSamples.count) step samples, \(distanceSamples.count) distance samples, \(workouts.count) workouts, \(routeSeriesCount) route series.")
-
         var skippedSampleCount = 0
-        let stepInputs = stepSamples.compactMap { sample in
-            makeObservationInput(
-                for: sample,
-                identifier: .stepCount,
-                skippedSampleCount: &skippedSampleCount
-            )
-        }
-        let distanceInputs = distanceSamples.compactMap { sample in
-            makeObservationInput(
-                for: sample,
-                identifier: .distanceWalkingRunning,
-                skippedSampleCount: &skippedSampleCount
-            )
-        }
-        let routeInputs = await workoutRouteInputs(for: workouts)
-        let heartRateInputs = await workoutHeartRateInputs(for: workouts)
-        log("Converted inputs: \(stepInputs.count) step observations, \(distanceInputs.count) distance observations, \(routeInputs.count) route observations, \(heartRateInputs.count) heart-rate observations.")
-
-        lastFoundWorkoutCount = workouts.count
-        lastFoundStepSampleCount = stepSamples.count
-        lastFoundDistanceSampleCount = distanceSamples.count
-        lastFoundRouteCount = routeSeriesCount
-        lastFoundRoutePointCount = routeInputs.count
-        lastFoundHeartRateSampleCount = heartRateInputs.count
-
-        let inputs = (stepInputs + distanceInputs + routeInputs + heartRateInputs).sorted { $0.timestamp < $1.timestamp }
 
         do {
-            if inputs.isEmpty == false {
-                log("Persisting \(inputs.count) Health-derived observations.")
-                try recorder.record(inputs)
-            }
+            let importedStepCount = try persistQuantitySamples(
+                stepSamples,
+                identifier: .stepCount,
+                recorder: recorder,
+                skippedSampleCount: &skippedSampleCount
+            )
+            let importedDistanceCount = try persistQuantitySamples(
+                distanceSamples,
+                identifier: .distanceWalkingRunning,
+                recorder: recorder,
+                skippedSampleCount: &skippedSampleCount
+            )
+            let routeImport = try await importWorkoutRoutes(for: workouts, recorder: recorder)
+            let heartRateImport = try await importWorkoutHeartRates(for: workouts, recorder: recorder)
+            let importedObservationCount = importedStepCount + importedDistanceCount + routeImport.importedObservationCount + heartRateImport
+
+            log("Raw query counts: \(stepSamples.count) step samples, \(distanceSamples.count) distance samples, \(workouts.count) workouts, \(routeImport.routeSeriesCount) route series.")
+            log("Imported observations: \(importedStepCount) step, \(importedDistanceCount) distance, \(routeImport.importedObservationCount) route, \(heartRateImport) heart rate.")
+
+            lastFoundWorkoutCount = workouts.count
+            lastFoundStepSampleCount = stepSamples.count
+            lastFoundDistanceSampleCount = distanceSamples.count
+            lastFoundRouteCount = routeImport.routeSeriesCount
+            lastFoundRoutePointCount = routeImport.routePointCount
+            lastFoundHeartRateSampleCount = heartRateImport
 
             lastBackfillAt = .now
             lastBackfillCursor = endDate
-            lastImportedObservationCount = inputs.count
-            lastImportedStepSampleCount = stepInputs.count
-            lastImportedDistanceSampleCount = distanceInputs.count
-            lastImportedRoutePointCount = routeInputs.count
-            lastImportedHeartRateSampleCount = heartRateInputs.count
+            lastImportedObservationCount = importedObservationCount
+            lastImportedStepSampleCount = importedStepCount
+            lastImportedDistanceSampleCount = importedDistanceCount
+            lastImportedRoutePointCount = routeImport.importedObservationCount
+            lastImportedHeartRateSampleCount = heartRateImport
             lastSkippedSampleCount = skippedSampleCount
             UserDefaults.standard.set(endDate.timeIntervalSinceReferenceDate, forKey: Keys.lastBackfillCursorTimeInterval)
 
-            if inputs.isEmpty {
+            if importedObservationCount == 0 {
                 statusNote = "Health backfill found no new step, distance, route, or heart-rate samples between \(startDate.formatted(date: .abbreviated, time: .shortened)) and \(endDate.formatted(date: .abbreviated, time: .shortened))."
                 log("Backfill completed with no importable samples.")
             } else {
-                statusNote = "Recovered \(inputs.count) Health samples on the iPhone (\(stepInputs.count) steps, \(distanceInputs.count) distance, \(routeInputs.count) route, \(heartRateInputs.count) heart rate) between \(startDate.formatted(date: .abbreviated, time: .shortened)) and \(endDate.formatted(date: .abbreviated, time: .shortened))."
+                statusNote = "Recovered \(importedObservationCount) Health samples on the iPhone (\(importedStepCount) steps, \(importedDistanceCount) distance, \(routeImport.importedObservationCount) route, \(heartRateImport) heart rate) between \(startDate.formatted(date: .abbreviated, time: .shortened)) and \(endDate.formatted(date: .abbreviated, time: .shortened))."
                 log("Backfill persisted successfully.")
             }
         } catch {
@@ -520,36 +520,35 @@ final class HealthBackfillStore {
         }
     }
 
-    private func workoutRouteInputs(for workouts: [HKWorkout]) async -> [ObservationInput] {
-        var inputs = [ObservationInput]()
-
+    private func importWorkoutRoutes(for workouts: [HKWorkout], recorder: LocalObservationRecorder) async throws -> RouteImportResult {
+        var routeSeriesCount = 0
+        var routePointCount = 0
+        var importedObservationCount = 0
         for (index, workout) in workouts.enumerated() {
             log("Processing routes for workout \(index + 1)/\(workouts.count) \(workout.uuid.uuidString) [\(workout.startDate.ISO8601Format()) - \(workout.endDate.ISO8601Format())].")
             let routes = await workoutRoutes(for: workout)
+            routeSeriesCount += routes.count
             log("Workout \(workout.uuid.uuidString) has \(routes.count) route series.")
             for route in routes {
                 let locations = await routeLocations(for: route)
+                routePointCount += locations.count
                 log("Route \(route.uuid.uuidString) returned \(locations.count) locations.")
-                inputs.append(contentsOf: locations.compactMap { location in
+                let inputs = locations.compactMap { location in
                     makeRouteObservationInput(for: location, route: route, workout: workout)
-                })
+                }
+                importedObservationCount += try persistObservations(inputs, recorder: recorder, label: "route \(route.uuid.uuidString)")
             }
         }
 
-        return inputs
+        return RouteImportResult(
+            routeSeriesCount: routeSeriesCount,
+            routePointCount: routePointCount,
+            importedObservationCount: importedObservationCount
+        )
     }
 
-    private func workoutRouteSeriesCount(for workouts: [HKWorkout]) async -> Int {
-        var count = 0
-        for workout in workouts {
-            count += await workoutRoutes(for: workout).count
-        }
-        return count
-    }
-
-    private func workoutHeartRateInputs(for workouts: [HKWorkout]) async -> [ObservationInput] {
-        var inputs = [ObservationInput]()
-
+    private func importWorkoutHeartRates(for workouts: [HKWorkout], recorder: LocalObservationRecorder) async throws -> Int {
+        var importedObservationCount = 0
         for (index, workout) in workouts.enumerated() {
             log("Processing heart rate for workout \(index + 1)/\(workouts.count) \(workout.uuid.uuidString).")
             let predicate = HKQuery.predicateForObjects(from: workout)
@@ -561,12 +560,58 @@ final class HealthBackfillStore {
             )
             log("Workout \(workout.uuid.uuidString) returned \(samples.count) heart-rate samples.")
 
-            inputs.append(contentsOf: samples.compactMap { sample in
+            let inputs = samples.compactMap { sample in
                 makeHeartRateObservationInput(for: sample, workout: workout)
-            })
+            }
+            importedObservationCount += try persistObservations(inputs, recorder: recorder, label: "heart rate \(workout.uuid.uuidString)")
         }
 
-        return inputs
+        return importedObservationCount
+    }
+
+    private func persistQuantitySamples(
+        _ samples: [HKQuantitySample],
+        identifier: HKQuantityTypeIdentifier,
+        recorder: LocalObservationRecorder,
+        skippedSampleCount: inout Int
+    ) throws -> Int {
+        var importedObservationCount = 0
+
+        for (chunkIndex, chunk) in samples.chunked(into: persistenceBatchSize).enumerated() {
+            let inputs = chunk.compactMap { sample in
+                makeObservationInput(
+                    for: sample,
+                    identifier: identifier,
+                    skippedSampleCount: &skippedSampleCount
+                )
+            }
+            importedObservationCount += try persistObservations(
+                inputs,
+                recorder: recorder,
+                label: "\(identifier.rawValue) chunk \(chunkIndex + 1)"
+            )
+        }
+
+        return importedObservationCount
+    }
+
+    private func persistObservations(
+        _ inputs: [ObservationInput],
+        recorder: LocalObservationRecorder,
+        label: String
+    ) throws -> Int {
+        guard inputs.isEmpty == false else {
+            return 0
+        }
+
+        var persistedCount = 0
+        for chunk in inputs.chunked(into: persistenceBatchSize) {
+            try recorder.record(chunk)
+            persistedCount += chunk.count
+            log("Persisted \(chunk.count) observations for \(label) (\(persistedCount) total).")
+        }
+
+        return persistedCount
     }
 
     private func workoutRoutes(for workout: HKWorkout) async -> [HKWorkoutRoute] {
@@ -781,5 +826,25 @@ final class HealthBackfillStore {
             bytes[12], bytes[13], bytes[14], bytes[15]
         )
         return UUID(uuid: uuid)
+    }
+}
+
+private extension Array {
+    func chunked(into size: Int) -> [[Element]] {
+        guard size > 0, isEmpty == false else {
+            return isEmpty ? [] : [self]
+        }
+
+        var chunks = [[Element]]()
+        chunks.reserveCapacity((count + size - 1) / size)
+
+        var startIndex = 0
+        while startIndex < count {
+            let endIndex = Swift.min(startIndex + size, count)
+            chunks.append(Array(self[startIndex..<endIndex]))
+            startIndex = endIndex
+        }
+
+        return chunks
     }
 }
