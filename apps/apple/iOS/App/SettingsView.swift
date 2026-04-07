@@ -56,6 +56,10 @@ struct SettingsView: View {
                     LabeledContent("Access", value: healthBackfill.authorizationSummary)
                     LabeledContent("State", value: healthBackfill.runStateSummary)
 
+                    Text("Health backfill runs only when triggered from this screen.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
                     Button("Request Health Access") {
                         Task {
                             await onRequestHealthAuthorization()

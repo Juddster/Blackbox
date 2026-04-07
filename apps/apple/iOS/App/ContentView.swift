@@ -55,7 +55,6 @@ struct ContentView: View {
             backfillSegmentMetrics()
             refreshCaptureReadiness()
             refreshSyncActivity()
-            scheduleHealthBackfillRefreshIfNeeded()
         }
         .onChange(of: scenePhase) {
             if scenePhase == .active {
@@ -63,7 +62,6 @@ struct ContentView: View {
                     presentedResumeReport = await captureControl.handleDidBecomeActive()
                     await resumeCaptureIfNeeded()
                     refreshSyncActivity()
-                    scheduleHealthBackfillRefreshIfNeeded()
                 }
             } else if scenePhase == .background {
                 captureControl.handleDidEnterBackground()
@@ -150,20 +148,6 @@ struct ContentView: View {
 
     private func forceFullHealthBackfill() async {
         await healthBackfill.forceFullBackfill()
-    }
-
-    private func refreshHealthBackfillIfNeeded() async {
-        guard healthBackfill.shouldRunAutomaticBackfill() else {
-            return
-        }
-
-        await healthBackfill.backfillSinceLastRequest()
-    }
-
-    private func scheduleHealthBackfillRefreshIfNeeded() {
-        Task(priority: .utility) {
-            await refreshHealthBackfillIfNeeded()
-        }
     }
 
     private func backfillSegmentMetrics() {
@@ -313,7 +297,7 @@ final class HealthBackfillStore {
         }
 
         if hasRequestedAuthorization {
-            statusNote = "Health backfill can recover step, distance, route, and heart-rate history from Apple Health on the iPhone."
+            statusNote = "Health backfill is available on demand to recover step, distance, route, and heart-rate history from Apple Health on the iPhone."
         } else {
             statusNote = "Authorize Health access to recover workout and activity history from Apple Health on the iPhone."
         }
@@ -361,7 +345,7 @@ final class HealthBackfillStore {
 
         hasRequestedAuthorization = true
         UserDefaults.standard.set(true, forKey: Keys.authorizationRequested)
-        statusNote = "Health backfill is authorized. Blackbox can now recover step, distance, route, and heart-rate samples on the iPhone."
+        statusNote = "Health backfill is authorized. Use the manual backfill actions in Settings when you want to recover step, distance, route, and heart-rate samples on the iPhone."
         log("Authorization granted.")
     }
 
