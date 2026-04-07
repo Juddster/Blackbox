@@ -15,6 +15,7 @@ struct SettingsView: View {
     let healthBackfill: HealthBackfillStore
     let onRequestHealthAuthorization: () async -> Void
     let onBackfillRecentWatchHealth: () async -> Void
+    let onForceFullHealthBackfill: () async -> Void
 
     var body: some View {
         NavigationStack {
@@ -53,6 +54,7 @@ struct SettingsView: View {
 
                 Section("Health Backfill") {
                     LabeledContent("Access", value: healthBackfill.authorizationSummary)
+                    LabeledContent("State", value: healthBackfill.runStateSummary)
 
                     Button("Request Health Access") {
                         Task {
@@ -66,6 +68,21 @@ struct SettingsView: View {
                         }
                     }
                     .disabled(healthBackfill.hasRequestedAuthorization == false)
+
+                    Button("Force Full Backfill") {
+                        Task {
+                            await onForceFullHealthBackfill()
+                        }
+                    }
+                    .disabled(healthBackfill.hasRequestedAuthorization == false || healthBackfill.isRunning)
+
+                    if let lastQueryWindowSummary = healthBackfill.lastQueryWindowSummary {
+                        LabeledContent("Query Window", value: lastQueryWindowSummary)
+                    }
+
+                    if let lastFoundSummary = healthBackfill.lastFoundSummary {
+                        LabeledContent("Raw Health Data", value: lastFoundSummary)
+                    }
 
                     if let lastBackfillSummary = healthBackfill.lastBackfillSummary {
                         LabeledContent("Last Import", value: lastBackfillSummary)

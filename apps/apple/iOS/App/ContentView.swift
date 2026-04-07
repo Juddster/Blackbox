@@ -36,7 +36,8 @@ struct ContentView: View {
                 watchConnectivity: watchConnectivity,
                 healthBackfill: healthBackfill,
                 onRequestHealthAuthorization: requestHealthAuthorization,
-                onBackfillRecentWatchHealth: backfillRecentWatchHealth
+                onBackfillRecentWatchHealth: backfillRecentWatchHealth,
+                onForceFullHealthBackfill: forceFullHealthBackfill
             )
             .tabItem {
                 Label("Settings", systemImage: "gearshape")
@@ -147,6 +148,10 @@ struct ContentView: View {
         await healthBackfill.backfillSinceLastRequest()
     }
 
+    private func forceFullHealthBackfill() async {
+        await healthBackfill.forceFullBackfill()
+    }
+
     private func refreshHealthBackfillIfNeeded() async {
         guard healthBackfill.hasRequestedAuthorization else {
             return
@@ -196,6 +201,15 @@ final class HealthBackfillStore {
     var lastImportedRoutePointCount = 0
     var lastImportedHeartRateSampleCount = 0
     var lastSkippedSampleCount = 0
+    var isRunning = false
+    var lastRequestedStartDate: Date?
+    var lastRequestedEndDate: Date?
+    var lastFoundWorkoutCount = 0
+    var lastFoundStepSampleCount = 0
+    var lastFoundDistanceSampleCount = 0
+    var lastFoundRouteCount = 0
+    var lastFoundRoutePointCount = 0
+    var lastFoundHeartRateSampleCount = 0
     var statusNote: String?
 
     private let healthStore = HKHealthStore()
@@ -228,6 +242,26 @@ final class HealthBackfillStore {
         }
 
         return "\(lastImportedStepSampleCount) steps • \(lastImportedDistanceSampleCount) distance • \(lastImportedRoutePointCount) route • \(lastImportedHeartRateSampleCount) heart rate • \(lastSkippedSampleCount) skipped"
+    }
+
+    var runStateSummary: String {
+        isRunning ? "Running" : "Idle"
+    }
+
+    var lastQueryWindowSummary: String? {
+        guard let lastRequestedStartDate, let lastRequestedEndDate else {
+            return nil
+        }
+
+        return "\(lastRequestedStartDate.formatted(date: .abbreviated, time: .shortened)) → \(lastRequestedEndDate.formatted(date: .abbreviated, time: .shortened))"
+    }
+
+    var lastFoundSummary: String? {
+        guard lastRequestedEndDate != nil else {
+            return nil
+        }
+
+        return "\(lastFoundWorkoutCount) workouts • \(lastFoundStepSampleCount) steps • \(lastFoundDistanceSampleCount) distance • \(lastFoundRouteCount) routes • \(lastFoundRoutePointCount) route points • \(lastFoundHeartRateSampleCount) heart rate"
     }
 
     func configure(modelContext: ModelContext) {
@@ -291,6 +325,10 @@ final class HealthBackfillStore {
         await backfill(from: startDate, to: endDate)
     }
 
+    func forceFullBackfill() async {
+        await backfill(from: healthStore.earliestPermittedSampleDate(), to: .now)
+    }
+
     func backfill(from startDate: Date, to endDate: Date) async {
         guard isAvailable else {
             statusNote = "Health data is unavailable on this iPhone."
@@ -306,6 +344,14 @@ final class HealthBackfillStore {
             return
         }
 
+        isRunning = true
+        lastRequestedStartDate = startDate
+        lastRequestedEndDate = endDate
+        statusNote = "Running Health backfill from \(startDate.formatted(date: .abbreviated, time: .shortened)) to \(endDate.formatted(date: .abbreviated, time: .shortened))."
+        defer {
+            isRunning = false
+        }
+
         let stepSamples = await quantitySamples(
             identifier: .stepCount,
             startDate: startDate,
@@ -317,6 +363,7 @@ final class HealthBackfillStore {
             endDate: endDate
         )
         let workouts = await workouts(startDate: startDate, endDate: endDate)
+        let routeSeriesCount = await workoutRouteSeriesCount(for: workouts)
 
         var skippedSampleCount = 0
         let stepInputs = stepSamples.compactMap { sample in
@@ -335,6 +382,13 @@ final class HealthBackfillStore {
         }
         let routeInputs = await workoutRouteInputs(for: workouts)
         let heartRateInputs = await workoutHeartRateInputs(for: workouts)
+
+        lastFoundWorkoutCount = workouts.count
+        lastFoundStepSampleCount = stepSamples.count
+        lastFoundDistanceSampleCount = distanceSamples.count
+        lastFoundRouteCount = routeSeriesCount
+        lastFoundRoutePointCount = routeInputs.count
+        lastFoundHeartRateSampleCount = heartRateInputs.count
 
         let inputs = (stepInputs + distanceInputs + routeInputs + heartRateInputs).sorted { $0.timestamp < $1.timestamp }
 
@@ -450,6 +504,14 @@ final class HealthBackfillStore {
         }
 
         return inputs
+    }
+
+    private func workoutRouteSeriesCount(for workouts: [HKWorkout]) async -> Int {
+        var count = 0
+        for workout in workouts {
+            count += await workoutRoutes(for: workout).count
+        }
+        return count
     }
 
     private func workoutHeartRateInputs(for workouts: [HKWorkout]) async -> [ObservationInput] {
