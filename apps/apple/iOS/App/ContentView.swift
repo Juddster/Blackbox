@@ -216,6 +216,14 @@ final class HealthBackfillStore {
     private var recorder: LocalObservationRecorder?
     private var modelContext: ModelContext?
 
+    private nonisolated static func debugLog(_ message: String) {
+        print("[HealthBackfill] \(message)")
+    }
+
+    private func log(_ message: String) {
+        Self.debugLog(message)
+    }
+
     var authorizationSummary: String {
         guard isAvailable else {
             return "Unavailable"
@@ -283,6 +291,7 @@ final class HealthBackfillStore {
     func requestAuthorization() async {
         guard isAvailable else {
             statusNote = "Health data is unavailable on this iPhone."
+            log("Authorization skipped because Health data is unavailable.")
             return
         }
 
@@ -295,8 +304,11 @@ final class HealthBackfillStore {
 
         guard readTypes.isEmpty == false else {
             statusNote = "Health backfill types are unavailable on this iPhone."
+            log("Authorization failed because required Health types were unavailable.")
             return
         }
+
+        log("Requesting Health authorization for \(readTypes.count) types.")
 
         let result = await withCheckedContinuation { continuation in
             healthStore.requestAuthorization(toShare: [], read: readTypes) { success, error in
@@ -306,17 +318,20 @@ final class HealthBackfillStore {
 
         if let error = result.1 {
             statusNote = "Health authorization failed: \(error.localizedDescription)"
+            log("Authorization error: \(error.localizedDescription)")
             return
         }
 
         guard result.0 else {
             statusNote = "Health authorization was not granted."
+            log("Authorization was denied.")
             return
         }
 
         hasRequestedAuthorization = true
         UserDefaults.standard.set(true, forKey: Keys.authorizationRequested)
         statusNote = "Health backfill is authorized. Blackbox can now recover step, distance, route, and heart-rate samples on the iPhone."
+        log("Authorization granted.")
     }
 
     func backfillSinceLastRequest() async {
@@ -332,15 +347,18 @@ final class HealthBackfillStore {
     func backfill(from startDate: Date, to endDate: Date) async {
         guard isAvailable else {
             statusNote = "Health data is unavailable on this iPhone."
+            log("Backfill skipped because Health data is unavailable.")
             return
         }
 
         guard hasRequestedAuthorization else {
             statusNote = "Authorize Health access before running watch activity backfill."
+            log("Backfill skipped because authorization has not been requested.")
             return
         }
 
         guard let recorder, endDate > startDate else {
+            log("Backfill skipped because recorder was missing or the window was invalid.")
             return
         }
 
@@ -348,8 +366,10 @@ final class HealthBackfillStore {
         lastRequestedStartDate = startDate
         lastRequestedEndDate = endDate
         statusNote = "Running Health backfill from \(startDate.formatted(date: .abbreviated, time: .shortened)) to \(endDate.formatted(date: .abbreviated, time: .shortened))."
+        log("Starting backfill from \(startDate.ISO8601Format()) to \(endDate.ISO8601Format()).")
         defer {
             isRunning = false
+            log("Backfill finished.")
         }
 
         let stepSamples = await quantitySamples(
@@ -364,6 +384,7 @@ final class HealthBackfillStore {
         )
         let workouts = await workouts(startDate: startDate, endDate: endDate)
         let routeSeriesCount = await workoutRouteSeriesCount(for: workouts)
+        log("Raw query counts: \(stepSamples.count) step samples, \(distanceSamples.count) distance samples, \(workouts.count) workouts, \(routeSeriesCount) route series.")
 
         var skippedSampleCount = 0
         let stepInputs = stepSamples.compactMap { sample in
@@ -382,6 +403,7 @@ final class HealthBackfillStore {
         }
         let routeInputs = await workoutRouteInputs(for: workouts)
         let heartRateInputs = await workoutHeartRateInputs(for: workouts)
+        log("Converted inputs: \(stepInputs.count) step observations, \(distanceInputs.count) distance observations, \(routeInputs.count) route observations, \(heartRateInputs.count) heart-rate observations.")
 
         lastFoundWorkoutCount = workouts.count
         lastFoundStepSampleCount = stepSamples.count
@@ -394,6 +416,7 @@ final class HealthBackfillStore {
 
         do {
             if inputs.isEmpty == false {
+                log("Persisting \(inputs.count) Health-derived observations.")
                 try recorder.record(inputs)
             }
 
@@ -409,11 +432,14 @@ final class HealthBackfillStore {
 
             if inputs.isEmpty {
                 statusNote = "Health backfill found no new step, distance, route, or heart-rate samples between \(startDate.formatted(date: .abbreviated, time: .shortened)) and \(endDate.formatted(date: .abbreviated, time: .shortened))."
+                log("Backfill completed with no importable samples.")
             } else {
                 statusNote = "Recovered \(inputs.count) Health samples on the iPhone (\(stepInputs.count) steps, \(distanceInputs.count) distance, \(routeInputs.count) route, \(heartRateInputs.count) heart rate) between \(startDate.formatted(date: .abbreviated, time: .shortened)) and \(endDate.formatted(date: .abbreviated, time: .shortened))."
+                log("Backfill persisted successfully.")
             }
         } catch {
             statusNote = "Failed to persist Health backfill samples."
+            log("Persistence failed: \(error.localizedDescription)")
         }
     }
 
@@ -451,10 +477,12 @@ final class HealthBackfillStore {
                 sortDescriptors: sortDescriptors
             ) { _, samples, error in
                 guard error == nil else {
+                    Self.debugLog("Quantity query for \(identifier.rawValue) failed: \(error?.localizedDescription ?? "unknown error")")
                     continuation.resume(returning: [])
                     return
                 }
 
+                Self.debugLog("Quantity query for \(identifier.rawValue) returned \((samples as? [HKQuantitySample])?.count ?? 0) samples.")
                 continuation.resume(returning: (samples as? [HKQuantitySample]) ?? [])
             }
 
@@ -479,10 +507,12 @@ final class HealthBackfillStore {
                 sortDescriptors: sortDescriptors
             ) { _, samples, error in
                 guard error == nil else {
+                    Self.debugLog("Workout query failed: \(error?.localizedDescription ?? "unknown error")")
                     continuation.resume(returning: [])
                     return
                 }
 
+                Self.debugLog("Workout query returned \((samples as? [HKWorkout])?.count ?? 0) workouts.")
                 continuation.resume(returning: (samples as? [HKWorkout]) ?? [])
             }
 
@@ -493,10 +523,13 @@ final class HealthBackfillStore {
     private func workoutRouteInputs(for workouts: [HKWorkout]) async -> [ObservationInput] {
         var inputs = [ObservationInput]()
 
-        for workout in workouts {
+        for (index, workout) in workouts.enumerated() {
+            log("Processing routes for workout \(index + 1)/\(workouts.count) \(workout.uuid.uuidString) [\(workout.startDate.ISO8601Format()) - \(workout.endDate.ISO8601Format())].")
             let routes = await workoutRoutes(for: workout)
+            log("Workout \(workout.uuid.uuidString) has \(routes.count) route series.")
             for route in routes {
                 let locations = await routeLocations(for: route)
+                log("Route \(route.uuid.uuidString) returned \(locations.count) locations.")
                 inputs.append(contentsOf: locations.compactMap { location in
                     makeRouteObservationInput(for: location, route: route, workout: workout)
                 })
@@ -517,7 +550,8 @@ final class HealthBackfillStore {
     private func workoutHeartRateInputs(for workouts: [HKWorkout]) async -> [ObservationInput] {
         var inputs = [ObservationInput]()
 
-        for workout in workouts {
+        for (index, workout) in workouts.enumerated() {
+            log("Processing heart rate for workout \(index + 1)/\(workouts.count) \(workout.uuid.uuidString).")
             let predicate = HKQuery.predicateForObjects(from: workout)
             let samples = await quantitySamples(
                 identifier: .heartRate,
@@ -525,6 +559,7 @@ final class HealthBackfillStore {
                 endDate: workout.endDate,
                 additionalPredicate: predicate
             )
+            log("Workout \(workout.uuid.uuidString) returned \(samples.count) heart-rate samples.")
 
             inputs.append(contentsOf: samples.compactMap { sample in
                 makeHeartRateObservationInput(for: sample, workout: workout)
@@ -546,10 +581,12 @@ final class HealthBackfillStore {
                 sortDescriptors: sortDescriptors
             ) { _, samples, error in
                 guard error == nil else {
+                    Self.debugLog("Workout route query for workout \(workout.uuid.uuidString) failed: \(error?.localizedDescription ?? "unknown error")")
                     continuation.resume(returning: [])
                     return
                 }
 
+                Self.debugLog("Workout route query for workout \(workout.uuid.uuidString) returned \((samples as? [HKWorkoutRoute])?.count ?? 0) series.")
                 continuation.resume(returning: (samples as? [HKWorkoutRoute]) ?? [])
             }
 
@@ -563,9 +600,15 @@ final class HealthBackfillStore {
             let query = HKWorkoutRouteQuery(route: route) { _, locations, done, error in
                 if let locations {
                     collected.append(contentsOf: locations)
+                    Self.debugLog("Route \(route.uuid.uuidString) streamed \(locations.count) locations (\(collected.count) total).")
                 }
 
                 if error != nil || done {
+                    if let error {
+                        Self.debugLog("Route \(route.uuid.uuidString) failed: \(error.localizedDescription)")
+                    } else {
+                        Self.debugLog("Route \(route.uuid.uuidString) completed with \(collected.count) locations.")
+                    }
                     continuation.resume(returning: error == nil ? collected : [])
                 }
             }
