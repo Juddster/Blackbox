@@ -282,15 +282,9 @@ final class HealthBackfillStore {
             return
         }
 
-        guard let recorder, let modelContext, endDate > startDate else {
+        guard let recorder, endDate > startDate else {
             return
         }
-
-        let existingWatchPedometerTimes = fetchExistingWatchPedometerTimes(
-            modelContext: modelContext,
-            startDate: startDate,
-            endDate: endDate
-        )
 
         let stepSamples = await quantitySamples(
             identifier: .stepCount,
@@ -308,7 +302,6 @@ final class HealthBackfillStore {
             makeObservationInput(
                 for: sample,
                 identifier: .stepCount,
-                existingWatchPedometerTimes: existingWatchPedometerTimes,
                 skippedSampleCount: &skippedSampleCount
             )
         }
@@ -316,7 +309,6 @@ final class HealthBackfillStore {
             makeObservationInput(
                 for: sample,
                 identifier: .distanceWalkingRunning,
-                existingWatchPedometerTimes: existingWatchPedometerTimes,
                 skippedSampleCount: &skippedSampleCount
             )
         }
@@ -382,24 +374,15 @@ final class HealthBackfillStore {
     private func makeObservationInput(
         for sample: HKQuantitySample,
         identifier: HKQuantityTypeIdentifier,
-        existingWatchPedometerTimes: [Date],
         skippedSampleCount: inout Int
     ) -> ObservationInput? {
-        guard isWatchSample(sample) else {
-            return nil
-        }
-
-        guard overlapsExistingWatchPedometer(sample: sample, existingWatchPedometerTimes: existingWatchPedometerTimes) == false else {
-            skippedSampleCount += 1
-            return nil
-        }
-
         var components = [
             "start=\(sample.startDate.timeIntervalSince1970)",
             "end=\(sample.endDate.timeIntervalSince1970)",
             "historical=true",
             "origin=healthKitBackfill",
             "healthQuantity=\(identifier.rawValue)",
+            "healthSourceDevice=\(inferredSourceDevice(sample).rawValue)",
         ]
 
         switch identifier {
@@ -432,53 +415,22 @@ final class HealthBackfillStore {
         return ObservationInput(
             id: sample.uuid,
             timestamp: sample.endDate,
-            sourceDevice: .watch,
+            sourceDevice: inferredSourceDevice(sample),
             sourceType: .pedometer,
             payload: components.joined(separator: ";"),
             ingestedAt: .now
         )
     }
 
-    private func fetchExistingWatchPedometerTimes(
-        modelContext: ModelContext,
-        startDate: Date,
-        endDate: Date
-    ) -> [Date] {
-        let descriptor = FetchDescriptor<ObservationRecord>(
-            sortBy: [SortDescriptor(\ObservationRecord.timestamp, order: .forward)]
-        )
-        let records = (try? modelContext.fetch(descriptor)) ?? []
-
-        return records
-            .filter { record in
-                record.sourceDevice == .watch
-                    && record.sourceType == .pedometer
-                    && record.timestamp >= startDate
-                    && record.timestamp <= endDate
-            }
-            .map { $0.timestamp }
-    }
-
-    private func overlapsExistingWatchPedometer(
-        sample: HKQuantitySample,
-        existingWatchPedometerTimes: [Date]
-    ) -> Bool {
-        let lowerBound = sample.startDate.addingTimeInterval(-30)
-        let upperBound = sample.endDate.addingTimeInterval(30)
-        return existingWatchPedometerTimes.contains { timestamp in
-            timestamp >= lowerBound && timestamp <= upperBound
-        }
-    }
-
-    private func isWatchSample(_ sample: HKQuantitySample) -> Bool {
+    private func inferredSourceDevice(_ sample: HKQuantitySample) -> ObservationSourceDevice {
         if let productType = sample.sourceRevision.productType?.lowercased(), productType.hasPrefix("watch") {
-            return true
+            return .watch
         }
 
         if let model = sample.device?.model?.lowercased(), model.contains("watch") {
-            return true
+            return .watch
         }
 
-        return false
+        return .iPhone
     }
 }
