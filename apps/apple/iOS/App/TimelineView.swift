@@ -4,6 +4,8 @@ import SwiftUI
 struct TimelineView: View {
     @Environment(\.modelContext) private var modelContext
     let syncActivity: SyncActivityStore
+    private static let initialSegmentFetchLimit = 80
+    private static let segmentFetchIncrement = 80
 
     @State private var liveDraftStatusMessage: String?
     @State private var inspectingSegment: SegmentSnapshot?
@@ -16,14 +18,9 @@ struct TimelineView: View {
     @State private var manualSegmentDistanceMeters = ""
     @State private var timelineRefreshNonce = 0
     @State private var recentObservations = [ObservationRecord]()
-
-    @Query(
-        sort: [
-            SortDescriptor(\SegmentRecord.startTime, order: .reverse),
-        ],
-        animation: .snappy
-    )
-    private var segments: [SegmentRecord]
+    @State private var segments = [SegmentRecord]()
+    @State private var visibleSegmentLimit = TimelineView.initialSegmentFetchLimit
+    @State private var hasMoreSegments = false
 
     var body: some View {
         NavigationStack {
@@ -45,6 +42,15 @@ struct TimelineView: View {
                     Section(group.title) {
                         ForEach(group.segments) { segment in
                             timelineRow(for: segment)
+                        }
+                    }
+                }
+
+                if hasMoreSegments {
+                    Section {
+                        Button("Load Older Segments") {
+                            visibleSegmentLimit += TimelineView.segmentFetchIncrement
+                            loadSegments()
                         }
                     }
                 }
@@ -149,11 +155,18 @@ struct TimelineView: View {
         .task {
             await refreshRecentObservationsLoop()
         }
+        .task(id: timelineRefreshNonce) {
+            loadSegments()
+        }
     }
 
     private var groupedSegments: [TimelineDayGroup] {
         let _ = timelineRefreshNonce
-        return TimelineProjection.groups(from: segments)
+        let startTime = CFAbsoluteTimeGetCurrent()
+        let groups = TimelineProjection.groups(from: segments)
+        let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+        print("[Timeline] Projected \(segments.count) loaded segments into \(groups.count) day groups in \(String(format: "%.3f", elapsed))s.")
+        return groups
     }
 
     private var liveDraftSegment: LiveDraftSegmentSnapshot? {
@@ -470,12 +483,29 @@ struct TimelineView: View {
         await syncActivity.pushPending(using: modelContext)
     }
 
+    private func loadSegments() {
+        let startTime = CFAbsoluteTimeGetCurrent()
+        print("[Timeline] Loading up to \(visibleSegmentLimit) recent segments.")
+        var descriptor = FetchDescriptor<SegmentRecord>(
+            sortBy: [SortDescriptor(\SegmentRecord.startTime, order: .reverse)]
+        )
+        descriptor.fetchLimit = visibleSegmentLimit + 1
+        let fetchedSegments = (try? modelContext.fetch(descriptor)) ?? []
+        hasMoreSegments = fetchedSegments.count > visibleSegmentLimit
+        segments = Array(fetchedSegments.prefix(visibleSegmentLimit))
+        let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+        print("[Timeline] Loaded \(segments.count) recent segments in \(String(format: "%.3f", elapsed))s. hasMore=\(hasMoreSegments)")
+    }
+
     private func loadRecentObservations() {
+        let startTime = CFAbsoluteTimeGetCurrent()
         var descriptor = FetchDescriptor<ObservationRecord>(
             sortBy: [SortDescriptor(\ObservationRecord.timestamp, order: .reverse)]
         )
         descriptor.fetchLimit = 240
         recentObservations = (try? modelContext.fetch(descriptor)) ?? []
+        let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+        print("[Timeline] Loaded \(recentObservations.count) recent observations in \(String(format: "%.3f", elapsed))s.")
     }
 
     private func refreshRecentObservationsLoop() async {
