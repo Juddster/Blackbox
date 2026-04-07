@@ -1,6 +1,8 @@
+import HealthKit
+import CoreLocation
+import CryptoKit
 import SwiftData
 import SwiftUI
-import HealthKit
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
@@ -191,6 +193,8 @@ final class HealthBackfillStore {
     var lastImportedObservationCount = 0
     var lastImportedStepSampleCount = 0
     var lastImportedDistanceSampleCount = 0
+    var lastImportedRoutePointCount = 0
+    var lastImportedHeartRateSampleCount = 0
     var lastSkippedSampleCount = 0
     var statusNote: String?
 
@@ -223,7 +227,7 @@ final class HealthBackfillStore {
             return nil
         }
 
-        return "\(lastImportedStepSampleCount) steps • \(lastImportedDistanceSampleCount) distance • \(lastSkippedSampleCount) skipped"
+        return "\(lastImportedStepSampleCount) steps • \(lastImportedDistanceSampleCount) distance • \(lastImportedRoutePointCount) route • \(lastImportedHeartRateSampleCount) heart rate • \(lastSkippedSampleCount) skipped"
     }
 
     func configure(modelContext: ModelContext) {
@@ -236,9 +240,9 @@ final class HealthBackfillStore {
         }
 
         if hasRequestedAuthorization {
-            statusNote = "Health backfill can recover watch step and walking distance samples when direct watch capture misses them."
+            statusNote = "Health backfill can recover step, distance, route, and heart-rate history from Apple Health on the iPhone."
         } else {
-            statusNote = "Authorize Health access to recover Apple Watch step and walking distance history on the iPhone."
+            statusNote = "Authorize Health access to recover workout and activity history from Apple Health on the iPhone."
         }
     }
 
@@ -250,7 +254,10 @@ final class HealthBackfillStore {
 
         let stepType = HKObjectType.quantityType(forIdentifier: .stepCount)
         let distanceType = HKObjectType.quantityType(forIdentifier: .distanceWalkingRunning)
-        let readTypes = Set([stepType, distanceType].compactMap { $0 })
+        let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate)
+        let workoutType = HKObjectType.workoutType()
+        let workoutRouteType = HKSeriesType.workoutRoute()
+        let readTypes = Set([stepType, distanceType, heartRateType, workoutType, workoutRouteType].compactMap { $0 })
 
         guard readTypes.isEmpty == false else {
             statusNote = "Health backfill types are unavailable on this iPhone."
@@ -275,7 +282,7 @@ final class HealthBackfillStore {
 
         hasRequestedAuthorization = true
         UserDefaults.standard.set(true, forKey: Keys.authorizationRequested)
-        statusNote = "Health backfill is authorized. Blackbox can now recover watch step and distance samples on the iPhone."
+        statusNote = "Health backfill is authorized. Blackbox can now recover step, distance, route, and heart-rate samples on the iPhone."
     }
 
     func backfillSinceLastRequest() async {
@@ -309,6 +316,7 @@ final class HealthBackfillStore {
             startDate: startDate,
             endDate: endDate
         )
+        let workouts = await workouts(startDate: startDate, endDate: endDate)
 
         var skippedSampleCount = 0
         let stepInputs = stepSamples.compactMap { sample in
@@ -325,8 +333,10 @@ final class HealthBackfillStore {
                 skippedSampleCount: &skippedSampleCount
             )
         }
+        let routeInputs = await workoutRouteInputs(for: workouts)
+        let heartRateInputs = await workoutHeartRateInputs(for: workouts)
 
-        let inputs = (stepInputs + distanceInputs).sorted { $0.timestamp < $1.timestamp }
+        let inputs = (stepInputs + distanceInputs + routeInputs + heartRateInputs).sorted { $0.timestamp < $1.timestamp }
 
         do {
             if inputs.isEmpty == false {
@@ -338,13 +348,15 @@ final class HealthBackfillStore {
             lastImportedObservationCount = inputs.count
             lastImportedStepSampleCount = stepInputs.count
             lastImportedDistanceSampleCount = distanceInputs.count
+            lastImportedRoutePointCount = routeInputs.count
+            lastImportedHeartRateSampleCount = heartRateInputs.count
             lastSkippedSampleCount = skippedSampleCount
             UserDefaults.standard.set(endDate.timeIntervalSinceReferenceDate, forKey: Keys.lastBackfillCursorTimeInterval)
 
             if inputs.isEmpty {
-                statusNote = "Health backfill found no new step or distance samples between \(startDate.formatted(date: .abbreviated, time: .shortened)) and \(endDate.formatted(date: .abbreviated, time: .shortened))."
+                statusNote = "Health backfill found no new step, distance, route, or heart-rate samples between \(startDate.formatted(date: .abbreviated, time: .shortened)) and \(endDate.formatted(date: .abbreviated, time: .shortened))."
             } else {
-                statusNote = "Recovered \(inputs.count) Health samples on the iPhone (\(stepInputs.count) steps, \(distanceInputs.count) distance) between \(startDate.formatted(date: .abbreviated, time: .shortened)) and \(endDate.formatted(date: .abbreviated, time: .shortened))."
+                statusNote = "Recovered \(inputs.count) Health samples on the iPhone (\(stepInputs.count) steps, \(distanceInputs.count) distance, \(routeInputs.count) route, \(heartRateInputs.count) heart rate) between \(startDate.formatted(date: .abbreviated, time: .shortened)) and \(endDate.formatted(date: .abbreviated, time: .shortened))."
             }
         } catch {
             statusNote = "Failed to persist Health backfill samples."
@@ -362,17 +374,19 @@ final class HealthBackfillStore {
     private func quantitySamples(
         identifier: HKQuantityTypeIdentifier,
         startDate: Date,
-        endDate: Date
+        endDate: Date,
+        additionalPredicate: NSPredicate? = nil
     ) async -> [HKQuantitySample] {
         guard let quantityType = HKObjectType.quantityType(forIdentifier: identifier) else {
             return []
         }
 
-        let predicate = HKQuery.predicateForSamples(
+        let datePredicate = HKQuery.predicateForSamples(
             withStart: startDate,
             end: endDate,
             options: [.strictStartDate]
         )
+        let predicate = compoundPredicate(datePredicate, additionalPredicate)
         let sortDescriptors = [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: true)]
 
         return await withCheckedContinuation { continuation in
@@ -388,6 +402,110 @@ final class HealthBackfillStore {
                 }
 
                 continuation.resume(returning: (samples as? [HKQuantitySample]) ?? [])
+            }
+
+            healthStore.execute(query)
+        }
+    }
+
+    private func workouts(startDate: Date, endDate: Date) async -> [HKWorkout] {
+        let workoutType = HKObjectType.workoutType()
+        let predicate = HKQuery.predicateForSamples(
+            withStart: startDate,
+            end: endDate,
+            options: []
+        )
+        let sortDescriptors = [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: true)]
+
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: workoutType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: sortDescriptors
+            ) { _, samples, error in
+                guard error == nil else {
+                    continuation.resume(returning: [])
+                    return
+                }
+
+                continuation.resume(returning: (samples as? [HKWorkout]) ?? [])
+            }
+
+            healthStore.execute(query)
+        }
+    }
+
+    private func workoutRouteInputs(for workouts: [HKWorkout]) async -> [ObservationInput] {
+        var inputs = [ObservationInput]()
+
+        for workout in workouts {
+            let routes = await workoutRoutes(for: workout)
+            for route in routes {
+                let locations = await routeLocations(for: route)
+                inputs.append(contentsOf: locations.compactMap { location in
+                    makeRouteObservationInput(for: location, route: route, workout: workout)
+                })
+            }
+        }
+
+        return inputs
+    }
+
+    private func workoutHeartRateInputs(for workouts: [HKWorkout]) async -> [ObservationInput] {
+        var inputs = [ObservationInput]()
+
+        for workout in workouts {
+            let predicate = HKQuery.predicateForObjects(from: workout)
+            let samples = await quantitySamples(
+                identifier: .heartRate,
+                startDate: workout.startDate,
+                endDate: workout.endDate,
+                additionalPredicate: predicate
+            )
+
+            inputs.append(contentsOf: samples.compactMap { sample in
+                makeHeartRateObservationInput(for: sample, workout: workout)
+            })
+        }
+
+        return inputs
+    }
+
+    private func workoutRoutes(for workout: HKWorkout) async -> [HKWorkoutRoute] {
+        let predicate = HKQuery.predicateForObjects(from: workout)
+        let sortDescriptors = [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: HKSeriesType.workoutRoute(),
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: sortDescriptors
+            ) { _, samples, error in
+                guard error == nil else {
+                    continuation.resume(returning: [])
+                    return
+                }
+
+                continuation.resume(returning: (samples as? [HKWorkoutRoute]) ?? [])
+            }
+
+            healthStore.execute(query)
+        }
+    }
+
+    private func routeLocations(for route: HKWorkoutRoute) async -> [CLLocation] {
+        await withCheckedContinuation { continuation in
+            var collected = [CLLocation]()
+            let query = HKWorkoutRouteQuery(route: route) { _, locations, done, error in
+                if let locations {
+                    collected.append(contentsOf: locations)
+                }
+
+                if error != nil || done {
+                    continuation.resume(returning: error == nil ? collected : [])
+                }
             }
 
             healthStore.execute(query)
@@ -425,15 +543,7 @@ final class HealthBackfillStore {
             return nil
         }
 
-        if let productType = sample.sourceRevision.productType {
-            components.append("healthProductType=\(productType)")
-        }
-
-        if let version = sample.sourceRevision.version {
-            components.append("healthSourceVersion=\(version)")
-        }
-
-        components.append("healthBundle=\(sample.sourceRevision.source.bundleIdentifier)")
+        components.append(contentsOf: metadataComponents(for: sample))
 
         return ObservationInput(
             id: sample.uuid,
@@ -445,7 +555,78 @@ final class HealthBackfillStore {
         )
     }
 
-    private func inferredSourceDevice(_ sample: HKQuantitySample) -> ObservationSourceDevice {
+    private func makeRouteObservationInput(
+        for location: CLLocation,
+        route: HKWorkoutRoute,
+        workout: HKWorkout
+    ) -> ObservationInput? {
+        guard CLLocationCoordinate2DIsValid(location.coordinate) else {
+            return nil
+        }
+
+        let sample = route as HKSample
+        var components = [
+            "lat=\(location.coordinate.latitude)",
+            "lon=\(location.coordinate.longitude)",
+            "alt=\(location.altitude)",
+            "speed=\(location.speed)",
+            "course=\(location.course)",
+            "hAcc=\(location.horizontalAccuracy)",
+            "vAcc=\(location.verticalAccuracy)",
+            "historical=true",
+            "origin=healthKitBackfill",
+            "healthQuantity=workoutRoute",
+            "healthSourceDevice=\(inferredSourceDevice(sample).rawValue)",
+            "healthWorkoutUUID=\(workout.uuid.uuidString)",
+            "healthRouteUUID=\(route.uuid.uuidString)",
+        ]
+        components.append(contentsOf: metadataComponents(for: sample))
+
+        return ObservationInput(
+            id: deterministicUUID(
+                namespace: "route:\(route.uuid.uuidString):\(location.timestamp.timeIntervalSince1970):\(location.coordinate.latitude):\(location.coordinate.longitude)"
+            ),
+            timestamp: location.timestamp,
+            sourceDevice: inferredSourceDevice(sample),
+            sourceType: .location,
+            payload: components.joined(separator: ";"),
+            qualityHint: location.horizontalAccuracy > 100 ? "degraded-horizontal-accuracy" : nil,
+            ingestedAt: .now
+        )
+    }
+
+    private func makeHeartRateObservationInput(
+        for sample: HKQuantitySample,
+        workout: HKWorkout
+    ) -> ObservationInput? {
+        let beatsPerMinute = sample.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+        guard beatsPerMinute > 0 else {
+            return nil
+        }
+
+        var components = [
+            "start=\(sample.startDate.timeIntervalSince1970)",
+            "end=\(sample.endDate.timeIntervalSince1970)",
+            "bpm=\(beatsPerMinute)",
+            "historical=true",
+            "origin=healthKitBackfill",
+            "healthQuantity=\(HKQuantityTypeIdentifier.heartRate.rawValue)",
+            "healthSourceDevice=\(inferredSourceDevice(sample).rawValue)",
+            "healthWorkoutUUID=\(workout.uuid.uuidString)",
+        ]
+        components.append(contentsOf: metadataComponents(for: sample))
+
+        return ObservationInput(
+            id: sample.uuid,
+            timestamp: sample.endDate,
+            sourceDevice: inferredSourceDevice(sample),
+            sourceType: .heartRate,
+            payload: components.joined(separator: ";"),
+            ingestedAt: .now
+        )
+    }
+
+    private func inferredSourceDevice(_ sample: HKSample) -> ObservationSourceDevice {
         if let productType = sample.sourceRevision.productType?.lowercased(), productType.hasPrefix("watch") {
             return .watch
         }
@@ -455,5 +636,45 @@ final class HealthBackfillStore {
         }
 
         return .iPhone
+    }
+
+    private func metadataComponents(for sample: HKSample) -> [String] {
+        var components = [String]()
+
+        if let productType = sample.sourceRevision.productType {
+            components.append("healthProductType=\(productType)")
+        }
+
+        if let version = sample.sourceRevision.version {
+            components.append("healthSourceVersion=\(version)")
+        }
+
+        components.append("healthBundle=\(sample.sourceRevision.source.bundleIdentifier)")
+        return components
+    }
+
+    private func compoundPredicate(_ predicates: NSPredicate?...) -> NSPredicate? {
+        let resolvedPredicates = predicates.compactMap { $0 }
+        guard resolvedPredicates.isEmpty == false else {
+            return nil
+        }
+
+        if resolvedPredicates.count == 1 {
+            return resolvedPredicates[0]
+        }
+
+        return NSCompoundPredicate(andPredicateWithSubpredicates: resolvedPredicates)
+    }
+
+    private func deterministicUUID(namespace: String) -> UUID {
+        let digest = SHA256.hash(data: Data(namespace.utf8))
+        let bytes = Array(digest)
+        let uuid = uuid_t(
+            bytes[0], bytes[1], bytes[2], bytes[3],
+            bytes[4], bytes[5], bytes[6], bytes[7],
+            bytes[8], bytes[9], bytes[10], bytes[11],
+            bytes[12], bytes[13], bytes[14], bytes[15]
+        )
+        return UUID(uuid: uuid)
     }
 }
