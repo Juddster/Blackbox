@@ -53,17 +53,17 @@ struct ContentView: View {
             presentedResumeReport = await captureControl.handleDidBecomeActive()
             await resumeCaptureIfNeeded()
             backfillSegmentMetrics()
-            await refreshHealthBackfillIfNeeded()
             refreshCaptureReadiness()
             refreshSyncActivity()
+            scheduleHealthBackfillRefreshIfNeeded()
         }
         .onChange(of: scenePhase) {
             if scenePhase == .active {
                 Task {
                     presentedResumeReport = await captureControl.handleDidBecomeActive()
                     await resumeCaptureIfNeeded()
-                    await refreshHealthBackfillIfNeeded()
                     refreshSyncActivity()
+                    scheduleHealthBackfillRefreshIfNeeded()
                 }
             } else if scenePhase == .background {
                 captureControl.handleDidEnterBackground()
@@ -158,6 +158,12 @@ struct ContentView: View {
         }
 
         await healthBackfill.backfillSinceLastRequest()
+    }
+
+    private func scheduleHealthBackfillRefreshIfNeeded() {
+        Task(priority: .utility) {
+            await refreshHealthBackfillIfNeeded()
+        }
     }
 
     private func backfillSegmentMetrics() {
