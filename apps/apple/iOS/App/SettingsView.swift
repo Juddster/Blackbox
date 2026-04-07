@@ -67,7 +67,7 @@ struct SettingsView: View {
                             await onBackfillRecentWatchHealth()
                         }
                     }
-                    .disabled(healthBackfill.hasRequestedAuthorization == false)
+                    .disabled(healthBackfill.hasRequestedAuthorization == false || healthBackfill.isRunning)
 
                     Button("Force Full Backfill") {
                         Task {

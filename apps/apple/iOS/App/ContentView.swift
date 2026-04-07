@@ -153,7 +153,7 @@ struct ContentView: View {
     }
 
     private func refreshHealthBackfillIfNeeded() async {
-        guard healthBackfill.hasRequestedAuthorization else {
+        guard healthBackfill.shouldRunAutomaticBackfill() else {
             return
         }
 
@@ -191,6 +191,7 @@ final class HealthBackfillStore {
     }
 
     private let persistenceBatchSize = 2_000
+    private let automaticBackfillMinimumInterval: TimeInterval = 60
 
     var isAvailable = HKHealthStore.isHealthDataAvailable()
     var hasRequestedAuthorization = UserDefaults.standard.bool(forKey: Keys.authorizationRequested)
@@ -359,13 +360,41 @@ final class HealthBackfillStore {
     }
 
     func backfillSinceLastRequest() async {
+        guard isRunning == false else {
+            statusNote = "Health backfill is already running."
+            log("Skipped backfill request because another run is already active.")
+            return
+        }
+
         let endDate = Date.now
         let startDate = resolvedBackfillStartDate(endDate: endDate)
         await backfill(from: startDate, to: endDate)
     }
 
     func forceFullBackfill() async {
+        guard isRunning == false else {
+            statusNote = "Health backfill is already running."
+            log("Skipped force-full request because another run is already active.")
+            return
+        }
+
         await backfill(from: healthStore.earliestPermittedSampleDate(), to: .now)
+    }
+
+    func shouldRunAutomaticBackfill(now: Date = .now) -> Bool {
+        guard hasRequestedAuthorization else {
+            return false
+        }
+
+        guard isRunning == false else {
+            return false
+        }
+
+        guard let lastBackfillAt else {
+            return true
+        }
+
+        return now.timeIntervalSince(lastBackfillAt) >= automaticBackfillMinimumInterval
     }
 
     func backfill(from startDate: Date, to endDate: Date) async {
