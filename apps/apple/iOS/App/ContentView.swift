@@ -430,17 +430,17 @@ final class HealthBackfillStore {
             log("Backfill finished.")
         }
 
-        let stepSamples = await quantitySamples(
+        let stepSamples = await Self.fetchQuantitySamples(
             identifier: .stepCount,
             startDate: startDate,
             endDate: endDate
         )
-        let distanceSamples = await quantitySamples(
+        let distanceSamples = await Self.fetchQuantitySamples(
             identifier: .distanceWalkingRunning,
             startDate: startDate,
             endDate: endDate
         )
-        let workouts = await workouts(startDate: startDate, endDate: endDate)
+        let workouts = await Self.fetchWorkouts(startDate: startDate, endDate: endDate)
         totalWorkoutCount = workouts.count
         var skippedSampleCount = 0
 
@@ -506,7 +506,7 @@ final class HealthBackfillStore {
         return healthStore.earliestPermittedSampleDate()
     }
 
-    private func quantitySamples(
+    private nonisolated static func fetchQuantitySamples(
         identifier: HKQuantityTypeIdentifier,
         startDate: Date,
         endDate: Date,
@@ -523,6 +523,7 @@ final class HealthBackfillStore {
         )
         let predicate = compoundPredicate(datePredicate, additionalPredicate)
         let sortDescriptors = [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: true)]
+        let healthStore = HKHealthStore()
 
         return await withCheckedContinuation { continuation in
             let query = HKSampleQuery(
@@ -545,7 +546,7 @@ final class HealthBackfillStore {
         }
     }
 
-    private func workouts(startDate: Date, endDate: Date) async -> [HKWorkout] {
+    private nonisolated static func fetchWorkouts(startDate: Date, endDate: Date) async -> [HKWorkout] {
         let workoutType = HKObjectType.workoutType()
         let predicate = HKQuery.predicateForSamples(
             withStart: startDate,
@@ -553,6 +554,7 @@ final class HealthBackfillStore {
             options: []
         )
         let sortDescriptors = [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: true)]
+        let healthStore = HKHealthStore()
 
         return await withCheckedContinuation { continuation in
             let query = HKSampleQuery(
@@ -582,11 +584,11 @@ final class HealthBackfillStore {
         for (index, workout) in workouts.enumerated() {
             currentWorkoutIndex = index + 1
             log("Processing routes for workout \(index + 1)/\(workouts.count) \(workout.uuid.uuidString) [\(workout.startDate.ISO8601Format()) - \(workout.endDate.ISO8601Format())].")
-            let routes = await workoutRoutes(for: workout)
+            let routes = await Self.fetchWorkoutRoutes(for: workout)
             routeSeriesCount += routes.count
             log("Workout \(workout.uuid.uuidString) has \(routes.count) route series.")
             for route in routes {
-                let locations = await routeLocations(for: route)
+                let locations = await Self.fetchRouteLocations(for: route)
                 routePointCount += locations.count
                 log("Route \(route.uuid.uuidString) returned \(locations.count) locations.")
                 let inputs = locations.compactMap { location in
@@ -609,7 +611,7 @@ final class HealthBackfillStore {
             currentWorkoutIndex = index + 1
             log("Processing heart rate for workout \(index + 1)/\(workouts.count) \(workout.uuid.uuidString).")
             let predicate = HKQuery.predicateForObjects(from: workout)
-            let samples = await quantitySamples(
+            let samples = await Self.fetchQuantitySamples(
                 identifier: .heartRate,
                 startDate: workout.startDate,
                 endDate: workout.endDate,
@@ -672,9 +674,10 @@ final class HealthBackfillStore {
         return persistedCount
     }
 
-    private func workoutRoutes(for workout: HKWorkout) async -> [HKWorkoutRoute] {
+    private nonisolated static func fetchWorkoutRoutes(for workout: HKWorkout) async -> [HKWorkoutRoute] {
         let predicate = HKQuery.predicateForObjects(from: workout)
         let sortDescriptors = [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+        let healthStore = HKHealthStore()
 
         return await withCheckedContinuation { continuation in
             let query = HKSampleQuery(
@@ -697,8 +700,9 @@ final class HealthBackfillStore {
         }
     }
 
-    private func routeLocations(for route: HKWorkoutRoute) async -> [CLLocation] {
-        await withCheckedContinuation { continuation in
+    private nonisolated static func fetchRouteLocations(for route: HKWorkoutRoute) async -> [CLLocation] {
+        let healthStore = HKHealthStore()
+        return await withCheckedContinuation { continuation in
             var collected = [CLLocation]()
             let query = HKWorkoutRouteQuery(route: route) { _, locations, done, error in
                 if let locations {
@@ -861,7 +865,7 @@ final class HealthBackfillStore {
         return components
     }
 
-    private func compoundPredicate(_ predicates: NSPredicate?...) -> NSPredicate? {
+    private nonisolated static func compoundPredicate(_ predicates: NSPredicate?...) -> NSPredicate? {
         let resolvedPredicates = predicates.compactMap { $0 }
         guard resolvedPredicates.isEmpty == false else {
             return nil
