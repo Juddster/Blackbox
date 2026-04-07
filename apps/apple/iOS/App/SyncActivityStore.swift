@@ -24,11 +24,34 @@ final class SyncActivityStore {
 
     func refresh(using modelContext: ModelContext) {
         do {
-            let records = try modelContext.fetch(FetchDescriptor<SegmentRecord>())
-            let summary = SyncProjection.summary(from: records)
-            pendingCount = summary.pendingUploadCount
-            conflictedCount = summary.conflictedCount
-            conflicts = summary.conflicts
+            let pendingStates = try modelContext.fetch(
+                FetchDescriptor<SegmentSyncStateRecord>(
+                    predicate: #Predicate { state in
+                        state.disposition.rawValue == "pendingUpload"
+                    }
+                )
+            )
+            let conflictedStates = try modelContext.fetch(
+                FetchDescriptor<SegmentSyncStateRecord>(
+                    predicate: #Predicate { state in
+                        state.disposition.rawValue == "conflicted"
+                    }
+                )
+            )
+
+            pendingCount = pendingStates.count
+            conflictedCount = conflictedStates.count
+            conflicts = conflictedStates.compactMap { state in
+                guard let segment = state.segment else {
+                    return nil
+                }
+
+                return SyncConflictSnapshot(
+                    id: segment.id,
+                    title: segment.title,
+                    message: conflictMessage(for: state.lastSyncError)
+                )
+            }
         } catch {
             lastPushMessage = "Failed to load sync state."
         }
@@ -74,6 +97,19 @@ final class SyncActivityStore {
             return "Applied \(pulledCount) pulled segment envelopes locally."
         default:
             return "Accepted \(pushedCount) pushed and applied \(pulledCount) pulled segment envelopes."
+        }
+    }
+
+    private func conflictMessage(for error: String?) -> String {
+        switch error {
+        case "versionMismatch":
+            return "Server has a newer version."
+        case "deletedOnServer":
+            return "Server deleted this segment."
+        case let error?:
+            return error
+        case nil:
+            return "Sync conflict needs review."
         }
     }
 }
