@@ -142,7 +142,7 @@ struct ContentView: View {
     }
 
     private func backfillRecentWatchHealth() async {
-        await healthBackfill.backfillRecentWatchActivity()
+        await healthBackfill.backfillSinceLastRequest()
     }
 
     private func refreshHealthBackfillIfNeeded() async {
@@ -150,7 +150,7 @@ struct ContentView: View {
             return
         }
 
-        await healthBackfill.backfillRecentWatchActivity(hours: 12)
+        await healthBackfill.backfillSinceLastRequest()
     }
 
     private func backfillSegmentMetrics() {
@@ -174,11 +174,20 @@ struct ContentView: View {
 final class HealthBackfillStore {
     private enum Keys {
         static let authorizationRequested = "health_backfill.authorization_requested"
+        static let lastBackfillCursorTimeInterval = "health_backfill.last_backfill_cursor_time_interval"
     }
 
     var isAvailable = HKHealthStore.isHealthDataAvailable()
     var hasRequestedAuthorization = UserDefaults.standard.bool(forKey: Keys.authorizationRequested)
     var lastBackfillAt: Date?
+    var lastBackfillCursor: Date? = {
+        let defaults = UserDefaults.standard
+        guard defaults.object(forKey: Keys.lastBackfillCursorTimeInterval) != nil else {
+            return nil
+        }
+
+        return Date(timeIntervalSinceReferenceDate: defaults.double(forKey: Keys.lastBackfillCursorTimeInterval))
+    }()
     var lastImportedObservationCount = 0
     var lastImportedStepSampleCount = 0
     var lastImportedDistanceSampleCount = 0
@@ -200,6 +209,10 @@ final class HealthBackfillStore {
     var lastBackfillSummary: String? {
         guard let lastBackfillAt else {
             return nil
+        }
+
+        if let lastBackfillCursor {
+            return "\(lastBackfillAt.formatted(date: .omitted, time: .shortened)) • \(lastImportedObservationCount) observations • cursor \(lastBackfillCursor.formatted(date: .abbreviated, time: .shortened))"
         }
 
         return "\(lastBackfillAt.formatted(date: .omitted, time: .shortened)) • \(lastImportedObservationCount) observations"
@@ -265,9 +278,9 @@ final class HealthBackfillStore {
         statusNote = "Health backfill is authorized. Blackbox can now recover watch step and distance samples on the iPhone."
     }
 
-    func backfillRecentWatchActivity(hours: Double = 24) async {
+    func backfillSinceLastRequest() async {
         let endDate = Date.now
-        let startDate = endDate.addingTimeInterval(-(hours * 60 * 60))
+        let startDate = resolvedBackfillStartDate(endDate: endDate)
         await backfill(from: startDate, to: endDate)
     }
 
@@ -321,19 +334,29 @@ final class HealthBackfillStore {
             }
 
             lastBackfillAt = .now
+            lastBackfillCursor = endDate
             lastImportedObservationCount = inputs.count
             lastImportedStepSampleCount = stepInputs.count
             lastImportedDistanceSampleCount = distanceInputs.count
             lastSkippedSampleCount = skippedSampleCount
+            UserDefaults.standard.set(endDate.timeIntervalSinceReferenceDate, forKey: Keys.lastBackfillCursorTimeInterval)
 
             if inputs.isEmpty {
-                statusNote = "Health backfill found no new watch step or distance samples in the selected window."
+                statusNote = "Health backfill found no new step or distance samples between \(startDate.formatted(date: .abbreviated, time: .shortened)) and \(endDate.formatted(date: .abbreviated, time: .shortened))."
             } else {
-                statusNote = "Recovered \(inputs.count) watch Health samples on the iPhone (\(stepInputs.count) steps, \(distanceInputs.count) distance)."
+                statusNote = "Recovered \(inputs.count) Health samples on the iPhone (\(stepInputs.count) steps, \(distanceInputs.count) distance) between \(startDate.formatted(date: .abbreviated, time: .shortened)) and \(endDate.formatted(date: .abbreviated, time: .shortened))."
             }
         } catch {
             statusNote = "Failed to persist Health backfill samples."
         }
+    }
+
+    private func resolvedBackfillStartDate(endDate: Date) -> Date {
+        if let lastBackfillCursor, lastBackfillCursor < endDate {
+            return lastBackfillCursor
+        }
+
+        return healthStore.earliestPermittedSampleDate()
     }
 
     private func quantitySamples(
