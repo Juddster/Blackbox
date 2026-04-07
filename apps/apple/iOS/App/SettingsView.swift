@@ -80,6 +80,10 @@ struct SettingsView: View {
                         LabeledContent("Query Window", value: lastQueryWindowSummary)
                     }
 
+                    if let progressSummary = healthBackfill.progressSummary {
+                        LabeledContent("Progress", value: progressSummary)
+                    }
+
                     if let lastFoundSummary = healthBackfill.lastFoundSummary {
                         LabeledContent("Raw Health Data", value: lastFoundSummary)
                     }

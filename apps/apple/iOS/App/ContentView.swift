@@ -218,6 +218,10 @@ final class HealthBackfillStore {
     var lastFoundRouteCount = 0
     var lastFoundRoutePointCount = 0
     var lastFoundHeartRateSampleCount = 0
+    var progressPhase = "Idle"
+    var currentWorkoutIndex = 0
+    var totalWorkoutCount = 0
+    var persistedObservationCount = 0
     var statusNote: String?
 
     private let healthStore = HKHealthStore()
@@ -278,6 +282,18 @@ final class HealthBackfillStore {
         }
 
         return "\(lastFoundWorkoutCount) workouts • \(lastFoundStepSampleCount) steps • \(lastFoundDistanceSampleCount) distance • \(lastFoundRouteCount) routes • \(lastFoundRoutePointCount) route points • \(lastFoundHeartRateSampleCount) heart rate"
+    }
+
+    var progressSummary: String? {
+        guard isRunning else {
+            return nil
+        }
+
+        if totalWorkoutCount > 0 {
+            return "\(progressPhase) • workout \(currentWorkoutIndex)/\(totalWorkoutCount) • persisted \(persistedObservationCount)"
+        }
+
+        return "\(progressPhase) • persisted \(persistedObservationCount)"
     }
 
     func configure(modelContext: ModelContext) {
@@ -373,10 +389,15 @@ final class HealthBackfillStore {
         isRunning = true
         lastRequestedStartDate = startDate
         lastRequestedEndDate = endDate
+        progressPhase = "Querying Health"
+        currentWorkoutIndex = 0
+        totalWorkoutCount = 0
+        persistedObservationCount = 0
         statusNote = "Running Health backfill from \(startDate.formatted(date: .abbreviated, time: .shortened)) to \(endDate.formatted(date: .abbreviated, time: .shortened))."
         log("Starting backfill from \(startDate.ISO8601Format()) to \(endDate.ISO8601Format()).")
         defer {
             isRunning = false
+            progressPhase = "Idle"
             log("Backfill finished.")
         }
 
@@ -391,22 +412,27 @@ final class HealthBackfillStore {
             endDate: endDate
         )
         let workouts = await workouts(startDate: startDate, endDate: endDate)
+        totalWorkoutCount = workouts.count
         var skippedSampleCount = 0
 
         do {
+            progressPhase = "Importing Steps"
             let importedStepCount = try persistQuantitySamples(
                 stepSamples,
                 identifier: .stepCount,
                 recorder: recorder,
                 skippedSampleCount: &skippedSampleCount
             )
+            progressPhase = "Importing Distance"
             let importedDistanceCount = try persistQuantitySamples(
                 distanceSamples,
                 identifier: .distanceWalkingRunning,
                 recorder: recorder,
                 skippedSampleCount: &skippedSampleCount
             )
+            progressPhase = "Importing Routes"
             let routeImport = try await importWorkoutRoutes(for: workouts, recorder: recorder)
+            progressPhase = "Importing Heart Rate"
             let heartRateImport = try await importWorkoutHeartRates(for: workouts, recorder: recorder)
             let importedObservationCount = importedStepCount + importedDistanceCount + routeImport.importedObservationCount + heartRateImport
 
@@ -525,6 +551,7 @@ final class HealthBackfillStore {
         var routePointCount = 0
         var importedObservationCount = 0
         for (index, workout) in workouts.enumerated() {
+            currentWorkoutIndex = index + 1
             log("Processing routes for workout \(index + 1)/\(workouts.count) \(workout.uuid.uuidString) [\(workout.startDate.ISO8601Format()) - \(workout.endDate.ISO8601Format())].")
             let routes = await workoutRoutes(for: workout)
             routeSeriesCount += routes.count
@@ -550,6 +577,7 @@ final class HealthBackfillStore {
     private func importWorkoutHeartRates(for workouts: [HKWorkout], recorder: LocalObservationRecorder) async throws -> Int {
         var importedObservationCount = 0
         for (index, workout) in workouts.enumerated() {
+            currentWorkoutIndex = index + 1
             log("Processing heart rate for workout \(index + 1)/\(workouts.count) \(workout.uuid.uuidString).")
             let predicate = HKQuery.predicateForObjects(from: workout)
             let samples = await quantitySamples(
@@ -608,6 +636,7 @@ final class HealthBackfillStore {
         for chunk in inputs.chunked(into: persistenceBatchSize) {
             try recorder.record(chunk)
             persistedCount += chunk.count
+            persistedObservationCount += chunk.count
             log("Persisted \(chunk.count) observations for \(label) (\(persistedCount) total).")
         }
 
