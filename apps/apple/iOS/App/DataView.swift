@@ -473,6 +473,8 @@ private struct ReplayExportObservationSummary: Codable {
     let watchObservationCount: Int
     let healthKitBackfillObservationCount: Int
     let liveWatchObservationCount: Int
+    let healthKitBackfillWatchObservationCount: Int
+    let healthKitBackfillIPhoneObservationCount: Int
     let locationCount: Int
     let motionCount: Int
     let pedometerCount: Int
@@ -489,11 +491,22 @@ private struct ReplayExportObservationSummary: Codable {
         let healthBackfillObservations = observations.filter { observation in
             observation.payload.contains("origin=healthKitBackfill")
         }
+        let healthBackfillWatchObservations = healthBackfillObservations.filter { observation in
+            observation.sourceDevice == .watch
+        }
+        let healthBackfillIPhoneObservations = healthBackfillObservations.filter { observation in
+            observation.sourceDevice == .iPhone
+        }
+        let liveWatchObservations = observations.filter { observation in
+            observation.sourceDevice == .watch && observation.payload.contains("origin=healthKitBackfill") == false
+        }
         totalObservationCount = observations.count
         iPhoneObservationCount = observations.filter { $0.sourceDevice == .iPhone }.count
         watchObservationCount = observations.filter { $0.sourceDevice == .watch }.count
         healthKitBackfillObservationCount = healthBackfillObservations.count
-        liveWatchObservationCount = watchObservationCount - healthKitBackfillObservationCount
+        liveWatchObservationCount = liveWatchObservations.count
+        healthKitBackfillWatchObservationCount = healthBackfillWatchObservations.count
+        healthKitBackfillIPhoneObservationCount = healthBackfillIPhoneObservations.count
         locationCount = observations.filter { $0.sourceType == .location }.count
         motionCount = observations.filter { $0.sourceType == .motion }.count
         pedometerCount = observations.filter { $0.sourceType == .pedometer }.count
@@ -508,7 +521,7 @@ private struct ReplayExportObservationSummary: Codable {
     }
 
     var uiSummary: String {
-        "\(totalObservationCount) observations • \(iPhoneObservationCount) iPhone • \(watchObservationCount) watch • \(healthKitBackfillObservationCount) Health backfill • \(locationCount) location • \(motionCount) motion • \(pedometerCount) pedometer • \(heartRateCount) heart rate"
+        "\(totalObservationCount) observations • \(iPhoneObservationCount) iPhone • \(watchObservationCount) watch • \(liveWatchObservationCount) live watch • \(healthKitBackfillObservationCount) Health backfill • \(locationCount) location • \(motionCount) motion • \(pedometerCount) pedometer • \(heartRateCount) heart rate"
     }
 }
 
