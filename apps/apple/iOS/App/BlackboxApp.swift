@@ -8,9 +8,6 @@ struct BlackboxApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .task {
-                    try? AppBootstrap.prepareStore(modelContext: modelContainer.mainContext)
-                }
         }
         .modelContainer(modelContainer)
     }

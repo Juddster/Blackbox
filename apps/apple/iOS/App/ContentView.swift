@@ -14,6 +14,7 @@ struct ContentView: View {
     @State private var syncActivity = SyncActivityStore()
     @State private var presentedResumeReport: CaptureResumeReport?
     @State private var hasBackfilledSegmentMetrics = false
+    @State private var deferredMaintenanceTask: Task<Void, Never>?
 
     var body: some View {
         TabView {
@@ -52,19 +53,19 @@ struct ContentView: View {
             configureCapture()
             presentedResumeReport = await captureControl.handleDidBecomeActive()
             await resumeCaptureIfNeeded()
-            backfillSegmentMetrics()
             refreshCaptureReadiness()
-            refreshSyncActivity()
+            scheduleDeferredMaintenance()
         }
         .onChange(of: scenePhase) {
             if scenePhase == .active {
                 Task {
                     presentedResumeReport = await captureControl.handleDidBecomeActive()
                     await resumeCaptureIfNeeded()
-                    refreshSyncActivity()
+                    scheduleDeferredMaintenance()
                 }
             } else if scenePhase == .background {
                 captureControl.handleDidEnterBackground()
+                deferredMaintenanceTask?.cancel()
             }
         }
         .alert(
@@ -148,6 +149,21 @@ struct ContentView: View {
 
     private func forceFullHealthBackfill() async {
         await healthBackfill.forceFullBackfill()
+    }
+
+    private func scheduleDeferredMaintenance() {
+        deferredMaintenanceTask?.cancel()
+        deferredMaintenanceTask = Task(priority: .utility) {
+            try? await Task.sleep(for: .seconds(2))
+            guard Task.isCancelled == false else {
+                return
+            }
+
+            await MainActor.run {
+                backfillSegmentMetrics()
+                refreshSyncActivity()
+            }
+        }
     }
 
     private func backfillSegmentMetrics() {
