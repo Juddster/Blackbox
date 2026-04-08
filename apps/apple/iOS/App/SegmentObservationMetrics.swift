@@ -27,6 +27,13 @@ struct SegmentPathReview {
     let rejectedDistanceMeters: Double
 }
 
+struct HealthWorkoutSummary {
+    let uuid: UUID
+    let startTime: Date
+    let endTime: Date
+    let distanceMeters: Double?
+}
+
 enum SegmentObservationMetrics {
     static func derivedDistanceMeters(from observations: [ObservationRecord]) -> Double? {
         distanceBreakdown(from: observations, preferredActivityClass: nil).preferredDistanceMeters
@@ -37,6 +44,7 @@ enum SegmentObservationMetrics {
         preferredActivityClass: ActivityClass?
     ) -> SegmentDistanceBreakdown {
         let sortedObservations = observations.sorted { $0.timestamp < $1.timestamp }
+        let workoutDistanceMeters = authoritativeWorkoutSummary(from: sortedObservations)?.distanceMeters
         let locationDistanceMeters = locationDistanceMeters(from: sortedObservations)
         let pedometerDistancesByDevice = pedometerDistanceMetersByDevice(from: sortedObservations)
         let iPhonePedometerDistanceMeters = pedometerDistancesByDevice[.iPhone]
@@ -47,11 +55,15 @@ enum SegmentObservationMetrics {
         )
 
         let preferredDistanceMeters: Double?
-        switch preferredActivityClass {
-        case .running, .walking, .hiking:
-            preferredDistanceMeters = pedometerDistanceMeters ?? locationDistanceMeters
-        default:
-            preferredDistanceMeters = locationDistanceMeters ?? pedometerDistanceMeters
+        if let workoutDistanceMeters {
+            preferredDistanceMeters = workoutDistanceMeters
+        } else {
+            switch preferredActivityClass {
+            case .running, .walking, .hiking:
+                preferredDistanceMeters = pedometerDistanceMeters ?? locationDistanceMeters
+            default:
+                preferredDistanceMeters = locationDistanceMeters ?? pedometerDistanceMeters
+            }
         }
 
         return SegmentDistanceBreakdown(
@@ -122,6 +134,23 @@ enum SegmentObservationMetrics {
         )
     }
 
+    static func authoritativeWorkoutSummary(from observations: [ObservationRecord]) -> HealthWorkoutSummary? {
+        let summaries = observations.compactMap(healthWorkoutSummary(from:))
+        guard summaries.isEmpty == false else {
+            return nil
+        }
+
+        return summaries.max { lhs, rhs in
+            let lhsDuration = lhs.endTime.timeIntervalSince(lhs.startTime)
+            let rhsDuration = rhs.endTime.timeIntervalSince(rhs.startTime)
+            if lhsDuration == rhsDuration {
+                return lhs.endTime < rhs.endTime
+            }
+
+            return lhsDuration < rhsDuration
+        }
+    }
+
     private static func locationDistanceMeters(from observations: [ObservationRecord]) -> Double? {
         let locations = observations.compactMap(locationCoordinate(from:))
         guard locations.count >= 2 else {
@@ -151,6 +180,25 @@ enum SegmentObservationMetrics {
         watchDistanceMeters: Double?
     ) -> Double? {
         watchDistanceMeters ?? iPhoneDistanceMeters
+    }
+
+    private static func healthWorkoutSummary(from observation: ObservationRecord) -> HealthWorkoutSummary? {
+        let values = payloadValues(from: observation.payload)
+        guard
+            let uuidString = values["healthWorkoutUUID"],
+            let uuid = UUID(uuidString: uuidString),
+            let startInterval = values["healthWorkoutStart"].flatMap(TimeInterval.init),
+            let endInterval = values["healthWorkoutEnd"].flatMap(TimeInterval.init)
+        else {
+            return nil
+        }
+
+        return HealthWorkoutSummary(
+            uuid: uuid,
+            startTime: Date(timeIntervalSince1970: startInterval),
+            endTime: Date(timeIntervalSince1970: endInterval),
+            distanceMeters: values["healthWorkoutDistance"].flatMap(Double.init)
+        )
     }
 
     static func payloadValues(from payload: String) -> [String: String] {

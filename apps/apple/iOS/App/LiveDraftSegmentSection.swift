@@ -1,80 +1,86 @@
 import SwiftUI
 
 struct LiveDraftSegmentSection: View {
+    @Binding var isExpanded: Bool
     let draft: LiveDraftSegmentSnapshot?
     let statusMessage: String?
     let onPersistDraft: () async -> Void
 
     var body: some View {
         Section("Current Inference") {
-            if let draft {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(alignment: .top, spacing: 12) {
-                        Image(systemName: draft.activityClass.systemImage)
-                            .font(.title3)
-                            .foregroundStyle(activityColor)
-                            .frame(width: 28)
+            DisclosureGroup(isExpanded: $isExpanded) {
+                if let draft {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack(alignment: .top, spacing: 12) {
+                            Image(systemName: draft.activityClass.systemImage)
+                                .font(.title3)
+                                .foregroundStyle(activityColor)
+                                .frame(width: 28)
 
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(draft.title)
-                                .font(.headline)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(draft.title)
+                                    .font(.headline)
 
-                            Text(draft.activityClass.displayName)
-                                .font(.subheadline)
+                                Text(draft.activityClass.displayName)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            Text(draft.confidence, format: .percent.precision(.fractionLength(0)))
+                                .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
 
-                        Spacer()
-
-                        Text(draft.confidence, format: .percent.precision(.fractionLength(0)))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    HStack {
-                        Label(
-                            "\(draft.startTime.formatted(date: .omitted, time: .shortened)) - \(draft.endTime.formatted(date: .omitted, time: .shortened))",
-                            systemImage: "clock"
-                        )
-                        Spacer()
-                        Label(
-                            Duration.seconds(draft.endTime.timeIntervalSince(draft.startTime))
-                                .formatted(.units(allowed: [.minutes], width: .abbreviated)),
-                            systemImage: "timer"
-                        )
-                    }
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-
-                    if let distanceMeters = draft.distanceMeters {
-                        Text(
-                            Measurement(value: distanceMeters, unit: UnitLength.meters)
-                                .formatted(.measurement(width: .abbreviated, usage: .road))
-                        )
+                        HStack {
+                            Label(
+                                "\(draft.startTime.formatted(date: .omitted, time: .shortened)) - \(draft.endTime.formatted(date: .omitted, time: .shortened))",
+                                systemImage: "clock"
+                            )
+                            Spacer()
+                            Label(
+                                Duration.seconds(draft.endTime.timeIntervalSince(draft.startTime))
+                                    .formatted(.units(allowed: [.minutes], width: .abbreviated)),
+                                systemImage: "timer"
+                            )
+                        }
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    }
 
-                    Text(sourceSummary)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        if let distanceMeters = draft.distanceMeters {
+                            Text(
+                                Measurement(value: distanceMeters, unit: UnitLength.meters)
+                                    .formatted(.measurement(width: .abbreviated, usage: .road))
+                            )
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        }
 
-                    if draft.needsReview {
-                        Label("Low-confidence draft", systemImage: "exclamationmark.circle.fill")
-                            .font(.caption)
-                            .foregroundStyle(.orange)
-                    }
+                        Text(sourceSummary)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
 
-                    Button("Add Or Update Timeline Segment") {
-                        Task {
-                            await onPersistDraft()
+                        if draft.needsReview {
+                            Label("Low-confidence draft", systemImage: "exclamationmark.circle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
+
+                        Button("Add Or Update Timeline Segment") {
+                            Task {
+                                await onPersistDraft()
+                            }
                         }
                     }
+                    .padding(.vertical, 8)
+                } else {
+                    Text("No current inferred activity yet. Expand this card after fresh observations arrive to recalculate it.")
+                        .foregroundStyle(.secondary)
                 }
-                .padding(.vertical, 8)
-            } else {
-                Text("No current inferred activity yet. Blackbox needs recent real observations before it can infer a segment draft.")
-                    .foregroundStyle(.secondary)
+            } label: {
+                Text(isExpanded ? "Hide Current Inference" : "Show Current Inference")
+                    .font(.subheadline.weight(.medium))
             }
 
             if let statusMessage {

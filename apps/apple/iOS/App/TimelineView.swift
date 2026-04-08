@@ -3,6 +3,7 @@ import SwiftUI
 
 struct TimelineView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     let syncActivity: SyncActivityStore
     private static let initialSegmentFetchLimit = 80
     private static let segmentFetchIncrement = 80
@@ -21,11 +22,13 @@ struct TimelineView: View {
     @State private var segments = [SegmentRecord]()
     @State private var visibleSegmentLimit = TimelineView.initialSegmentFetchLimit
     @State private var hasMoreSegments = false
+    @State private var isLiveDraftExpanded = false
 
     var body: some View {
         NavigationStack {
             List {
                 LiveDraftSegmentSection(
+                    isExpanded: $isLiveDraftExpanded,
                     draft: liveDraftSegment,
                     statusMessage: liveDraftStatusMessage,
                     onPersistDraft: persistLiveDraft
@@ -56,6 +59,9 @@ struct TimelineView: View {
                 }
             }
             .navigationTitle("Activity")
+            .refreshable {
+                refreshTimelineData()
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
@@ -153,10 +159,22 @@ struct TimelineView: View {
             SegmentMapDetailView(segment: segment)
         }
         .task {
-            await refreshRecentObservationsLoop()
+            refreshTimelineData()
         }
         .task(id: timelineRefreshNonce) {
-            loadSegments()
+            refreshTimelineData()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else {
+                return
+            }
+            refreshTimelineData()
+        }
+        .onChange(of: isLiveDraftExpanded) { _, isExpanded in
+            guard isExpanded else {
+                return
+            }
+            loadRecentObservations()
         }
     }
 
@@ -170,7 +188,14 @@ struct TimelineView: View {
     }
 
     private var liveDraftSegment: LiveDraftSegmentSnapshot? {
-        LiveDraftSegmentProjection.make(from: recentObservations)
+        guard isLiveDraftExpanded else {
+            return nil
+        }
+        let startTime = CFAbsoluteTimeGetCurrent()
+        let draft = LiveDraftSegmentProjection.make(from: recentObservations)
+        let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+        print("[Timeline] Projected live draft from \(recentObservations.count) recent observations in \(String(format: "%.3f", elapsed))s.")
+        return draft
     }
 
     private var observationCoverageDescription: String? {
@@ -189,6 +214,7 @@ struct TimelineView: View {
     }
 
     private func persistLiveDraft() async {
+        ensureRecentObservationsLoaded()
         guard let liveDraftSegment else {
             liveDraftStatusMessage = "No current inferred activity is available yet."
             return
@@ -203,6 +229,7 @@ struct TimelineView: View {
             case .updated:
                 "Updated the current segment for \(result.segment.title.lowercased())."
             }
+            refreshTimelineData()
             refreshSyncActivity()
             await pushPendingSync()
         } catch {
@@ -218,6 +245,7 @@ struct TimelineView: View {
                 modelContext: modelContext
             )
             timelineRefreshNonce &+= 1
+            refreshTimelineData()
             refreshSyncActivity()
         } catch {
             syncActivity.lastPushMessage = "Could not apply the server version for that conflict."
@@ -232,6 +260,7 @@ struct TimelineView: View {
                 modelContext: modelContext
             )
             timelineRefreshNonce &+= 1
+            refreshTimelineData()
             refreshSyncActivity()
             await pushPendingSync()
         } catch {
@@ -247,6 +276,7 @@ struct TimelineView: View {
                 modelContext: modelContext
             )
             timelineRefreshNonce &+= 1
+            refreshTimelineData()
             refreshSyncActivity()
             await pushPendingSync()
         } catch {
@@ -259,6 +289,7 @@ struct TimelineView: View {
             let tombstoner = LocalSegmentTombstoner(modelContext: modelContext)
             try tombstoner.tombstone(segmentID: segmentID)
             timelineRefreshNonce &+= 1
+            refreshTimelineData()
             refreshSyncActivity()
             await pushPendingSync()
         } catch {
@@ -319,6 +350,7 @@ struct TimelineView: View {
 
     private func prepareManualSegmentForm() {
         editingManualSegment = nil
+        ensureRecentObservationsLoaded()
         let latestObservationTime = recentObservations.first?.timestamp ?? .now
         let earliestRecentObservationTime = recentObservations.prefix(20).last?.timestamp
             ?? latestObservationTime.addingTimeInterval(-30 * 60)
@@ -343,6 +375,7 @@ struct TimelineView: View {
 
     private func prepareRecentWorkoutSegmentForm(activityClass: ActivityClass) {
         editingManualSegment = nil
+        ensureRecentObservationsLoaded()
         let inferredWindow = inferredRecentWorkoutWindow(for: activityClass)
         manualSegmentStartTime = inferredWindow.startTime
         manualSegmentEndTime = inferredWindow.endTime
@@ -377,6 +410,7 @@ struct TimelineView: View {
                 ? "Saved a user-marked \(manualSegmentActivityClass.displayName.lowercased()) segment."
                 : "Updated that \(manualSegmentActivityClass.displayName.lowercased()) segment."
             editingManualSegment = nil
+            refreshTimelineData()
             refreshSyncActivity()
             await pushPendingSync()
         } catch {
@@ -483,6 +517,19 @@ struct TimelineView: View {
         await syncActivity.pushPending(using: modelContext)
     }
 
+    private func refreshTimelineData() {
+        if isLiveDraftExpanded {
+            loadRecentObservations()
+        }
+        loadSegments()
+    }
+
+    private func ensureRecentObservationsLoaded() {
+        if recentObservations.isEmpty {
+            loadRecentObservations()
+        }
+    }
+
     private func loadSegments() {
         let startTime = CFAbsoluteTimeGetCurrent()
         print("[Timeline] Loading up to \(visibleSegmentLimit) recent segments.")
@@ -506,12 +553,5 @@ struct TimelineView: View {
         recentObservations = (try? modelContext.fetch(descriptor)) ?? []
         let elapsed = CFAbsoluteTimeGetCurrent() - startTime
         print("[Timeline] Loaded \(recentObservations.count) recent observations in \(String(format: "%.3f", elapsed))s.")
-    }
-
-    private func refreshRecentObservationsLoop() async {
-        while Task.isCancelled == false {
-            loadRecentObservations()
-            try? await Task.sleep(for: .seconds(5))
-        }
     }
 }

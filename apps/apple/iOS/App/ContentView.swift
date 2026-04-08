@@ -465,14 +465,16 @@ final class HealthBackfillStore {
                 recorder: recorder,
                 skippedSampleCount: &skippedSampleCount
             )
+            progressPhase = "Importing Workout Summaries"
+            let workoutSummaryImport = try importWorkoutSummaries(for: workouts, recorder: recorder)
             progressPhase = "Importing Routes"
             let routeImport = try await importWorkoutRoutes(for: workouts, recorder: recorder)
             progressPhase = "Importing Heart Rate"
             let heartRateImport = try await importWorkoutHeartRates(for: workouts, recorder: recorder)
-            let importedObservationCount = importedStepCount + importedDistanceCount + routeImport.importedObservationCount + heartRateImport
+            let importedObservationCount = importedStepCount + importedDistanceCount + workoutSummaryImport + routeImport.importedObservationCount + heartRateImport
 
             log("Raw query counts: \(stepSamples.count) step samples, \(distanceSamples.count) distance samples, \(workouts.count) workouts, \(routeImport.routeSeriesCount) route series.")
-            log("Imported observations: \(importedStepCount) step, \(importedDistanceCount) distance, \(routeImport.importedObservationCount) route, \(heartRateImport) heart rate.")
+            log("Imported observations: \(importedStepCount) step, \(importedDistanceCount) distance, \(workoutSummaryImport) workout summary, \(routeImport.importedObservationCount) route, \(heartRateImport) heart rate.")
 
             lastFoundWorkoutCount = workouts.count
             lastFoundStepSampleCount = stepSamples.count
@@ -609,6 +611,11 @@ final class HealthBackfillStore {
             routePointCount: routePointCount,
             importedObservationCount: importedObservationCount
         )
+    }
+
+    private func importWorkoutSummaries(for workouts: [HKWorkout], recorder: LocalObservationRecorder) throws -> Int {
+        let inputs = workouts.compactMap(makeWorkoutSummaryObservationInput)
+        return try persistObservations(inputs, recorder: recorder, label: "workout summaries")
     }
 
     private func importWorkoutHeartRates(for workouts: [HKWorkout], recorder: LocalObservationRecorder) async throws -> Int {
@@ -796,8 +803,13 @@ final class HealthBackfillStore {
             "healthQuantity=workoutRoute",
             "healthSourceDevice=\(inferredSourceDevice(sample).rawValue)",
             "healthWorkoutUUID=\(workout.uuid.uuidString)",
+            "healthWorkoutStart=\(workout.startDate.timeIntervalSince1970)",
+            "healthWorkoutEnd=\(workout.endDate.timeIntervalSince1970)",
             "healthRouteUUID=\(route.uuid.uuidString)",
         ]
+        if let workoutDistanceMeters = workout.totalDistance?.doubleValue(for: .meter()), workoutDistanceMeters > 0 {
+            components.append("healthWorkoutDistance=\(workoutDistanceMeters)")
+        }
         components.append(contentsOf: metadataComponents(for: sample))
 
         return ObservationInput(
@@ -831,7 +843,12 @@ final class HealthBackfillStore {
             "healthQuantity=\(HKQuantityTypeIdentifier.heartRate.rawValue)",
             "healthSourceDevice=\(inferredSourceDevice(sample).rawValue)",
             "healthWorkoutUUID=\(workout.uuid.uuidString)",
+            "healthWorkoutStart=\(workout.startDate.timeIntervalSince1970)",
+            "healthWorkoutEnd=\(workout.endDate.timeIntervalSince1970)",
         ]
+        if let workoutDistanceMeters = workout.totalDistance?.doubleValue(for: .meter()), workoutDistanceMeters > 0 {
+            components.append("healthWorkoutDistance=\(workoutDistanceMeters)")
+        }
         components.append(contentsOf: metadataComponents(for: sample))
 
         return ObservationInput(
@@ -839,6 +856,34 @@ final class HealthBackfillStore {
             timestamp: sample.endDate,
             sourceDevice: inferredSourceDevice(sample),
             sourceType: .heartRate,
+            payload: components.joined(separator: ";"),
+            ingestedAt: .now
+        )
+    }
+
+    private func makeWorkoutSummaryObservationInput(for workout: HKWorkout) -> ObservationInput? {
+        var components = [
+            "start=\(workout.startDate.timeIntervalSince1970)",
+            "end=\(workout.endDate.timeIntervalSince1970)",
+            "historical=true",
+            "origin=healthKitBackfill",
+            "healthQuantity=workoutSummary",
+            "healthSourceDevice=\(inferredSourceDevice(workout).rawValue)",
+            "healthWorkoutUUID=\(workout.uuid.uuidString)",
+            "healthWorkoutStart=\(workout.startDate.timeIntervalSince1970)",
+            "healthWorkoutEnd=\(workout.endDate.timeIntervalSince1970)",
+            "healthWorkoutActivity=\(workout.workoutActivityType.rawValue)",
+        ]
+        if let workoutDistanceMeters = workout.totalDistance?.doubleValue(for: .meter()), workoutDistanceMeters > 0 {
+            components.append("healthWorkoutDistance=\(workoutDistanceMeters)")
+        }
+        components.append(contentsOf: metadataComponents(for: workout))
+
+        return ObservationInput(
+            id: workout.uuid,
+            timestamp: workout.endDate,
+            sourceDevice: inferredSourceDevice(workout),
+            sourceType: .other,
             payload: components.joined(separator: ";"),
             ingestedAt: .now
         )

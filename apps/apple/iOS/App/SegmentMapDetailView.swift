@@ -261,6 +261,24 @@ struct SegmentMapDetailView: View {
         descriptor.fetchLimit = 4_000
 
         observations = (try? modelContext.fetch(descriptor)) ?? []
+        if let authoritativeWorkout = SegmentObservationMetrics.authoritativeWorkoutSummary(from: observations) {
+            segmentStartTime = authoritativeWorkout.startTime
+            segmentEndTime = authoritativeWorkout.endTime
+            let workoutStartTime = authoritativeWorkout.startTime
+            let workoutEndTime = authoritativeWorkout.endTime
+            descriptor = FetchDescriptor<ObservationRecord>(
+                predicate: #Predicate<ObservationRecord> { observation in
+                    observation.timestamp >= workoutStartTime && observation.timestamp <= workoutEndTime
+                },
+                sortBy: [SortDescriptor(\ObservationRecord.timestamp, order: .forward)]
+            )
+            descriptor.fetchLimit = 4_000
+            observations = (try? modelContext.fetch(descriptor)) ?? observations
+            if let workoutDistanceMeters = authoritativeWorkout.distanceMeters {
+                liveDistanceMeters = workoutDistanceMeters
+            }
+            liveDurationSeconds = authoritativeWorkout.endTime.timeIntervalSince(authoritativeWorkout.startTime)
+        }
         locationFixes = SegmentObservationMetrics.locationFixes(from: observations)
         loadLiveSegmentMetrics()
 
@@ -343,11 +361,17 @@ struct SegmentMapDetailView: View {
             return
         }
 
+        let authoritativeWorkout = SegmentObservationMetrics.authoritativeWorkoutSummary(from: observations)
         segmentStartTime = record.startTime
         segmentEndTime = record.endTime
-        liveDistanceMeters = record.summary?.distanceMeters
-        liveDurationSeconds = record.summary?.durationSeconds
+        liveDistanceMeters = authoritativeWorkout?.distanceMeters ?? record.summary?.distanceMeters
+        liveDurationSeconds = authoritativeWorkout.map { $0.endTime.timeIntervalSince($0.startTime) }
+            ?? record.summary?.durationSeconds
             ?? record.endTime.timeIntervalSince(record.startTime)
+        if let authoritativeWorkout {
+            segmentStartTime = authoritativeWorkout.startTime
+            segmentEndTime = authoritativeWorkout.endTime
+        }
     }
 
     private func trimSegmentBeforeCurrentFix() {

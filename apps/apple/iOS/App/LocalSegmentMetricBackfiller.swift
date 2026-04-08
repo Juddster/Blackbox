@@ -13,33 +13,57 @@ struct LocalSegmentMetricBackfiller {
         let segments = try modelContext.fetch(FetchDescriptor<SegmentRecord>())
 
         for segment in segments {
-            guard
-                segment.lifecycleState != .deleted,
-                let summary = segment.summary,
-                summary.distanceMeters == nil
-            else {
+            guard segment.lifecycleState != .deleted else {
                 continue
             }
 
-            let observations = try observations(
+            var segmentObservations = try observations(
                 from: segment.startTime,
                 to: segment.endTime
             )
-            let distanceBreakdown = SegmentObservationMetrics.distanceBreakdown(
-                from: observations,
-                preferredActivityClass: segment.interpretation?.visibleClass
-            )
-            guard let distanceMeters = distanceBreakdown.preferredDistanceMeters else {
+            let authoritativeWorkout = SegmentObservationMetrics.authoritativeWorkoutSummary(from: segmentObservations)
+            let shouldRefreshSummary = segment.summary?.distanceMeters == nil || authoritativeWorkout != nil
+            guard shouldRefreshSummary else {
                 continue
             }
-
-            summary.distanceMeters = distanceMeters
-            summary.locationDistanceMeters = distanceBreakdown.locationDistanceMeters
-            summary.pedometerDistanceMeters = distanceBreakdown.pedometerDistanceMeters
-            if summary.durationSeconds > 0 {
-                summary.averageSpeedMetersPerSecond = distanceMeters / summary.durationSeconds
+            if let authoritativeWorkout {
+                if segment.originType != .userCreated {
+                    segment.startTime = authoritativeWorkout.startTime
+                    segment.endTime = authoritativeWorkout.endTime
+                }
+                segmentObservations = try observations(
+                    from: authoritativeWorkout.startTime,
+                    to: authoritativeWorkout.endTime
+                )
             }
-            summary.updatedAt = .now
+
+            let distanceBreakdown = SegmentObservationMetrics.distanceBreakdown(
+                from: segmentObservations,
+                preferredActivityClass: segment.interpretation?.visibleClass
+            )
+            let durationSeconds = max(0, segment.endTime.timeIntervalSince(segment.startTime))
+            if let summary = segment.summary {
+                summary.distanceMeters = distanceBreakdown.preferredDistanceMeters
+                summary.locationDistanceMeters = distanceBreakdown.locationDistanceMeters
+                summary.pedometerDistanceMeters = distanceBreakdown.pedometerDistanceMeters
+                summary.durationSeconds = durationSeconds
+                if let distanceMeters = distanceBreakdown.preferredDistanceMeters, durationSeconds > 0 {
+                    summary.averageSpeedMetersPerSecond = distanceMeters / durationSeconds
+                } else {
+                    summary.averageSpeedMetersPerSecond = nil
+                }
+                summary.updatedAt = .now
+            } else {
+                segment.summary = SegmentSummaryRecord(
+                    durationSeconds: durationSeconds,
+                    distanceMeters: distanceBreakdown.preferredDistanceMeters,
+                    locationDistanceMeters: distanceBreakdown.locationDistanceMeters,
+                    pedometerDistanceMeters: distanceBreakdown.pedometerDistanceMeters,
+                    averageSpeedMetersPerSecond: durationSeconds > 0
+                        ? distanceBreakdown.preferredDistanceMeters.map { $0 / durationSeconds }
+                        : nil
+                )
+            }
             segment.updatedAt = .now
         }
 
@@ -52,12 +76,22 @@ struct LocalSegmentMetricBackfiller {
             return
         }
 
-        let observations = try observations(
+        var segmentObservations = try observations(
             from: segment.startTime,
             to: segment.endTime
         )
+        if let authoritativeWorkout = SegmentObservationMetrics.authoritativeWorkoutSummary(from: segmentObservations) {
+            if segment.originType != .userCreated {
+                segment.startTime = authoritativeWorkout.startTime
+                segment.endTime = authoritativeWorkout.endTime
+            }
+            segmentObservations = try observations(
+                from: authoritativeWorkout.startTime,
+                to: authoritativeWorkout.endTime
+            )
+        }
         let distanceBreakdown = SegmentObservationMetrics.distanceBreakdown(
-            from: observations,
+            from: segmentObservations,
             preferredActivityClass: segment.interpretation?.visibleClass
         )
         let distanceMeters = distanceBreakdown.preferredDistanceMeters
