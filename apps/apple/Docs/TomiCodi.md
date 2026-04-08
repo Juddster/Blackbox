@@ -96,6 +96,8 @@ What to watch:
 
 ## Codi Progress Notes
 
+- Apr 8, 22:58: Fixed the shared Xcode scheme pre-build increment action to use Xcode's exported `CURRENT_PROJECT_VERSION` directly, with a properly escaped `awk` fallback, after earlier parsers failed during watch builds.
+- Apr 8, 23:08: Reworked the shared Xcode scheme pre-build increment action into a simpler every-build increment path with configurable rollover at `100` or `1000`, defaulting to `1000`.
 - Mar 26, 12:45: Added the first SwiftData-backed Apple local persistence foundation for observations and semantic segment history.
 - Mar 26, 12:45: Replaced the initial scaffold screen with a timeline shell driven by persisted seed data.
 - Mar 26, 12:45: Wired the app entry point to a shared model container and bootstrap seeding path.

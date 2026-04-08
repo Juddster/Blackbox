@@ -5,6 +5,24 @@
    <BuildAction
       parallelizeBuildables = "YES"
       buildImplicitDependencies = "YES">
+      <PreActions>
+         <ExecutionAction
+            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
+            <ActionContent
+               title = "Increment Build Number"
+               scriptText = "set -eu&#10;PROJECT_CONTAINER=&quot;${PROJECT_FILE_PATH:-$SRCROOT/Blackbox.xcodeproj}&quot;&#10;ROLLOVER_LIMIT=&quot;${BLACKBOX_BUILD_NUMBER_ROLLOVER:-1000}&quot;&#10;case &quot;$PROJECT_CONTAINER&quot; in&#10;  *.xcodeproj) PROJECT_FILE=&quot;$PROJECT_CONTAINER/project.pbxproj&quot; ;;&#10;  */project.pbxproj) PROJECT_FILE=&quot;$PROJECT_CONTAINER&quot; ;;&#10;  *) PROJECT_FILE=&quot;$PROJECT_CONTAINER&quot; ;;&#10;esac&#10;case &quot;$ROLLOVER_LIMIT&quot; in&#10;  100|1000) ;;&#10;  *) ROLLOVER_LIMIT=1000 ;;&#10;esac&#10;CURRENT=&quot;${CURRENT_PROJECT_VERSION:-}&quot;&#10;if [ -z &quot;$CURRENT&quot; ]; then&#10;  CURRENT=$(/usr/bin/perl -ne 'if (/CURRENT_PROJECT_VERSION = (\\d+);/) { print $1; exit }' &quot;$PROJECT_FILE&quot;)&#10;fi&#10;if [ -z &quot;${CURRENT:-}&quot; ]; then&#10;  echo &quot;Could not read CURRENT_PROJECT_VERSION from $PROJECT_FILE&quot; >&amp;2&#10;  exit 1&#10;fi&#10;if [ &quot;$CURRENT&quot; -ge &quot;$ROLLOVER_LIMIT&quot; ]; then&#10;  NEXT=1&#10;else&#10;  NEXT=$((CURRENT + 1))&#10;fi&#10;/usr/bin/perl -0pi -e &quot;s/CURRENT_PROJECT_VERSION = \\d+;/CURRENT_PROJECT_VERSION = $NEXT;/g&quot; &quot;$PROJECT_FILE&quot;&#10;echo &quot;Incremented CURRENT_PROJECT_VERSION to $NEXT (rollover $ROLLOVER_LIMIT)&quot;&#10;">
+               <EnvironmentBuildable>
+                  <BuildableReference
+                     BuildableIdentifier = "primary"
+                     BlueprintIdentifier = "40DF1382E67EE9921E979A39"
+                     BuildableName = "Blackbox.app"
+                     BlueprintName = "Blackbox"
+                     ReferencedContainer = "container:Blackbox.xcodeproj">
+                  </BuildableReference>
+               </EnvironmentBuildable>
+            </ActionContent>
+         </ExecutionAction>
+      </PreActions>
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
