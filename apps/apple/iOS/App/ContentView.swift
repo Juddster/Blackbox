@@ -14,7 +14,6 @@ struct ContentView: View {
     @State private var syncActivity = SyncActivityStore()
     @State private var presentedResumeReport: CaptureResumeReport?
     @State private var hasBackfilledSegmentMetrics = false
-    @State private var deferredMaintenanceTask: Task<Void, Never>?
 
     var body: some View {
         TabView {
@@ -46,26 +45,51 @@ struct ContentView: View {
 
             DataView(syncActivity: syncActivity)
                 .tabItem {
-                    Label("Data", systemImage: "tray.full")
+                Label("Data", systemImage: "tray.full")
+            }
+        }
+        .overlay {
+            if healthBackfill.isRunning {
+                ZStack {
+                    Color.black.opacity(0.18)
+                        .ignoresSafeArea()
+
+                    VStack(spacing: 12) {
+                        ProgressView()
+                            .controlSize(.large)
+
+                        Text("Backfilling Health Data")
+                            .font(.headline)
+
+                        Text(healthBackfill.progressSummary ?? healthBackfill.runStateSummary)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+
+                        if let lastQueryWindowSummary = healthBackfill.lastQueryWindowSummary {
+                            Text(lastQueryWindowSummary)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                    }
+                    .padding(24)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .padding(32)
                 }
+                .allowsHitTesting(true)
+            }
         }
         .task {
-            configureCapture()
-            presentedResumeReport = await captureControl.handleDidBecomeActive()
-            await resumeCaptureIfNeeded()
-            refreshCaptureReadiness()
-            scheduleDeferredMaintenance()
+            await runStartupSequence(reason: "initial")
         }
         .onChange(of: scenePhase) {
             if scenePhase == .active {
                 Task {
-                    presentedResumeReport = await captureControl.handleDidBecomeActive()
-                    await resumeCaptureIfNeeded()
-                    scheduleDeferredMaintenance()
+                    await runStartupSequence(reason: "becameActive")
                 }
             } else if scenePhase == .background {
                 captureControl.handleDidEnterBackground()
-                deferredMaintenanceTask?.cancel()
             }
         }
         .alert(
@@ -93,6 +117,30 @@ struct ContentView: View {
         captureControl.configure(modelContext: modelContext)
         watchConnectivity.configure(modelContext: modelContext)
         healthBackfill.configure(modelContext: modelContext)
+    }
+
+    private func runStartupSequence(reason: String) async {
+        let totalStartTime = CFAbsoluteTimeGetCurrent()
+        logStartup("Starting startup sequence [\(reason)].")
+
+        var stepStartTime = CFAbsoluteTimeGetCurrent()
+        configureCapture()
+        logStartupStep("configureCapture", startedAt: stepStartTime)
+
+        stepStartTime = CFAbsoluteTimeGetCurrent()
+        presentedResumeReport = await captureControl.handleDidBecomeActive()
+        logStartupStep("handleDidBecomeActive", startedAt: stepStartTime)
+
+        stepStartTime = CFAbsoluteTimeGetCurrent()
+        await resumeCaptureIfNeeded()
+        logStartupStep("resumeCaptureIfNeeded", startedAt: stepStartTime)
+
+        stepStartTime = CFAbsoluteTimeGetCurrent()
+        refreshCaptureReadiness()
+        logStartupStep("refreshCaptureReadiness", startedAt: stepStartTime)
+
+        let totalElapsed = CFAbsoluteTimeGetCurrent() - totalStartTime
+        logStartup("Startup sequence [\(reason)] finished in \(String(format: "%.3f", totalElapsed))s.")
     }
 
     private func resumeCaptureIfNeeded() async {
@@ -145,35 +193,33 @@ struct ContentView: View {
 
     private func backfillRecentWatchHealth() async {
         await healthBackfill.backfillSinceLastRequest()
+        backfillSegmentMetrics(force: true)
+        refreshSyncActivity()
     }
 
     private func forceFullHealthBackfill() async {
         await healthBackfill.forceFullBackfill()
+        backfillSegmentMetrics(force: true)
+        refreshSyncActivity()
     }
 
-    private func scheduleDeferredMaintenance() {
-        deferredMaintenanceTask?.cancel()
-        deferredMaintenanceTask = Task(priority: .utility) {
-            try? await Task.sleep(for: .seconds(2))
-            guard Task.isCancelled == false else {
-                return
-            }
-
-            await MainActor.run {
-                backfillSegmentMetrics()
-                refreshSyncActivity()
-            }
-        }
-    }
-
-    private func backfillSegmentMetrics() {
-        guard hasBackfilledSegmentMetrics == false else {
+    private func backfillSegmentMetrics(force: Bool = false) {
+        guard force || hasBackfilledSegmentMetrics == false else {
             return
         }
 
         hasBackfilledSegmentMetrics = true
         let backfiller = LocalSegmentMetricBackfiller(modelContext: modelContext)
         try? backfiller.backfillMissingDistanceMetrics()
+    }
+
+    private func logStartup(_ message: String) {
+        print("[Startup] \(message)")
+    }
+
+    private func logStartupStep(_ name: String, startedAt: CFAbsoluteTime) {
+        let elapsed = CFAbsoluteTimeGetCurrent() - startedAt
+        logStartup("\(name) finished in \(String(format: "%.3f", elapsed))s.")
     }
 }
 
