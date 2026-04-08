@@ -1,7 +1,7 @@
 import SwiftData
 
 extension ModelContainer {
-    static var blackbox: ModelContainer = {
+    static func makeBlackbox() throws -> ModelContainer {
         let schema = Schema([
             ObservationRecord.self,
             SegmentRecord.self,
@@ -15,10 +15,6 @@ extension ModelContainer {
             isStoredInMemoryOnly: false
         )
 
-        do {
-            return try ModelContainer(for: schema, configurations: [configuration])
-        } catch {
-            fatalError("Failed to create Blackbox model container: \(error)")
-        }
-    }()
+        return try ModelContainer(for: schema, configurations: [configuration])
+    }
 }

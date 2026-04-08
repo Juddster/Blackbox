@@ -225,7 +225,7 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .modelContainer(ModelContainer.blackbox)
+        .modelContainer(try! ModelContainer.makeBlackbox())
 }
 
 @MainActor
