@@ -96,6 +96,23 @@ What to watch:
 
 ## Codi Progress Notes
 
+- Apr 14, 19:22:
+  - Added Apple replay truth-vs-inference comparison for windows with Health-backfilled segments, so the Data tab and replay export now score current proposed segments against overlapping Health truth with match coverage, class agreement, timing offsets, distance deltas, and unmatched inferred segments called out explicitly.
+  - Added a scoped Apple cleanup path to tombstone previously posted system-origin segments inside the selected replay window, so stale bad posts can be removed before comparing the current analyzer output against Health truth.
+- Apr 14, 16:28:
+  - Reworked the Apple replay analyzer so Health backfill pedometer distance samples are summed instead of treated like cumulative live pedometer updates, Health-route-backed running segments are no longer auto-rejected for route-vs-pedometer mismatch, and short walking interruptions between adjacent running chunks are merged back into a single inferred run when they match the existing run-exit pattern.
+- Apr 9, 15:40:
+  - Tightened the Apple replay inference pipeline so each analysis bucket now chooses a single preferred location stream instead of mixing Health route points with Blackbox live points, filters low-quality and implausibly fast live jumps more aggressively, ignores manual correction fixes during inference, and lowers the sustained-running threshold so obvious mid-pace runs are less likely to be mislabeled as walking.
+- Apr 9, 15:27:
+  - Split the Apple segment-map review overlay by source so Health-backed route observations now render separately from Blackbox live/manual location observations, with Health isolated by workout UUID and shown in blue while Blackbox location stays green; the scrubber follows the segment’s own primary source instead of a mixed path.
+- Apr 9, 12:02:
+  - Fixed the iPhone segment-map review flow so it now shows an explicit loading state instead of a premature no-data message, keeps the full segment observation window instead of collapsing the fetch to the Health workout bounds, overlays raw-versus-accepted route polylines for review, and adds a full-screen map viewer from the segment detail sheet.
+- Apr 9, 01:06:
+  - Reworked the Apple iPhone Data and Activity cleanup so recent real capture is now collapsed and fetched lazily, Health backfilled workouts materialize as dedicated timeline segments, short inferred system segments stay visible but are visually de-emphasized, and Health workout segments no longer block overlapping Blackbox-inferred segments from being saved beside them.
+- Apr 9, 01:18:
+  - Added an Apple Settings action to materialize previously imported Health workout summaries into timeline segments without rerunning the full Health backfill, so already-fetched workouts can be converted into separate Health-origin Activity rows beside overlapping Blackbox-inferred segments.
+- Apr 9, 01:34:
+  - Moved the Apple background-resume collection summary out of the startup modal and into a dedicated Data-tab section backed by `CaptureControlStore`, while keeping the report-generation work off the UI thread and confirming the new Health-workout materialization path still does its meaningful work in detached utility tasks.
 - Apr 8, 22:58: Fixed the shared Xcode scheme pre-build increment action to use Xcode's exported `CURRENT_PROJECT_VERSION` directly, with a properly escaped `awk` fallback, after earlier parsers failed during watch builds.
 - Apr 8, 23:08: Reworked the shared Xcode scheme pre-build increment action into a simpler every-build increment path with configurable rollover at `100` or `1000`, defaulting to `1000`.
 - Mar 26, 12:45: Added the first SwiftData-backed Apple local persistence foundation for observations and semantic segment history.

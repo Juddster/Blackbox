@@ -6,10 +6,12 @@ import SwiftUI
 struct DataView: View {
     @Environment(\.modelContext) private var modelContext
     let syncActivity: SyncActivityStore
+    let captureControl: CaptureControlStore
 
     @AppStorage("replay_export_start_time_interval") private var storedExportStartTimeInterval: Double = 0
     @AppStorage("replay_export_end_time_interval") private var storedExportEndTimeInterval: Double = 0
     @State private var recentObservations = [ObservationSnapshot]()
+    @State private var isRecentObservationsExpanded = false
     @State private var inferencePreview: ReplayInferencePreview?
     @State private var exportStartTime = Date.now.addingTimeInterval(-60 * 60)
     @State private var exportEndTime = Date.now
@@ -19,6 +21,8 @@ struct DataView: View {
     @State private var exportStatusMessage: String?
     @State private var inferenceStatusMessage: String?
     @State private var debugSelection: ReplayInferenceDebugSelection?
+    @State private var exportObservationSummary = ReplayExportObservationSummary(observations: [])
+    @State private var truthComparison: ReplayTruthComparison?
 
     var body: some View {
         NavigationStack {
@@ -32,6 +36,46 @@ struct DataView: View {
                     lastSyncAt: syncActivity.lastSyncAt,
                     onPushPending: pushPendingSync
                 )
+
+                if let latestResumeReport = captureControl.latestResumeReport {
+                    Section("Background Collection Report") {
+                        LabeledContent("Window", value: latestResumeReport.windowSummary)
+                        LabeledContent("Intent", value: latestResumeReport.enabledSourcesSummary)
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Recorded by Blackbox")
+                                .font(.subheadline.weight(.semibold))
+                            Text(latestResumeReport.recordedSummary)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 2)
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Recovered On Resume")
+                                .font(.subheadline.weight(.semibold))
+                            Text(latestResumeReport.recoveredSummary)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 2)
+
+                        if latestResumeReport.blockingReasons.isEmpty == false {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Notes")
+                                    .font(.subheadline.weight(.semibold))
+                                Text(latestResumeReport.blockingReasons.joined(separator: "\n"))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.vertical, 2)
+                        }
+
+                        Button("Clear Report") {
+                            captureControl.clearLatestResumeReport()
+                        }
+                    }
+                }
 
                 Section("Replay Export") {
                     DatePicker(
@@ -59,8 +103,7 @@ struct DataView: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    let summary = selectedWindowObservationSummary()
-                    Text(summary.uiSummary)
+                    Text(exportObservationSummary.uiSummary)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -81,6 +124,13 @@ struct DataView: View {
                         }
                     }
 
+                    Button(role: .destructive) {
+                        clearPostedSystemSegmentsInWindow()
+                    } label: {
+                        Label("Clear Posted System Segments In Window", systemImage: "trash")
+                    }
+                    .disabled(exportEndTime <= exportStartTime)
+
                     if let inferenceStatusMessage {
                         Text(inferenceStatusMessage)
                             .font(.caption)
@@ -91,6 +141,67 @@ struct DataView: View {
                         Text(inferenceSummary(for: inferencePreview))
                             .font(.caption)
                             .foregroundStyle(.secondary)
+
+                        if let truthComparison {
+                            Section("Health Truth Comparison") {
+                                Text(truthComparison.summaryText)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+
+                                ForEach(truthComparison.healthMatches) { match in
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        HStack {
+                                            Label(match.healthActivityClass.displayName, systemImage: "heart.text.square")
+                                                .font(.subheadline.weight(.semibold))
+                                            Spacer()
+                                            Text(match.statusText)
+                                                .font(.caption.weight(.semibold))
+                                                .foregroundStyle(match.statusColor)
+                                        }
+
+                                        Text(
+                                            "\(match.startTime.formatted(date: .omitted, time: .shortened)) - \(match.endTime.formatted(date: .omitted, time: .shortened))"
+                                        )
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+
+                                        if let inferredActivityClass = match.inferredActivityClass {
+                                            Text(
+                                                "Inferred \(inferredActivityClass.displayName) • truth coverage \(Int((match.truthCoverage * 100).rounded()))% • start \(formattedSignedDuration(match.startOffsetSeconds)) • end \(formattedSignedDuration(match.endOffsetSeconds))"
+                                            )
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+
+                                            if let distanceDeltaMeters = match.distanceDeltaMeters {
+                                                Text("Distance delta \(formattedSignedDistance(distanceDeltaMeters))")
+                                                    .font(.caption)
+                                                    .foregroundStyle(.tertiary)
+                                            }
+                                        } else {
+                                            Text("No inferred segment overlapped this Health segment enough to count as a match.")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    .padding(.vertical, 2)
+                                }
+
+                                if truthComparison.unmatchedProposedSegments.isEmpty == false {
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text("Unmatched Proposed Segments")
+                                            .font(.subheadline.weight(.semibold))
+                                        ForEach(truthComparison.unmatchedProposedSegments) { segment in
+                                            Text(
+                                                "\(segment.activityClass.displayName) \(segment.startTime.formatted(date: .omitted, time: .shortened)) - \(segment.endTime.formatted(date: .omitted, time: .shortened))"
+                                            )
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    .padding(.vertical, 2)
+                                }
+                            }
+                        }
 
                         if inferencePreview.proposedTransitions.isEmpty == false {
                             ForEach(inferencePreview.proposedTransitions) { transition in
@@ -181,19 +292,33 @@ struct DataView: View {
                     }
                 }
 
-                RecentObservationsSection(observations: recentObservations)
+                RecentObservationsSection(
+                    isExpanded: $isRecentObservationsExpanded,
+                    observations: recentObservations
+                )
             }
             .navigationTitle("Data")
         }
         .task {
-            refreshRecentObservations()
-            configureExportWindowIfNeeded()
+            await configureExportWindowIfNeeded()
+            await refreshExportObservationSummary()
+        }
+        .onChange(of: isRecentObservationsExpanded) { _, isExpanded in
+            guard isExpanded else {
+                return
+            }
+
+            Task {
+                await refreshRecentObservations()
+            }
         }
         .onChange(of: exportStartTime) { _, newValue in
             storedExportStartTimeInterval = newValue.timeIntervalSinceReferenceDate
+            Task { await refreshExportObservationSummary() }
         }
         .onChange(of: exportEndTime) { _, newValue in
             storedExportEndTimeInterval = newValue.timeIntervalSinceReferenceDate
+            Task { await refreshExportObservationSummary() }
         }
         .fileExporter(
             isPresented: $isPresentingExporter,
@@ -215,19 +340,25 @@ struct DataView: View {
 
     private func pushPendingSync() async {
         await syncActivity.pushPending(using: modelContext)
-        refreshRecentObservations()
+        if isRecentObservationsExpanded {
+            await refreshRecentObservations()
+        }
     }
 
-    private func refreshRecentObservations() {
-        var descriptor = FetchDescriptor<ObservationRecord>(
-            sortBy: [SortDescriptor(\ObservationRecord.timestamp, order: .reverse)]
-        )
-        descriptor.fetchLimit = 40
-        let observations = (try? modelContext.fetch(descriptor)) ?? []
-        recentObservations = ObservationProjection.recent(from: observations)
+    private func refreshRecentObservations() async {
+        let modelContainer = modelContext.container
+        let snapshots = await Task.detached(priority: .utility) {
+            var descriptor = FetchDescriptor<ObservationRecord>(
+                sortBy: [SortDescriptor(\ObservationRecord.timestamp, order: .reverse)]
+            )
+            descriptor.fetchLimit = 40
+            let observations = (try? ModelContext(modelContainer).fetch(descriptor)) ?? []
+            return ObservationProjection.recent(from: observations)
+        }.value
+        recentObservations = snapshots
     }
 
-    private func configureExportWindowIfNeeded() {
+    private func configureExportWindowIfNeeded() async {
         if storedExportStartTimeInterval > 0, storedExportEndTimeInterval > 0 {
             let storedStartTime = Date(timeIntervalSinceReferenceDate: storedExportStartTimeInterval)
             let storedEndTime = Date(timeIntervalSinceReferenceDate: storedExportEndTimeInterval)
@@ -242,67 +373,56 @@ struct DataView: View {
             return
         }
 
-        var newestDescriptor = FetchDescriptor<ObservationRecord>(
-            sortBy: [SortDescriptor(\ObservationRecord.timestamp, order: .reverse)]
-        )
-        newestDescriptor.fetchLimit = 1
+        let modelContainer = modelContext.container
+        let bounds = await Task.detached(priority: .utility) {
+            var newestDescriptor = FetchDescriptor<ObservationRecord>(
+                sortBy: [SortDescriptor(\ObservationRecord.timestamp, order: .reverse)]
+            )
+            newestDescriptor.fetchLimit = 1
 
-        var oldestDescriptor = FetchDescriptor<ObservationRecord>(
-            sortBy: [SortDescriptor(\ObservationRecord.timestamp, order: .forward)]
-        )
-        oldestDescriptor.fetchLimit = 1
+            var oldestDescriptor = FetchDescriptor<ObservationRecord>(
+                sortBy: [SortDescriptor(\ObservationRecord.timestamp, order: .forward)]
+            )
+            oldestDescriptor.fetchLimit = 1
 
-        let newestObservation = try? modelContext.fetch(newestDescriptor).first
-        let oldestObservation = try? modelContext.fetch(oldestDescriptor).first
+            let context = ModelContext(modelContainer)
+            return (
+                newest: try? context.fetch(newestDescriptor).first?.timestamp,
+                oldest: try? context.fetch(oldestDescriptor).first?.timestamp
+            )
+        }.value
 
-        if let newestObservation {
-            exportEndTime = newestObservation.timestamp
+        if let newestObservation = bounds.newest {
+            exportEndTime = newestObservation
             exportStartTime = max(
-                oldestObservation?.timestamp ?? newestObservation.timestamp.addingTimeInterval(-60 * 60),
-                newestObservation.timestamp.addingTimeInterval(-60 * 90)
+                bounds.oldest ?? newestObservation.addingTimeInterval(-60 * 60),
+                newestObservation.addingTimeInterval(-60 * 90)
             )
         }
     }
 
     private func exportReplayBundle() {
-        let observations = fetchObservationsForExport()
-        let segments = fetchSegmentsForExport()
-        let observationSummary = ReplayExportObservationSummary(observations: observations)
-        refreshMetricsForExport(segments: segments)
-        let analysis = ReplayInferenceAnalyzer.preview(
-            from: observations,
-            windowStart: exportStartTime,
-            windowEnd: exportEndTime
-        )
-        let bundle = ReplayExportBundle(
-            exportedAt: .now,
-            exportedTimeZoneIdentifier: TimeZone.current.identifier,
-            exportedTimeZoneSecondsFromGMT: TimeZone.current.secondsFromGMT(),
-            windowStart: exportStartTime,
-            windowEnd: exportEndTime,
-            appBuilds: ReplayExportAppBuilds(
-                iPhone: .current,
-                latestWatchSender: WatchIntakeMetadataSnapshot.load()
-            ),
-            observationSummary: observationSummary,
-            observations: observations.map(ReplayExportObservation.init),
-            segments: segments.compactMap(makeReplayExportSegment),
-            analysis: ReplayExportAnalysis(preview: analysis)
-        )
+        let modelContainer = modelContext.container
+        let exportStartTime = exportStartTime
+        let exportEndTime = exportEndTime
+        Task {
+            do {
+                let result = try await Task.detached(priority: .utility) {
+                    try Self.buildReplayExport(
+                        modelContainer: modelContainer,
+                        exportStartTime: exportStartTime,
+                        exportEndTime: exportEndTime
+                    )
+                }.value
 
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        encoder.dateEncodingStrategy = .iso8601
-
-        guard let data = try? encoder.encode(bundle) else {
-            exportStatusMessage = "Could not encode the replay bundle."
-            return
+                exportDocument = ReplayExportDocument(data: result.data)
+                exportFileName = result.fileName
+                exportStatusMessage = result.statusMessage
+                isPresentingExporter = true
+            } catch {
+                exportStatusMessage = "Could not encode the replay bundle."
+            }
         }
-
-        exportDocument = ReplayExportDocument(data: data)
-        exportFileName = exportFileName(for: bundle)
-        exportStatusMessage = "Prepared \(bundle.observations.count) observations (\(observationSummary.iPhoneObservationCount) iPhone, \(observationSummary.watchObservationCount) watch) and \(bundle.segments.count) segments."
-        isPresentingExporter = true
     }
 
     private func refreshMetricsForExport(segments: [SegmentRecord]) {
@@ -317,13 +437,37 @@ struct DataView: View {
     }
 
     private func analyzeSelectedWindow() {
-        let observations = fetchObservationsForExport()
-        inferencePreview = ReplayInferenceAnalyzer.preview(
-            from: observations,
-            windowStart: exportStartTime,
-            windowEnd: exportEndTime
-        )
-        inferenceStatusMessage = nil
+        let modelContainer = modelContext.container
+        let exportStartTime = exportStartTime
+        let exportEndTime = exportEndTime
+        Task {
+            let result = await Task.detached(priority: .utility) {
+                let context = ModelContext(modelContainer)
+                let observations = Self.fetchObservationsForExport(
+                    using: context,
+                    startTime: exportStartTime,
+                    endTime: exportEndTime
+                )
+                let segments = Self.fetchSegmentsForExport(
+                    using: context,
+                    startTime: exportStartTime,
+                    endTime: exportEndTime
+                )
+                let preview = ReplayInferenceAnalyzer.preview(
+                    from: observations,
+                    windowStart: exportStartTime,
+                    windowEnd: exportEndTime
+                )
+                let comparison = Self.makeTruthComparison(
+                    preview: preview,
+                    segments: segments
+                )
+                return (preview, comparison)
+            }.value
+            inferencePreview = result.0
+            truthComparison = result.1
+            inferenceStatusMessage = nil
+        }
     }
 
     private func saveInferredSegments() {
@@ -332,26 +476,74 @@ struct DataView: View {
             return
         }
 
-        do {
-            let writer = LocalUserSegmentWriter(modelContext: modelContext)
-            let outcome = try writer.createInferredSegments(from: inferencePreview.proposedSegments)
-            if outcome.createdCount == 0 {
-                inferenceStatusMessage = outcome.skippedCount > 0
-                    ? "Skipped \(outcome.skippedCount) overlapping proposals."
-                    : "No saveable inferred segments were found."
-            } else if outcome.skippedCount == 0 {
-                inferenceStatusMessage = "Saved \(outcome.createdCount) proposed segment\(outcome.createdCount == 1 ? "" : "s") for review."
-            } else {
-                inferenceStatusMessage = "Saved \(outcome.createdCount) proposed segment\(outcome.createdCount == 1 ? "" : "s"); skipped \(outcome.skippedCount) overlaps."
+        let modelContainer = modelContext.container
+        Task {
+            do {
+                let outcome = try await Task.detached(priority: .utility) {
+                    let writer = LocalUserSegmentWriter(modelContainer: modelContainer)
+                    return try writer.createInferredSegments(from: inferencePreview.proposedSegments)
+                }.value
+
+                if outcome.createdCount == 0 {
+                    inferenceStatusMessage = outcome.skippedCount > 0
+                        ? "Skipped \(outcome.skippedCount) overlapping proposals."
+                        : "No saveable inferred segments were found."
+                } else if outcome.skippedCount == 0 {
+                    inferenceStatusMessage = "Saved \(outcome.createdCount) proposed segment\(outcome.createdCount == 1 ? "" : "s") for review."
+                } else {
+                    inferenceStatusMessage = "Saved \(outcome.createdCount) proposed segment\(outcome.createdCount == 1 ? "" : "s"); skipped \(outcome.skippedCount) overlaps."
+                }
+            } catch {
+                inferenceStatusMessage = "Could not save the proposed segments."
             }
-        } catch {
-            inferenceStatusMessage = "Could not save the proposed segments."
         }
     }
 
-    private func fetchObservationsForExport() -> [ObservationRecord] {
-        let startTime = exportStartTime
-        let endTime = exportEndTime
+    private func clearPostedSystemSegmentsInWindow() {
+        let modelContainer = modelContext.container
+        let exportStartTime = exportStartTime
+        let exportEndTime = exportEndTime
+
+        Task {
+            do {
+                let removedCount = try await Task.detached(priority: .utility) {
+                    let tombstoner = LocalSegmentTombstoner(modelContainer: modelContainer)
+                    return try tombstoner.tombstonePostedSystemSegments(
+                        startTime: exportStartTime,
+                        endTime: exportEndTime
+                    )
+                }.value
+
+                if removedCount == 0 {
+                    inferenceStatusMessage = "No posted system segments overlapped this window."
+                } else {
+                    inferenceStatusMessage = "Cleared \(removedCount) posted system segment\(removedCount == 1 ? "" : "s") from this window."
+                }
+            } catch {
+                inferenceStatusMessage = "Could not clear posted system segments for this window."
+            }
+        }
+    }
+
+    private func refreshExportObservationSummary() async {
+        let modelContainer = modelContext.container
+        let exportStartTime = exportStartTime
+        let exportEndTime = exportEndTime
+        exportObservationSummary = await Task.detached(priority: .utility) {
+            let observations = Self.fetchObservationsForExport(
+                using: ModelContext(modelContainer),
+                startTime: exportStartTime,
+                endTime: exportEndTime
+            )
+            return ReplayExportObservationSummary(observations: observations)
+        }.value
+    }
+
+    nonisolated private static func fetchObservationsForExport(
+        using modelContext: ModelContext,
+        startTime: Date,
+        endTime: Date
+    ) -> [ObservationRecord] {
         let descriptor = FetchDescriptor<ObservationRecord>(
             predicate: #Predicate<ObservationRecord> { observation in
                 observation.timestamp >= startTime && observation.timestamp <= endTime
@@ -361,9 +553,11 @@ struct DataView: View {
         return (try? modelContext.fetch(descriptor)) ?? []
     }
 
-    private func fetchSegmentsForExport() -> [SegmentRecord] {
-        let startTime = exportStartTime
-        let endTime = exportEndTime
+    nonisolated private static func fetchSegmentsForExport(
+        using modelContext: ModelContext,
+        startTime: Date,
+        endTime: Date
+    ) -> [SegmentRecord] {
         let descriptor = FetchDescriptor<SegmentRecord>(
             predicate: #Predicate<SegmentRecord> { segment in
                 segment.endTime >= startTime && segment.startTime <= endTime
@@ -373,7 +567,7 @@ struct DataView: View {
         return (try? modelContext.fetch(descriptor)) ?? []
     }
 
-    private func makeReplayExportSegment(from record: SegmentRecord) -> ReplayExportSegment? {
+    nonisolated private static func makeReplayExportSegment(from record: SegmentRecord) -> ReplayExportSegment? {
         guard let envelope = try? SyncEnvelopeProjection.makeEnvelope(from: record) else {
             return nil
         }
@@ -392,18 +586,80 @@ struct DataView: View {
             sync: envelope.sync
         )
     }
+}
 
-    private func exportFileName(for bundle: ReplayExportBundle) -> String {
+private extension DataView {
+    nonisolated static func buildReplayExport(
+        modelContainer: ModelContainer,
+        exportStartTime: Date,
+        exportEndTime: Date
+    ) throws -> ReplayExportBuildResult {
+        let modelContext = ModelContext(modelContainer)
+        let observations = fetchObservationsForExport(
+            using: modelContext,
+            startTime: exportStartTime,
+            endTime: exportEndTime
+        )
+        let segments = fetchSegmentsForExport(
+            using: modelContext,
+            startTime: exportStartTime,
+            endTime: exportEndTime
+        )
+        let observationSummary = ReplayExportObservationSummary(observations: observations)
+        let backfiller = LocalSegmentMetricBackfiller(modelContainer: modelContainer)
+        for segment in segments where segment.lifecycleState != .deleted {
+            try? backfiller.refreshMetrics(for: segment.id)
+        }
+        let analysis = ReplayInferenceAnalyzer.preview(
+            from: observations,
+            windowStart: exportStartTime,
+            windowEnd: exportEndTime
+        )
+        let truthComparison = makeTruthComparison(
+            preview: analysis,
+            segments: segments
+        )
+        let bundle = ReplayExportBundle(
+            exportedAt: .now,
+            exportedTimeZoneIdentifier: TimeZone.current.identifier,
+            exportedTimeZoneSecondsFromGMT: TimeZone.current.secondsFromGMT(),
+            windowStart: exportStartTime,
+            windowEnd: exportEndTime,
+            appBuilds: ReplayExportAppBuilds(
+                iPhone: .current,
+                latestWatchSender: WatchIntakeMetadataSnapshot.load()
+            ),
+            observationSummary: observationSummary,
+            observations: observations.map(ReplayExportObservation.init),
+            segments: segments.compactMap(Self.makeReplayExportSegment),
+            analysis: ReplayExportAnalysis(preview: analysis, truthComparison: truthComparison)
+        )
+
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(bundle)
+
+        return ReplayExportBuildResult(
+            data: data,
+            fileName: exportFileName(for: bundle),
+            statusMessage: "Prepared \(bundle.observations.count) observations (\(observationSummary.iPhoneObservationCount) iPhone, \(observationSummary.watchObservationCount) watch) and \(bundle.segments.count) segments."
+        )
+    }
+
+    nonisolated static func exportFileName(for bundle: ReplayExportBundle) -> String {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withDashSeparatorInDate, .withColonSeparatorInTime]
         let start = formatter.string(from: bundle.windowStart).replacingOccurrences(of: ":", with: "-")
         let end = formatter.string(from: bundle.windowEnd).replacingOccurrences(of: ":", with: "-")
         return "blackbox-replay-\(start)-to-\(end).json"
     }
+}
 
-    private func selectedWindowObservationSummary() -> ReplayExportObservationSummary {
-        ReplayExportObservationSummary(observations: fetchObservationsForExport())
-    }
+private struct ReplayExportBuildResult: Sendable {
+    let data: Data
+    let fileName: String
+    let statusMessage: String
 }
 
 private struct ReplayExportDocument: FileDocument {
@@ -578,8 +834,9 @@ private struct ReplayExportAnalysis: Codable {
     let pedometerRecordCount: Int
     let proposedSegments: [ReplayExportAnalysisSegment]
     let proposedTransitions: [ReplayExportAnalysisTransition]
+    let truthComparison: ReplayExportTruthComparison?
 
-    init(preview: ReplayInferencePreview) {
+    init(preview: ReplayInferencePreview, truthComparison: ReplayTruthComparison?) {
         analyzerVersion = ReplayInferenceAnalyzer.heuristicVersion
         bucketDurationSeconds = preview.bucketDurationSeconds
         locationFixCount = preview.locationFixCount
@@ -587,6 +844,7 @@ private struct ReplayExportAnalysis: Codable {
         pedometerRecordCount = preview.pedometerRecordCount
         proposedSegments = preview.proposedSegments.map(ReplayExportAnalysisSegment.init)
         proposedTransitions = preview.proposedTransitions.map(ReplayExportAnalysisTransition.init)
+        self.truthComparison = truthComparison.map(ReplayExportTruthComparison.init)
         suppressedSegments = preview.suppressedSegments.map(ReplayExportAnalysisSegment.init)
         rejectedSegments = preview.rejectedSegments.map(ReplayExportAnalysisSegment.init)
     }
@@ -722,6 +980,247 @@ private extension DataView {
         Measurement(value: distanceMeters, unit: UnitLength.meters)
             .formatted(.measurement(width: .abbreviated, usage: .road))
     }
+
+    func formattedSignedDistance(_ distanceMeters: Double) -> String {
+        let distanceText = formattedDistance(abs(distanceMeters))
+        return distanceMeters >= 0 ? "+\(distanceText)" : "-\(distanceText)"
+    }
+
+    func formattedSignedDuration(_ seconds: TimeInterval) -> String {
+        let magnitude = Int(abs(seconds).rounded())
+        let minutes = magnitude / 60
+        let remainingSeconds = magnitude % 60
+        let body = minutes > 0 ? "\(minutes)m \(remainingSeconds)s" : "\(remainingSeconds)s"
+        return seconds >= 0 ? "+\(body)" : "-\(body)"
+    }
+}
+
+private extension DataView {
+    nonisolated static func makeTruthComparison(
+        preview: ReplayInferencePreview,
+        segments: [SegmentRecord]
+    ) -> ReplayTruthComparison? {
+        let healthSegments = segments.compactMap(ReplayTruthSegment.init)
+        guard healthSegments.isEmpty == false else {
+            return nil
+        }
+
+        let proposedSegments = preview.proposedSegments.filter { $0.activityClass != .stationary }
+        let matches = healthSegments.map { healthSegment in
+            makeTruthMatch(for: healthSegment, proposedSegments: proposedSegments)
+        }
+        let matchedProposedIDs = Set(matches.compactMap(\.matchedProposedSegmentID))
+        let unmatchedProposedSegments = proposedSegments.filter { matchedProposedIDs.contains($0.id) == false }
+        return ReplayTruthComparison(
+            healthMatches: matches,
+            unmatchedProposedSegments: unmatchedProposedSegments
+        )
+    }
+
+    nonisolated static func makeTruthMatch(
+        for healthSegment: ReplayTruthSegment,
+        proposedSegments: [ReplayInferenceSegment]
+    ) -> ReplayTruthMatch {
+        let candidates = proposedSegments.compactMap { proposedSegment -> (ReplayInferenceSegment, TimeInterval)? in
+            let overlap = overlapDuration(
+                startA: healthSegment.startTime,
+                endA: healthSegment.endTime,
+                startB: proposedSegment.startTime,
+                endB: proposedSegment.endTime
+            )
+            guard overlap > 0 else {
+                return nil
+            }
+            return (proposedSegment, overlap)
+        }
+
+        guard let bestCandidate = candidates.max(by: { lhs, rhs in
+            if lhs.1 != rhs.1 {
+                return lhs.1 < rhs.1
+            }
+            let lhsAgreement = lhs.0.activityClass == healthSegment.activityClass ? 1 : 0
+            let rhsAgreement = rhs.0.activityClass == healthSegment.activityClass ? 1 : 0
+            if lhsAgreement != rhsAgreement {
+                return lhsAgreement < rhsAgreement
+            }
+            return lhs.0.confidence < rhs.0.confidence
+        }) else {
+            return ReplayTruthMatch(healthSegment: healthSegment, proposedSegment: nil, overlapDuration: 0)
+        }
+
+        let minimumMatchOverlap = min(5 * 60, max(60, healthSegment.durationSeconds * 0.2))
+        guard bestCandidate.1 >= minimumMatchOverlap else {
+            return ReplayTruthMatch(healthSegment: healthSegment, proposedSegment: nil, overlapDuration: bestCandidate.1)
+        }
+
+        return ReplayTruthMatch(
+            healthSegment: healthSegment,
+            proposedSegment: bestCandidate.0,
+            overlapDuration: bestCandidate.1
+        )
+    }
+
+    nonisolated static func overlapDuration(
+        startA: Date,
+        endA: Date,
+        startB: Date,
+        endB: Date
+    ) -> TimeInterval {
+        max(0, min(endA, endB).timeIntervalSince(max(startA, startB)))
+    }
+}
+
+private struct ReplayTruthSegment {
+    let id: UUID
+    let startTime: Date
+    let endTime: Date
+    let activityClass: ActivityClass
+    let distanceMeters: Double?
+
+    var durationSeconds: TimeInterval {
+        max(0, endTime.timeIntervalSince(startTime))
+    }
+
+    init?(record: SegmentRecord) {
+        guard
+            record.originType == .healthKitBackfill,
+            record.lifecycleState != .deleted,
+            let activityClass = record.interpretation?.visibleClass
+        else {
+            return nil
+        }
+
+        id = record.id
+        startTime = record.startTime
+        endTime = record.endTime
+        self.activityClass = activityClass
+        distanceMeters = record.summary?.distanceMeters
+    }
+}
+
+private struct ReplayTruthComparison {
+    let healthMatches: [ReplayTruthMatch]
+    let unmatchedProposedSegments: [ReplayInferenceSegment]
+
+    var summaryText: String {
+        let matchedCount = healthMatches.filter(\.isMatched).count
+        let classAgreementCount = healthMatches.filter(\.isClassMatch).count
+        let strongCoverageCount = healthMatches.filter { $0.truthCoverage >= 0.8 }.count
+        return "\(healthMatches.count) Health truth segment\(healthMatches.count == 1 ? "" : "s") • \(matchedCount) matched • \(classAgreementCount) class-aligned • \(strongCoverageCount) covered >=80% • \(unmatchedProposedSegments.count) unmatched proposed"
+    }
+}
+
+private struct ReplayTruthMatch: Identifiable {
+    let id: UUID
+    let healthSegmentID: UUID
+    let matchedProposedSegmentID: UUID?
+    let healthActivityClass: ActivityClass
+    let inferredActivityClass: ActivityClass?
+    let startTime: Date
+    let endTime: Date
+    let overlapDuration: TimeInterval
+    let truthCoverage: Double
+    let inferredCoverage: Double
+    let startOffsetSeconds: TimeInterval
+    let endOffsetSeconds: TimeInterval
+    let distanceDeltaMeters: Double?
+
+    init(healthSegment: ReplayTruthSegment, proposedSegment: ReplayInferenceSegment?, overlapDuration: TimeInterval) {
+        id = healthSegment.id
+        healthSegmentID = healthSegment.id
+        matchedProposedSegmentID = proposedSegment?.id
+        healthActivityClass = healthSegment.activityClass
+        inferredActivityClass = proposedSegment?.activityClass
+        startTime = healthSegment.startTime
+        endTime = healthSegment.endTime
+        self.overlapDuration = overlapDuration
+
+        let truthDuration = max(1, healthSegment.durationSeconds)
+        truthCoverage = overlapDuration / truthDuration
+        if let proposedSegment {
+            let inferredDuration = max(1, proposedSegment.endTime.timeIntervalSince(proposedSegment.startTime))
+            inferredCoverage = overlapDuration / inferredDuration
+            startOffsetSeconds = proposedSegment.startTime.timeIntervalSince(healthSegment.startTime)
+            endOffsetSeconds = proposedSegment.endTime.timeIntervalSince(healthSegment.endTime)
+            let proposedDistance = proposedSegment.pedometerDistanceMeters ?? proposedSegment.locationDistanceMeters
+            if let healthDistance = healthSegment.distanceMeters {
+                distanceDeltaMeters = proposedDistance - healthDistance
+            } else {
+                distanceDeltaMeters = nil
+            }
+        } else {
+            inferredCoverage = 0
+            startOffsetSeconds = 0
+            endOffsetSeconds = 0
+            distanceDeltaMeters = nil
+        }
+    }
+
+    var isMatched: Bool {
+        matchedProposedSegmentID != nil
+    }
+
+    var isClassMatch: Bool {
+        inferredActivityClass == healthActivityClass
+    }
+
+    var statusText: String {
+        guard let inferredActivityClass else {
+            return "MISS"
+        }
+        return inferredActivityClass == healthActivityClass ? "MATCH" : "MISMATCH"
+    }
+
+    var statusColor: Color {
+        guard let inferredActivityClass else {
+            return .red
+        }
+        return inferredActivityClass == healthActivityClass ? .green : .orange
+    }
+}
+
+private struct ReplayExportTruthComparison: Codable {
+    let healthMatches: [ReplayExportTruthMatch]
+    let unmatchedProposedSegments: [ReplayExportAnalysisSegment]
+
+    init(comparison: ReplayTruthComparison) {
+        healthMatches = comparison.healthMatches.map(ReplayExportTruthMatch.init)
+        unmatchedProposedSegments = comparison.unmatchedProposedSegments.map(ReplayExportAnalysisSegment.init)
+    }
+}
+
+private struct ReplayExportTruthMatch: Codable {
+    let healthSegmentID: UUID
+    let matchedProposedSegmentID: UUID?
+    let healthActivityClass: ActivityClass
+    let inferredActivityClass: ActivityClass?
+    let startTime: Date
+    let startTimeLocal: String
+    let endTime: Date
+    let endTimeLocal: String
+    let overlapDurationSeconds: TimeInterval
+    let truthCoverage: Double
+    let inferredCoverage: Double
+    let startOffsetSeconds: TimeInterval
+    let endOffsetSeconds: TimeInterval
+    let distanceDeltaMeters: Double?
+
+    init(match: ReplayTruthMatch) {
+        healthSegmentID = match.healthSegmentID
+        matchedProposedSegmentID = match.matchedProposedSegmentID
+        healthActivityClass = match.healthActivityClass
+        inferredActivityClass = match.inferredActivityClass
+        startTime = match.startTime
+        startTimeLocal = ReplayExportLocalTime.string(from: match.startTime)
+        endTime = match.endTime
+        endTimeLocal = ReplayExportLocalTime.string(from: match.endTime)
+        overlapDurationSeconds = match.overlapDuration
+        truthCoverage = match.truthCoverage
+        inferredCoverage = match.inferredCoverage
+        startOffsetSeconds = match.startOffsetSeconds
+        endOffsetSeconds = match.endOffsetSeconds
+        distanceDeltaMeters = match.distanceDeltaMeters
+    }
 }
 
 private struct ReplayInferenceDebugSelection: Identifiable {
@@ -847,20 +1346,31 @@ private struct ReplayInferenceDebugMapView: View {
     }
 
     private func loadObservations() {
-        let startTime = selection.segment.startTime
-        let endTime = selection.segment.endTime
-        var descriptor = FetchDescriptor<ObservationRecord>(
-            predicate: #Predicate<ObservationRecord> { observation in
-                observation.timestamp >= startTime && observation.timestamp <= endTime
-            },
-            sortBy: [SortDescriptor(\ObservationRecord.timestamp, order: .forward)]
-        )
-        descriptor.fetchLimit = 4_000
+        let modelContainer = modelContext.container
+        let segment = selection.segment
+        Task {
+            let result = await Task.detached(priority: .utility) {
+                let modelContext = ModelContext(modelContainer)
+                let startTime = segment.startTime
+                let endTime = segment.endTime
+                var descriptor = FetchDescriptor<ObservationRecord>(
+                    predicate: #Predicate<ObservationRecord> { observation in
+                        observation.timestamp >= startTime && observation.timestamp <= endTime
+                    },
+                    sortBy: [SortDescriptor(\ObservationRecord.timestamp, order: .forward)]
+                )
+                descriptor.fetchLimit = 4_000
 
-        observations = (try? modelContext.fetch(descriptor)) ?? []
-        pathReview = SegmentObservationMetrics.pathReview(from: observations)
-        if pathReview.rawFixes.isEmpty == false {
-            cameraPosition = initialMapPosition(for: pathReview.rawFixes)
+                let observations = (try? modelContext.fetch(descriptor)) ?? []
+                let pathReview = SegmentObservationMetrics.pathReview(from: observations)
+                return (observations, pathReview)
+            }.value
+
+            observations = result.0
+            pathReview = result.1
+            if pathReview.rawFixes.isEmpty == false {
+                cameraPosition = initialMapPosition(for: pathReview.rawFixes)
+            }
         }
     }
 
