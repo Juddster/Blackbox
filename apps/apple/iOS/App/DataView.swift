@@ -124,13 +124,6 @@ struct DataView: View {
                         }
                     }
 
-                    Button(role: .destructive) {
-                        clearPostedSystemSegmentsInWindow()
-                    } label: {
-                        Label("Clear Posted System Segments In Window", systemImage: "trash")
-                    }
-                    .disabled(exportEndTime <= exportStartTime)
-
                     if let inferenceStatusMessage {
                         Text(inferenceStatusMessage)
                             .font(.caption)
@@ -486,41 +479,17 @@ struct DataView: View {
 
                 if outcome.createdCount == 0 {
                     inferenceStatusMessage = outcome.skippedCount > 0
-                        ? "Skipped \(outcome.skippedCount) overlapping proposals."
+                        ? "Replaced \(outcome.replacedCount) stale system segment\(outcome.replacedCount == 1 ? "" : "s"); skipped \(outcome.skippedCount) protected overlap\(outcome.skippedCount == 1 ? "" : "s")."
                         : "No saveable inferred segments were found."
-                } else if outcome.skippedCount == 0 {
+                } else if outcome.skippedCount == 0, outcome.replacedCount == 0 {
                     inferenceStatusMessage = "Saved \(outcome.createdCount) proposed segment\(outcome.createdCount == 1 ? "" : "s") for review."
+                } else if outcome.skippedCount == 0 {
+                    inferenceStatusMessage = "Replaced \(outcome.replacedCount) stale system segment\(outcome.replacedCount == 1 ? "" : "s") and saved \(outcome.createdCount) proposed segment\(outcome.createdCount == 1 ? "" : "s")."
                 } else {
-                    inferenceStatusMessage = "Saved \(outcome.createdCount) proposed segment\(outcome.createdCount == 1 ? "" : "s"); skipped \(outcome.skippedCount) overlaps."
+                    inferenceStatusMessage = "Replaced \(outcome.replacedCount) stale system segment\(outcome.replacedCount == 1 ? "" : "s"), saved \(outcome.createdCount) proposed segment\(outcome.createdCount == 1 ? "" : "s"), and skipped \(outcome.skippedCount) protected overlap\(outcome.skippedCount == 1 ? "" : "s")."
                 }
             } catch {
                 inferenceStatusMessage = "Could not save the proposed segments."
-            }
-        }
-    }
-
-    private func clearPostedSystemSegmentsInWindow() {
-        let modelContainer = modelContext.container
-        let exportStartTime = exportStartTime
-        let exportEndTime = exportEndTime
-
-        Task {
-            do {
-                let removedCount = try await Task.detached(priority: .utility) {
-                    let tombstoner = LocalSegmentTombstoner(modelContainer: modelContainer)
-                    return try tombstoner.tombstonePostedSystemSegments(
-                        startTime: exportStartTime,
-                        endTime: exportEndTime
-                    )
-                }.value
-
-                if removedCount == 0 {
-                    inferenceStatusMessage = "No posted system segments overlapped this window."
-                } else {
-                    inferenceStatusMessage = "Cleared \(removedCount) posted system segment\(removedCount == 1 ? "" : "s") from this window."
-                }
-            } catch {
-                inferenceStatusMessage = "Could not clear posted system segments for this window."
             }
         }
     }
@@ -564,7 +533,7 @@ struct DataView: View {
             },
             sortBy: [SortDescriptor(\SegmentRecord.startTime, order: .forward)]
         )
-        return (try? modelContext.fetch(descriptor)) ?? []
+        return ((try? modelContext.fetch(descriptor)) ?? []).filter { $0.lifecycleState != .deleted }
     }
 
     nonisolated private static func makeReplayExportSegment(from record: SegmentRecord) -> ReplayExportSegment? {

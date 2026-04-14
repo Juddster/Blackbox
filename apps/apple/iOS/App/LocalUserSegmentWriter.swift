@@ -1,12 +1,25 @@
 import Foundation
 import SwiftData
 
-@MainActor
-struct LocalUserSegmentWriter {
-    private let modelContext: ModelContext
+struct HealthBackfilledWorkoutSegment: Sendable {
+    let id: UUID
+    let startTime: Date
+    let endTime: Date
+    let activityClass: ActivityClass
+    let title: String
+    let distanceMeters: Double?
+    let primaryDeviceHint: ObservationSourceDevice
+}
+
+struct LocalUserSegmentWriter: @unchecked Sendable {
+    private let modelContainer: ModelContainer
 
     init(modelContext: ModelContext) {
-        self.modelContext = modelContext
+        self.modelContainer = modelContext.container
+    }
+
+    init(modelContainer: ModelContainer) {
+        self.modelContainer = modelContainer
     }
 
     func createSegment(
@@ -16,6 +29,7 @@ struct LocalUserSegmentWriter {
         narrowerLabel: String,
         distanceMeters: Double?
     ) throws {
+        let modelContext = ModelContext(modelContainer)
         let trimmedLabel = narrowerLabel.trimmingCharacters(in: .whitespacesAndNewlines)
         let durationSeconds = max(0, endTime.timeIntervalSince(startTime))
         let distanceBreakdown = try distanceBreakdown(
@@ -64,13 +78,18 @@ struct LocalUserSegmentWriter {
 
     func createInferredSegments(
         from proposals: [ReplayInferenceSegment]
-    ) throws -> (createdCount: Int, skippedCount: Int) {
+    ) throws -> (createdCount: Int, skippedCount: Int, replacedCount: Int) {
+        let modelContext = ModelContext(modelContainer)
         let candidates = proposals.filter { $0.activityClass != .stationary }
         guard candidates.isEmpty == false else {
-            return (0, 0)
+            return (0, 0, 0)
         }
 
         let existingSegments = try modelContext.fetch(FetchDescriptor<SegmentRecord>())
+        let replacedSegments = replaceOverlappingSystemSegments(
+            for: candidates,
+            existingSegments: existingSegments
+        )
         var createdCount = 0
         var skippedCount = 0
 
@@ -120,7 +139,104 @@ struct LocalUserSegmentWriter {
             try modelContext.save()
         }
 
-        return (createdCount, skippedCount)
+        return (createdCount, skippedCount, replacedSegments)
+    }
+
+    func upsertHealthBackfilledSegments(
+        _ workouts: [HealthBackfilledWorkoutSegment]
+    ) throws -> Int {
+        guard workouts.isEmpty == false else {
+            return 0
+        }
+
+        let modelContext = ModelContext(modelContainer)
+        let existingSegments = try modelContext.fetch(FetchDescriptor<SegmentRecord>())
+        let existingSegmentsByID = Dictionary(uniqueKeysWithValues: existingSegments.map { ($0.id, $0) })
+        var changedCount = 0
+
+        for workout in workouts {
+            let segment = existingSegmentsByID[workout.id] ?? SegmentRecord(
+                id: workout.id,
+                startTime: workout.startTime,
+                endTime: workout.endTime,
+                lifecycleState: .settled,
+                originType: .healthKitBackfill,
+                primaryDeviceHint: workout.primaryDeviceHint,
+                title: workout.title
+            )
+
+            segment.startTime = workout.startTime
+            segment.endTime = workout.endTime
+            segment.lifecycleState = .settled
+            segment.originType = .healthKitBackfill
+            segment.primaryDeviceHint = workout.primaryDeviceHint
+            segment.title = workout.title
+            segment.updatedAt = .now
+
+            if let interpretation = segment.interpretation {
+                interpretation.visibleClass = workout.activityClass
+                interpretation.userSelectedClass = nil
+                interpretation.confidence = 1
+                interpretation.ambiguityState = .clear
+                interpretation.needsReview = false
+                interpretation.interpretationOrigin = .system
+                interpretation.updatedAt = .now
+            } else {
+                segment.interpretation = SegmentInterpretationRecord(
+                    visibleClass: workout.activityClass,
+                    confidence: 1,
+                    ambiguityState: .clear,
+                    needsReview: false,
+                    interpretationOrigin: .system
+                )
+            }
+
+            let durationSeconds = max(0, workout.endTime.timeIntervalSince(workout.startTime))
+            let averageSpeed = averageSpeed(
+                distanceMeters: workout.distanceMeters,
+                durationSeconds: durationSeconds
+            )
+            if let summary = segment.summary {
+                summary.durationSeconds = durationSeconds
+                summary.distanceMeters = workout.distanceMeters
+                summary.locationDistanceMeters = nil
+                summary.pedometerDistanceMeters = nil
+                summary.averageSpeedMetersPerSecond = averageSpeed
+                summary.updatedAt = .now
+            } else {
+                segment.summary = SegmentSummaryRecord(
+                    durationSeconds: durationSeconds,
+                    distanceMeters: workout.distanceMeters,
+                    averageSpeedMetersPerSecond: averageSpeed
+                )
+            }
+
+            if let syncState = segment.syncState {
+                syncState.lastModifiedByDeviceID = "apple-local"
+                syncState.lastModifiedAt = .now
+                syncState.isDeleted = false
+                syncState.disposition = .pendingUpload
+                syncState.lastSyncError = nil
+            } else {
+                segment.syncState = SegmentSyncStateRecord(
+                    lastModifiedByDeviceID: "apple-local",
+                    lastModifiedAt: .now,
+                    syncVersion: 0,
+                    disposition: .pendingUpload
+                )
+            }
+
+            if existingSegmentsByID[workout.id] == nil {
+                modelContext.insert(segment)
+            }
+            changedCount += 1
+        }
+
+        if changedCount > 0 {
+            try modelContext.save()
+        }
+
+        return changedCount
     }
 
     func updateSegment(
@@ -131,6 +247,7 @@ struct LocalUserSegmentWriter {
         narrowerLabel: String,
         distanceMeters: Double?
     ) throws {
+        let modelContext = ModelContext(modelContainer)
         let records = try modelContext.fetch(FetchDescriptor<SegmentRecord>())
         guard let segment = records.first(where: { $0.id == segmentID }) else {
             return
@@ -234,6 +351,7 @@ struct LocalUserSegmentWriter {
         startTime: Date,
         endTime: Date
     ) throws -> SegmentDistanceBreakdown {
+        let modelContext = ModelContext(modelContainer)
         if let fallbackDistanceMeters {
             return SegmentDistanceBreakdown(
                 preferredDistanceMeters: fallbackDistanceMeters,
@@ -272,6 +390,13 @@ struct LocalUserSegmentWriter {
                 return false
             }
 
+            guard
+                existingSegment.originType != .healthKitBackfill,
+                existingSegment.originType != .system
+            else {
+                return false
+            }
+
             let overlapStart = max(existingSegment.startTime, proposal.startTime)
             let overlapEnd = min(existingSegment.endTime, proposal.endTime)
             let overlapDuration = overlapEnd.timeIntervalSince(overlapStart)
@@ -285,5 +410,54 @@ struct LocalUserSegmentWriter {
 
             return overlapRatio >= 0.5 || existingOverlapRatio >= 0.5
         }
+    }
+
+    private func replaceOverlappingSystemSegments(
+        for proposals: [ReplayInferenceSegment],
+        existingSegments: [SegmentRecord]
+    ) -> Int {
+        guard
+            let windowStart = proposals.map(\.startTime).min(),
+            let windowEnd = proposals.map(\.endTime).max()
+        else {
+            return 0
+        }
+
+        var replacedCount = 0
+        for existingSegment in existingSegments {
+            guard
+                existingSegment.originType == .system,
+                existingSegment.lifecycleState != .deleted,
+                existingSegment.endTime >= windowStart,
+                existingSegment.startTime <= windowEnd
+            else {
+                continue
+            }
+
+            existingSegment.lifecycleState = .deleted
+            existingSegment.updatedAt = .now
+
+            if let syncState = existingSegment.syncState {
+                syncState.lastModifiedByDeviceID = "apple-local"
+                syncState.lastModifiedAt = .now
+                syncState.isDeleted = true
+                syncState.disposition = .pendingUpload
+                syncState.lastSyncError = nil
+                syncState.pendingServerEnvelopeData = nil
+            } else {
+                existingSegment.syncState = SegmentSyncStateRecord(
+                    lastModifiedByDeviceID: "apple-local",
+                    lastModifiedAt: .now,
+                    syncVersion: 0,
+                    isDeleted: true,
+                    disposition: .pendingUpload
+                )
+            }
+
+            LocalDeletedSegmentStore.markDeleted(existingSegment.id)
+            replacedCount += 1
+        }
+
+        return replacedCount
     }
 }

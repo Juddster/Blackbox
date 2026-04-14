@@ -96,6 +96,9 @@ What to watch:
 
 ## Codi Progress Notes
 
+- Apr 14, 19:41:
+  - Moved Apple stale-inference cleanup into the source path by making `Save Proposed Segments` replace overlapping system-origin segments in the selected replay window before inserting the new inferred segments, while still leaving Health-backed and user-created segments untouched.
+  - Tightened Apple replay export to exclude deleted segments so exported windows reflect current active state rather than accumulating tombstoned historical inference noise.
 - Apr 14, 19:22:
   - Added Apple replay truth-vs-inference comparison for windows with Health-backfilled segments, so the Data tab and replay export now score current proposed segments against overlapping Health truth with match coverage, class agreement, timing offsets, distance deltas, and unmatched inferred segments called out explicitly.
   - Added a scoped Apple cleanup path to tombstone previously posted system-origin segments inside the selected replay window, so stale bad posts can be removed before comparing the current analyzer output against Health truth.
